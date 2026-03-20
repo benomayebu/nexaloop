@@ -7,8 +7,9 @@ async function getOrgName(): Promise<string> {
   if (!token) return '';
 
   try {
+    const apiUrl = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
     const res = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/auth/me`,
+      `${apiUrl}/auth/me`,
       {
         headers: { Cookie: `auth_token=${token.value}` },
         cache: 'no-store',
