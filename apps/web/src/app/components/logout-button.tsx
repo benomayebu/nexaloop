@@ -6,14 +6,19 @@ export function LogoutButton() {
   const router = useRouter();
 
   const handleLogout = async () => {
-    await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/auth/logout`,
-      {
-        method: 'POST',
-        credentials: 'include',
-      },
-    );
-    router.push('/login');
+    try {
+      await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/auth/logout`,
+        {
+          method: 'POST',
+          credentials: 'include',
+        },
+      );
+    } catch {
+      // If the API call fails we still redirect — the cookie will expire naturally
+    } finally {
+      router.push('/login');
+    }
   };
 
   return (

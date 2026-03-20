@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, ConflictException, NotFoundException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
 import * as bcrypt from 'bcrypt';
@@ -61,6 +61,7 @@ export class AuthService {
     const membership = await this.prisma.userOrganization.findFirst({
       where: { userId: user.id },
       include: { organization: true },
+      orderBy: { createdAt: 'asc' },
     });
 
     if (!membership) {
@@ -78,7 +79,9 @@ export class AuthService {
 
   async getMe(userId: string, orgId: string) {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw new NotFoundException('User not found');
     const org = await this.prisma.organization.findUnique({ where: { id: orgId } });
+    if (!org) throw new NotFoundException('Organization not found');
     return { user, org };
   }
 }
