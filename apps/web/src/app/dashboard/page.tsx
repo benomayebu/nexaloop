@@ -1,7 +1,7 @@
 import { cookies } from 'next/headers';
 
 async function getMeData() {
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   const token = cookieStore.get('auth_token');
   if (!token) return null;
 
