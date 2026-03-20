@@ -1,5 +1,4 @@
 import { cookies } from 'next/headers';
-import { redirect } from 'next/navigation';
 import { LogoutButton } from '../components/logout-button';
 
 async function getOrgName(): Promise<string> {
@@ -28,12 +27,6 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const cookieStore = await cookies();
-  const token = cookieStore.get('auth_token');
-  if (!token) {
-    redirect('/login');
-  }
-
   const orgName = await getOrgName();
 
   return (
