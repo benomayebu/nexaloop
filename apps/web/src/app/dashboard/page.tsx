@@ -1,4 +1,5 @@
 import { cookies } from 'next/headers';
+import Link from 'next/link';
 
 async function getMeData() {
   const cookieStore = await cookies();
@@ -6,8 +7,9 @@ async function getMeData() {
   if (!token) return null;
 
   try {
+    const apiUrl = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
     const res = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/auth/me`,
+      `${apiUrl}/auth/me`,
       {
         headers: { Cookie: `auth_token=${token.value}` },
         cache: 'no-store',
@@ -32,10 +34,10 @@ export default async function DashboardPage() {
         Supply chain compliance &amp; traceability platform.
       </p>
       <div className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        <div className="bg-white rounded-lg shadow p-6">
+        <Link href="/dashboard/suppliers" className="bg-white rounded-lg shadow p-6 hover:shadow-md transition-shadow">
           <h3 className="text-lg font-medium text-gray-900">Suppliers</h3>
           <p className="mt-2 text-sm text-gray-500">Manage your supplier network</p>
-        </div>
+        </Link>
         <div className="bg-white rounded-lg shadow p-6">
           <h3 className="text-lg font-medium text-gray-900">Compliance</h3>
           <p className="mt-2 text-sm text-gray-500">Track compliance requirements</p>

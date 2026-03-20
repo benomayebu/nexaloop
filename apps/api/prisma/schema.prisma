@@ -14,6 +14,29 @@ enum Role {
   VIEWER
 }
 
+enum SupplierType {
+  TIER1_FACTORY
+  MILL
+  SPINNER
+  DYEHOUSE
+  TRIM_SUPPLIER
+  AGENT
+  OTHER
+}
+
+enum SupplierStatus {
+  ACTIVE
+  INACTIVE
+  PROSPECT
+}
+
+enum RiskLevel {
+  LOW
+  MEDIUM
+  HIGH
+  UNKNOWN
+}
+
 model User {
   id            String             @id @default(cuid())
   email         String             @unique
@@ -30,6 +53,7 @@ model Organization {
   createdAt DateTime           @default(now())
   updatedAt DateTime           @updatedAt
   members   UserOrganization[]
+  suppliers Supplier[]
 }
 
 model UserOrganization {
@@ -42,4 +66,33 @@ model UserOrganization {
   createdAt      DateTime     @default(now())
 
   @@unique([userId, organizationId])
+}
+
+model Supplier {
+  id           String         @id @default(cuid())
+  orgId        String
+  org          Organization   @relation(fields: [orgId], references: [id])
+  name         String
+  supplierCode String?
+  type         SupplierType
+  country      String
+  city         String?
+  status       SupplierStatus @default(ACTIVE)
+  riskLevel    RiskLevel      @default(UNKNOWN)
+  notes        String?
+  contacts     Contact[]
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+}
+
+model Contact {
+  id         String   @id @default(cuid())
+  supplierId String
+  supplier   Supplier @relation(fields: [supplierId], references: [id])
+  name       String
+  email      String?
+  phone      String?
+  role       String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 }

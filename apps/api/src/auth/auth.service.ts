@@ -1,6 +1,7 @@
-import { Injectable, UnauthorizedException, ConflictException, NotFoundException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
+import { Prisma } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
@@ -10,6 +11,18 @@ export class AuthService {
     private readonly jwtService: JwtService,
   ) {}
 
+  private sanitizeUser(user: {
+    id: string;
+    email: string;
+    name: string | null;
+    createdAt: Date;
+    updatedAt: Date;
+    passwordHash: string;
+  }) {
+    const { passwordHash: _, ...safe } = user;
+    return safe;
+  }
+
   async register(email: string, password: string, orgName: string, name?: string) {
     const existing = await this.prisma.user.findUnique({ where: { email } });
     if (existing) {
@@ -18,7 +31,7 @@ export class AuthService {
 
     const passwordHash = await bcrypt.hash(password, 10);
 
-    const result = await this.prisma.$transaction(async (tx) => {
+    const result = await this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const org = await tx.organization.create({
         data: { name: orgName },
       });
@@ -44,7 +57,7 @@ export class AuthService {
       orgId: result.org.id,
     });
 
-    return { token, user: result.user, org: result.org };
+    return { token, user: this.sanitizeUser(result.user), org: result.org };
   }
 
   async login(email: string, password: string) {
@@ -74,14 +87,29 @@ export class AuthService {
       orgId: membership.organizationId,
     });
 
-    return { token, user, org: membership.organization };
+    return { token, user: this.sanitizeUser(user), org: membership.organization };
   }
 
   async getMe(userId: string, orgId: string) {
-    const user = await this.prisma.user.findUnique({ where: { id: userId } });
-    if (!user) throw new NotFoundException('User not found');
-    const org = await this.prisma.organization.findUnique({ where: { id: orgId } });
-    if (!org) throw new NotFoundException('Organization not found');
-    return { user, org };
+    const membership = await this.prisma.userOrganization.findFirst({
+      where: {
+        userId,
+        organizationId: orgId,
+      },
+      include: {
+        user: true,
+        organization: true,
+      },
+    });
+
+    if (!membership) {
+      throw new UnauthorizedException('Access denied');
+    }
+
+    return {
+      user: this.sanitizeUser(membership.user),
+      org: membership.organization,
+      role: membership.role,
+    };
   }
 }
