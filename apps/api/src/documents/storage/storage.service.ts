@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { join, extname } from 'path';
 import * as fs from 'fs';
+import { randomUUID } from 'crypto';
 
 @Injectable()
 export class StorageService {
@@ -20,7 +21,8 @@ export class StorageService {
     const uploadsDir = join(process.cwd(), 'uploads');
     await fs.promises.mkdir(uploadsDir, { recursive: true });
 
-    const uniqueName = `${Date.now()}-${Math.round(Math.random() * 1e9)}${extname(file.originalname)}`;
+    // Use a cryptographically random UUID to make filenames unguessable
+    const uniqueName = `${randomUUID()}${extname(file.originalname)}`;
     const destPath = join(uploadsDir, uniqueName);
 
     await fs.promises.writeFile(destPath, file.buffer);
