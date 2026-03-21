@@ -37,23 +37,34 @@ enum RiskLevel {
   UNKNOWN
 }
 
+enum DocumentStatus {
+  PENDING_REVIEW
+  APPROVED
+  REJECTED
+  EXPIRED
+}
+
 model User {
-  id            String             @id @default(cuid())
-  email         String             @unique
-  passwordHash  String
-  name          String?
-  createdAt     DateTime           @default(now())
-  updatedAt     DateTime           @updatedAt
-  organizations UserOrganization[]
+  id                String             @id @default(cuid())
+  email             String             @unique
+  passwordHash      String
+  name              String?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  organizations     UserOrganization[]
+  uploadedDocuments Document[]         @relation("UploadedDocuments")
+  reviewedDocuments Document[]         @relation("ReviewedDocuments")
 }
 
 model Organization {
-  id        String             @id @default(cuid())
-  name      String
-  createdAt DateTime           @default(now())
-  updatedAt DateTime           @updatedAt
-  members   UserOrganization[]
-  suppliers Supplier[]
+  id            String             @id @default(cuid())
+  name          String
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+  members       UserOrganization[]
+  suppliers     Supplier[]
+  documentTypes DocumentType[]
+  documents     Document[]
 }
 
 model UserOrganization {
@@ -81,6 +92,7 @@ model Supplier {
   riskLevel    RiskLevel      @default(UNKNOWN)
   notes        String?
   contacts     Contact[]
+  documents    Document[]
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
 }
@@ -95,4 +107,40 @@ model Contact {
   role       String?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
+}
+
+model DocumentType {
+  id                       String         @id @default(cuid())
+  orgId                    String
+  org                      Organization   @relation(fields: [orgId], references: [id])
+  name                     String
+  description              String?
+  requiredForSupplierTypes SupplierType[] @default([])
+  isActive                 Boolean        @default(true)
+  documents                Document[]
+  createdAt                DateTime       @default(now())
+  updatedAt                DateTime       @updatedAt
+}
+
+model Document {
+  id               String         @id @default(cuid())
+  orgId            String
+  org              Organization   @relation(fields: [orgId], references: [id])
+  supplierId       String
+  supplier         Supplier       @relation(fields: [supplierId], references: [id])
+  documentTypeId   String
+  documentType     DocumentType   @relation(fields: [documentTypeId], references: [id])
+  fileUrl          String
+  filename         String
+  mimeType         String
+  issuedDate       DateTime?
+  expiryDate       DateTime?
+  status           DocumentStatus @default(PENDING_REVIEW)
+  uploadedByUserId String
+  uploadedBy       User           @relation("UploadedDocuments", fields: [uploadedByUserId], references: [id])
+  reviewedByUserId String?
+  reviewedBy       User?          @relation("ReviewedDocuments", fields: [reviewedByUserId], references: [id])
+  reviewNotes      String?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
 }
