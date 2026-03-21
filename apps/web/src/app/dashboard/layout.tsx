@@ -52,6 +52,12 @@ export default async function DashboardLayout({
                 Suppliers
               </Link>
               <Link
+                href="/dashboard/products"
+                className="text-sm text-gray-600 hover:text-gray-900"
+              >
+                Products
+              </Link>
+              <Link
                 href="/dashboard/settings/document-types"
                 className="text-sm text-gray-600 hover:text-gray-900"
               >

@@ -61,7 +61,17 @@ export class SuppliersService {
   async findOne(orgId: string, id: string) {
     const supplier = await this.prisma.supplier.findFirst({
       where: { id, orgId },
-      include: { contacts: { orderBy: { createdAt: 'asc' } } },
+      include: {
+        contacts: { orderBy: { createdAt: 'asc' } },
+        productLinks: {
+          include: {
+            product: {
+              select: { id: true, name: true, sku: true, category: true, status: true },
+            },
+          },
+          orderBy: { createdAt: 'asc' },
+        },
+      },
     });
     if (!supplier) {
       throw new NotFoundException('Supplier not found');
