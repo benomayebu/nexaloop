@@ -13,6 +13,12 @@ interface Contact {
   role: string | null;
 }
 
+interface ProductLink {
+  id: string;
+  role: string;
+  product: { id: string; name: string; sku: string; category: string | null; status: string };
+}
+
 interface Supplier {
   id: string;
   name: string;
@@ -24,6 +30,7 @@ interface Supplier {
   riskLevel: string;
   notes: string | null;
   contacts: Contact[];
+  productLinks: ProductLink[];
   updatedAt: string;
   createdAt: string;
 }
@@ -233,9 +240,16 @@ export default async function SupplierDetailPage({
           >
             Documents
           </Link>
-          <span className="border-b-2 border-transparent pb-4 px-1 text-sm font-medium text-gray-400 cursor-not-allowed">
-            Products
-          </span>
+          <Link
+            href={`/dashboard/suppliers/${id}?tab=products`}
+            className={`pb-4 px-1 text-sm font-medium border-b-2 ${
+              activeTab === 'products'
+                ? 'border-indigo-500 text-indigo-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            Products ({supplier.productLinks.length})
+          </Link>
         </nav>
       </div>
 
@@ -367,6 +381,78 @@ export default async function SupplierDetailPage({
                           documentId={doc.id}
                           currentStatus={doc.status}
                         />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Products tab */}
+      {activeTab === 'products' && (
+        <div>
+          <h2 className="text-base font-medium text-gray-900 mb-4">
+            Products ({supplier.productLinks.length})
+          </h2>
+          <div className="bg-white shadow rounded-lg overflow-hidden">
+            {supplier.productLinks.length === 0 ? (
+              <div className="p-8 text-center text-gray-500">
+                No products linked to this supplier yet.
+              </div>
+            ) : (
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Product Name
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      SKU
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Category
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Role
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Status
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {supplier.productLinks.map((link) => (
+                    <tr key={link.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <Link
+                          href={`/dashboard/products/${link.product.id}`}
+                          className="text-indigo-600 hover:text-indigo-900 font-medium"
+                        >
+                          {link.product.name}
+                        </Link>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                        {link.product.sku}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                        {link.product.category ?? '—'}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                        {formatLabel(link.role)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span
+                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                            link.product.status === 'ACTIVE'
+                              ? 'bg-green-100 text-green-800'
+                              : 'bg-gray-100 text-gray-600'
+                          }`}
+                        >
+                          {link.product.status}
+                        </span>
                       </td>
                     </tr>
                   ))}

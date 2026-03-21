@@ -65,6 +65,7 @@ model Organization {
   suppliers     Supplier[]
   documentTypes DocumentType[]
   documents     Document[]
+  products      Product[]
 }
 
 model UserOrganization {
@@ -80,21 +81,22 @@ model UserOrganization {
 }
 
 model Supplier {
-  id           String         @id @default(cuid())
+  id           String            @id @default(cuid())
   orgId        String
-  org          Organization   @relation(fields: [orgId], references: [id])
+  org          Organization      @relation(fields: [orgId], references: [id])
   name         String
   supplierCode String?
   type         SupplierType
   country      String
   city         String?
-  status       SupplierStatus @default(ACTIVE)
-  riskLevel    RiskLevel      @default(UNKNOWN)
+  status       SupplierStatus    @default(ACTIVE)
+  riskLevel    RiskLevel         @default(UNKNOWN)
   notes        String?
   contacts     Contact[]
   documents    Document[]
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
+  productLinks ProductSupplier[]
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
 }
 
 model Contact {
@@ -143,4 +145,47 @@ model Document {
   reviewNotes      String?
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
+}
+
+enum ProductStatus {
+  ACTIVE
+  DISCONTINUED
+}
+
+enum ProductSupplierRole {
+  CUT_AND_SEW
+  FABRIC_SUPPLIER
+  YARN_SUPPLIER
+  TRIM_SUPPLIER
+  PACKAGING
+  OTHER
+}
+
+model Product {
+  id        String            @id @default(cuid())
+  orgId     String
+  org       Organization      @relation(fields: [orgId], references: [id])
+  name      String
+  sku       String
+  category  String?
+  season    String?
+  status    ProductStatus     @default(ACTIVE)
+  notes     String?
+  suppliers ProductSupplier[]
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+
+  @@unique([orgId, sku])
+}
+
+model ProductSupplier {
+  id         String              @id @default(cuid())
+  productId  String
+  product    Product             @relation(fields: [productId], references: [id])
+  supplierId String
+  supplier   Supplier            @relation(fields: [supplierId], references: [id])
+  role       ProductSupplierRole
+  createdAt  DateTime            @default(now())
+
+  @@unique([productId, supplierId, role])
 }
