@@ -1,4 +1,5 @@
 import { cookies } from 'next/headers';
+import Link from 'next/link';
 import { LogoutButton } from '../components/logout-button';
 
 async function getOrgName(): Promise<string> {
@@ -34,13 +35,29 @@ export default async function DashboardLayout({
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <span className="text-xl font-bold text-gray-900">N.E.X.A Loop</span>
-            {orgName && (
-              <span className="text-sm text-gray-500 bg-gray-100 px-2 py-1 rounded">
-                {orgName}
-              </span>
-            )}
+          <div className="flex items-center gap-6">
+            <div className="flex items-center gap-3">
+              <span className="text-xl font-bold text-gray-900">N.E.X.A Loop</span>
+              {orgName && (
+                <span className="text-sm text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                  {orgName}
+                </span>
+              )}
+            </div>
+            <nav className="hidden sm:flex items-center gap-4">
+              <Link
+                href="/dashboard/suppliers"
+                className="text-sm text-gray-600 hover:text-gray-900"
+              >
+                Suppliers
+              </Link>
+              <Link
+                href="/dashboard/settings/document-types"
+                className="text-sm text-gray-600 hover:text-gray-900"
+              >
+                Settings
+              </Link>
+            </nav>
           </div>
           <LogoutButton />
         </div>

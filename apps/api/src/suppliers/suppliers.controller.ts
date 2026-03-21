@@ -85,7 +85,10 @@ export class SuppliersController {
 
   @Delete('contacts/:id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  deleteContact(@CurrentOrg() orgId: string, @Param('id') id: string) {
-    return this.suppliersService.deleteContact(orgId, id);
+  async deleteContact(
+    @CurrentOrg() orgId: string,
+    @Param('id') id: string,
+  ): Promise<void> {
+    await this.suppliersService.deleteContact(orgId, id);
   }
 }
