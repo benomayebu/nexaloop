@@ -10,6 +10,7 @@ import {
   UploadedFile,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { memoryStorage } from 'multer';
 import { DocumentsService } from './documents.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CurrentOrg } from '../auth/current-org.decorator';
@@ -17,13 +18,20 @@ import { CurrentUser } from '../auth/current-user.decorator';
 import { UploadDocumentDto } from './dto/upload-document.dto';
 import { UpdateDocumentDto } from './dto/update-document.dto';
 
+const MAX_FILE_SIZE_BYTES = 20 * 1024 * 1024; // 20 MB
+
 @Controller()
 @UseGuards(JwtAuthGuard)
 export class DocumentsController {
   constructor(private readonly documentsService: DocumentsService) {}
 
   @Post('suppliers/:supplierId/documents')
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: memoryStorage(),
+      limits: { fileSize: MAX_FILE_SIZE_BYTES },
+    }),
+  )
   uploadDocument(
     @CurrentOrg() orgId: string,
     @CurrentUser() userId: string,
