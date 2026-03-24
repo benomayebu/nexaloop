@@ -3,19 +3,13 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
-interface Props {
-  productId: string;
-  linkId: string;
-}
+interface Props { productId: string; linkId: string; }
 
 export function RemoveProductSupplierButton({ productId, linkId }: Props) {
   const router = useRouter();
   const [removing, setRemoving] = useState(false);
 
-  const apiUrl =
-    typeof window !== 'undefined'
-      ? (process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001')
-      : 'http://localhost:3001';
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
 
   async function handleRemove() {
     if (!confirm('Remove this supplier link?')) return;
@@ -35,9 +29,12 @@ export function RemoveProductSupplierButton({ productId, linkId }: Props) {
     <button
       onClick={handleRemove}
       disabled={removing}
-      className="text-sm text-red-600 hover:text-red-800 disabled:opacity-50"
+      title="Remove link"
+      className="text-slate-400 hover:text-red-500 transition-colors disabled:opacity-50"
     >
-      {removing ? 'Removing…' : 'Remove'}
+      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+      </svg>
     </button>
   );
 }
