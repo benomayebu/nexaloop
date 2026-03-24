@@ -54,6 +54,7 @@ model User {
   organizations     UserOrganization[]
   uploadedDocuments Document[]         @relation("UploadedDocuments")
   reviewedDocuments Document[]         @relation("ReviewedDocuments")
+  notifications     Notification[]
 }
 
 model Organization {
@@ -66,6 +67,7 @@ model Organization {
   documentTypes DocumentType[]
   documents     Document[]
   products      Product[]
+  notifications Notification[]
 }
 
 model UserOrganization {
@@ -171,6 +173,15 @@ model Product {
   season    String?
   status    ProductStatus     @default(ACTIVE)
   notes     String?
+  // DPP (Digital Product Passport) fields — Phase 6
+  dppEnabled       Boolean   @default(false)
+  materialComposition String?
+  countryOfOrigin    String?
+  manufacturingDate  DateTime?
+  weight             Float?
+  weightUnit         String?   @default("kg")
+  recycledContent    Float?    // percentage 0-100
+  repairabilityScore Int?      // 1-10
   suppliers ProductSupplier[]
   createdAt DateTime          @default(now())
   updatedAt DateTime          @updatedAt
@@ -188,4 +199,33 @@ model ProductSupplier {
   createdAt  DateTime            @default(now())
 
   @@unique([productId, supplierId, role])
+}
+
+// ─── Phase 5: Notifications ───────────────────────────────────────
+
+enum NotificationType {
+  DOCUMENT_EXPIRING
+  DOCUMENT_EXPIRED
+  DOCUMENT_UPLOADED
+  DOCUMENT_REVIEWED
+  SYSTEM
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  orgId     String
+  org       Organization     @relation(fields: [orgId], references: [id])
+  userId    String
+  user      User             @relation(fields: [userId], references: [id])
+  type      NotificationType
+  title     String
+  message   String
+  read      Boolean          @default(false)
+  // Optional link to the related entity
+  entityType String?          // "document", "supplier", "product"
+  entityId   String?
+  createdAt DateTime         @default(now())
+
+  @@index([userId, read])
+  @@index([orgId, createdAt])
 }

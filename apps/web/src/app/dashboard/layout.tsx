@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { apiFetch } from '../../lib/api';
 import { SidebarNav } from '../components/sidebar-nav';
 import { LogoutButton } from '../components/logout-button';
+import { NotificationBell } from '../components/notification-bell';
 
 interface MeData {
   user: { id: string; name: string | null; email: string };
@@ -64,12 +65,7 @@ export default async function DashboardLayout({
             )}
           </div>
           <div className="flex items-center gap-4">
-            {/* Notification bell placeholder */}
-            <button className="relative text-slate-400 hover:text-slate-600 transition-colors">
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
-              </svg>
-            </button>
+            <NotificationBell />
             {/* User avatar (mobile) */}
             <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center md:hidden">
               <span className="text-indigo-600 font-semibold text-xs">

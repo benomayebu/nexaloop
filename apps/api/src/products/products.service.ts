@@ -105,6 +105,16 @@ export class ProductsService {
         season: dto.season,
         status: dto.status,
         notes: dto.notes,
+        dppEnabled: dto.dppEnabled,
+        materialComposition: dto.materialComposition,
+        countryOfOrigin: dto.countryOfOrigin,
+        manufacturingDate: dto.manufacturingDate
+          ? new Date(dto.manufacturingDate)
+          : undefined,
+        weight: dto.weight,
+        weightUnit: dto.weightUnit,
+        recycledContent: dto.recycledContent,
+        repairabilityScore: dto.repairabilityScore,
       },
     });
   }
