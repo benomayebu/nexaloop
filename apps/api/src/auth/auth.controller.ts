@@ -13,7 +13,7 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   // Stricter rate limit on auth endpoints: 5 attempts per 60s
-  @Throttle([{ ttl: 60_000, limit: 5 }])
+  @Throttle({ default: { ttl: 60_000, limit: 5 } })
   @Post('register')
   async register(
     @Body() body: RegisterDto,
@@ -35,7 +35,7 @@ export class AuthController {
   }
 
   // Stricter rate limit on auth endpoints: 5 attempts per 60s
-  @Throttle([{ ttl: 60_000, limit: 5 }])
+  @Throttle({ default: { ttl: 60_000, limit: 5 } })
   @Post('login')
   async login(
     @Body() body: LoginDto,

@@ -18,7 +18,7 @@ import { EprModule } from './epr/epr.module';
   imports: [
     ScheduleModule.forRoot(),
     // Rate limiting: 100 requests per 60 seconds per IP
-    ThrottlerModule.forRoot([{ ttl: 60_000, limit: 100 }]),
+    ThrottlerModule.forRoot({ throttlers: [{ ttl: 60_000, limit: 100 }] }),
     PrismaModule,
     AuthModule,
     SuppliersModule,
