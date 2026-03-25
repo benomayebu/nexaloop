@@ -1,5 +1,6 @@
 # ── Build stage ─────────────────────────────
 FROM node:20-alpine AS builder
+RUN apk add --no-cache openssl
 WORKDIR /app
 
 RUN corepack enable && corepack prepare pnpm@9 --activate
@@ -17,18 +18,14 @@ RUN pnpm build
 
 # ── Production stage ───────────────────────
 FROM node:20-alpine
+RUN apk add --no-cache openssl
 WORKDIR /app
 
-RUN corepack enable && corepack prepare pnpm@9 --activate
-
-COPY package.json ./
-RUN pnpm install --prod --no-frozen-lockfile
-
-# Copy built output and Prisma files from builder
+# Copy everything needed from builder
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/prisma ./prisma
-COPY --from=builder /app/node_modules/.pnpm/@prisma+client*/node_modules/@prisma/client ./node_modules/@prisma/client
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=builder /app/package.json ./
+COPY --from=builder /app/node_modules ./node_modules
 
 EXPOSE 3001
 
