@@ -3,7 +3,8 @@ import { NestExpressApplication } from '@nestjs/platform-express';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import * as cookieParser from 'cookie-parser';
-import helmet = require('helmet');
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const helmet = require('helmet');
 import { join } from 'path';
 import * as fs from 'fs';
 
