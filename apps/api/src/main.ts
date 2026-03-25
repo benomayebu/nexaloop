@@ -26,8 +26,12 @@ async function bootstrap() {
   // Note: in production this should be replaced with object storage (e.g. S3)
   // so that the uploads directory is not publicly readable on the server.
   app.useStaticAssets(join(process.cwd(), 'uploads'), { prefix: '/uploads' });
-  const port = process.env.PORT || 3001;
-  await app.listen(port);
+  const port = parseInt(process.env.PORT || '3001', 10);
+  // Bind to 0.0.0.0 — required for Railway/Docker container networking
+  await app.listen(port, '0.0.0.0');
   console.log(`API running on port ${port}`);
 }
-bootstrap();
+bootstrap().catch((err) => {
+  console.error('Failed to start API:', err);
+  process.exit(1);
+});
