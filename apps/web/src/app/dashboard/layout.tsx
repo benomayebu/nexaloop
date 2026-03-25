@@ -1,4 +1,3 @@
-import Link from 'next/link';
 import { apiFetch } from '../../lib/api';
 import { SidebarNav } from '../components/sidebar-nav';
 import { LogoutButton } from '../components/logout-button';
