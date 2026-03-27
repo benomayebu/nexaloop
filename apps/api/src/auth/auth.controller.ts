@@ -25,11 +25,12 @@ export class AuthController {
       body.orgName,
       body.name,
     );
+    const isProduction = process.env.NODE_ENV === 'production';
     res.cookie('auth_token', result.token, {
       httpOnly: true,
-      sameSite: 'lax',
+      sameSite: isProduction ? 'none' : 'lax',
       maxAge: 7 * 24 * 60 * 60 * 1000,
-      secure: process.env.NODE_ENV === 'production',
+      secure: isProduction,
     });
     return { token: result.token, user: result.user, org: result.org };
   }
@@ -42,11 +43,12 @@ export class AuthController {
     @Res({ passthrough: true }) res: Response,
   ) {
     const result = await this.authService.login(body.email, body.password);
+    const isProduction = process.env.NODE_ENV === 'production';
     res.cookie('auth_token', result.token, {
       httpOnly: true,
-      sameSite: 'lax',
+      sameSite: isProduction ? 'none' : 'lax',
       maxAge: 7 * 24 * 60 * 60 * 1000,
-      secure: process.env.NODE_ENV === 'production',
+      secure: isProduction,
     });
     return { token: result.token, user: result.user, org: result.org };
   }
