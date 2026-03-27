@@ -22,15 +22,11 @@ export default function RegisterPage() {
 
   const onSubmit = async (data: RegisterForm) => {
     try {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/auth/register`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data),
-          credentials: 'include',
-        },
-      );
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
       if (!res.ok) {
         const err = await res.json();
         setError('root', { message: err.message || 'Registration failed' });

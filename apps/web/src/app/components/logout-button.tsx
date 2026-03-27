@@ -7,10 +7,7 @@ export function LogoutButton() {
 
   const handleLogout = async () => {
     try {
-      await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/auth/logout`,
-        { method: 'POST', credentials: 'include' },
-      );
+      await fetch('/api/auth/logout', { method: 'POST' });
     } catch {
       // cookie will expire naturally
     }

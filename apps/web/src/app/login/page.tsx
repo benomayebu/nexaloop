@@ -20,15 +20,11 @@ export default function LoginPage() {
 
   const onSubmit = async (data: LoginForm) => {
     try {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/auth/login`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data),
-          credentials: 'include',
-        },
-      );
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
       if (!res.ok) {
         const err = await res.json();
         setError('root', { message: err.message || 'Login failed' });
