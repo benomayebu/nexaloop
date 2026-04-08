@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { apiFetchList } from '../../../../lib/api';
 import { DocumentTypeForm } from '../../../components/document-type-form';
 import { DeleteDocumentTypeButton } from '../../../components/delete-document-type-button';
@@ -23,6 +24,12 @@ export default async function DocumentTypesSettingsPage() {
 
   return (
     <div>
+      <nav className="mb-4 text-sm text-slate-500">
+        <Link href="/dashboard/settings" className="hover:text-slate-700">Settings</Link>
+        <span className="mx-2">/</span>
+        <span className="text-slate-900 font-medium">Document Types</span>
+      </nav>
+
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Document Types</h1>

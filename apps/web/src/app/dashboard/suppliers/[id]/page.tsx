@@ -191,6 +191,7 @@ export default async function SupplierDetailPage({
                       <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Expiry</th>
                       <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Uploaded By</th>
                       <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Updated</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Download</th>
                       <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Actions</th>
                     </tr>
                   </thead>
@@ -202,6 +203,17 @@ export default async function SupplierDetailPage({
                         <td className="px-4 py-3 text-sm text-slate-600">{doc.expiryDate ? new Date(doc.expiryDate).toLocaleDateString() : '—'}</td>
                         <td className="px-4 py-3 text-sm text-slate-600">{doc.uploadedBy.name ?? '—'}</td>
                         <td className="px-4 py-3 text-sm text-slate-500">{new Date(doc.updatedAt).toLocaleDateString()}</td>
+                        <td className="px-4 py-3">
+                          <a
+                            href={`/api/documents/${doc.id}/download`}
+                            className="inline-flex items-center gap-1 text-xs font-medium text-indigo-600 hover:text-indigo-800"
+                          >
+                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                            </svg>
+                            Download
+                          </a>
+                        </td>
                         <td className="px-4 py-3"><DocumentStatusActions documentId={doc.id} currentStatus={doc.status} /></td>
                       </tr>
                     ))}
