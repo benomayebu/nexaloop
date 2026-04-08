@@ -1,4 +1,3 @@
-import Link from 'next/link';
 import { HeroVisual } from './hero-visual';
 
 export function HeroSection() {
