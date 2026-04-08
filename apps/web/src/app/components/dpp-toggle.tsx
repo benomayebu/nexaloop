@@ -10,15 +10,12 @@ export function DppToggle({ productId, enabled }: Props) {
   const [saving, setSaving] = useState(false);
   const [isEnabled, setIsEnabled] = useState(enabled);
 
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
-
   async function toggle() {
     setSaving(true);
     try {
-      const res = await fetch(`${apiUrl}/products/${productId}`, {
+      const res = await fetch(`/api/products/${productId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
         body: JSON.stringify({ dppEnabled: !isEnabled }),
       });
       if (res.ok) {

@@ -4,12 +4,11 @@ import { useState } from 'react';
 
 export function EprDownloadButton() {
   const [downloading, setDownloading] = useState(false);
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
 
   async function handleDownload() {
     setDownloading(true);
     try {
-      const res = await fetch(`${apiUrl}/epr/download`, { credentials: 'include' });
+      const res = await fetch(`/api/epr/download`);
       if (!res.ok) throw new Error('Download failed');
       const blob = await res.blob();
       const url = window.URL.createObjectURL(blob);
