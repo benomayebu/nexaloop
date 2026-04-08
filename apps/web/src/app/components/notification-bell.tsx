@@ -54,17 +54,15 @@ export function NotificationBell() {
   const [loading, setLoading] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
-
   const fetchCount = useCallback(async () => {
     try {
-      const res = await fetch(`${apiUrl}/notifications/count`, { credentials: 'include' });
+      const res = await fetch(`/api/notifications/count`);
       if (res.ok) {
         const data = await res.json();
         setCount(data.count);
       }
     } catch { /* ignore */ }
-  }, [apiUrl]);
+  }, []);
 
   // Poll every 30 seconds
   useEffect(() => {
@@ -87,7 +85,7 @@ export function NotificationBell() {
     setOpen(true);
     setLoading(true);
     try {
-      const res = await fetch(`${apiUrl}/notifications?unread=false`, { credentials: 'include' });
+      const res = await fetch(`/api/notifications?unread=false`);
       if (res.ok) setNotifications(await res.json());
     } catch { /* ignore */ }
     setLoading(false);
@@ -95,7 +93,7 @@ export function NotificationBell() {
 
   async function markAllRead() {
     try {
-      await fetch(`${apiUrl}/notifications/read-all`, { method: 'PATCH', credentials: 'include' });
+      await fetch(`/api/notifications/read-all`, { method: 'PATCH' });
       setCount(0);
       setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
     } catch { /* ignore */ }
@@ -103,7 +101,7 @@ export function NotificationBell() {
 
   async function markRead(id: string) {
     try {
-      await fetch(`${apiUrl}/notifications/${id}/read`, { method: 'PATCH', credentials: 'include' });
+      await fetch(`/api/notifications/${id}/read`, { method: 'PATCH' });
       setCount((c) => Math.max(0, c - 1));
       setNotifications((prev) => prev.map((n) => n.id === id ? { ...n, read: true } : n));
     } catch { /* ignore */ }

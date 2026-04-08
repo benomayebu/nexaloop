@@ -22,8 +22,6 @@ export function DocumentTypeForm({ initialData, onSuccess }: Props) {
     requiredForSupplierTypes: initialData?.requiredForSupplierTypes ?? [],
   });
 
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
-
   function toggleType(type: string) {
     setForm((prev) => ({
       ...prev,
@@ -38,11 +36,10 @@ export function DocumentTypeForm({ initialData, onSuccess }: Props) {
     setSaving(true);
     setError('');
     try {
-      const url = initialData ? `${apiUrl}/document-types/${initialData.id}` : `${apiUrl}/document-types`;
+      const url = initialData ? `/api/document-types/${initialData.id}` : `/api/document-types`;
       const res = await fetch(url, {
         method: initialData ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
         body: JSON.stringify({
           name: form.name,
           description: form.description || undefined,

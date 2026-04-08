@@ -9,15 +9,12 @@ export function DeleteContactButton({ contactId, contactName }: Props) {
   const router = useRouter();
   const [deleting, setDeleting] = useState(false);
 
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
-
   async function handleDelete() {
     if (!confirm(`Remove contact "${contactName}"?`)) return;
     setDeleting(true);
     try {
-      await fetch(`${apiUrl}/contacts/${contactId}`, {
+      await fetch(`/api/contacts/${contactId}`, {
         method: 'DELETE',
-        credentials: 'include',
       });
       router.refresh();
     } catch {

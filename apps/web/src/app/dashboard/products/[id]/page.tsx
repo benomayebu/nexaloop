@@ -73,9 +73,18 @@ export default async function ProductDetailPage({
           <h1 className="text-2xl font-bold text-slate-900">{product.name}</h1>
           <p className="text-sm text-slate-500 font-mono mt-1">{product.sku}</p>
         </div>
-        <div className="flex gap-2 items-center">
+        <div className="flex gap-2 items-center flex-wrap">
           {product.dppEnabled && <Badge variant="indigo">DPP Enabled</Badge>}
           <Badge variant={product.status === 'ACTIVE' ? 'emerald' : 'slate'}>{product.status}</Badge>
+          <Link
+            href={`/dashboard/products/${id}/edit`}
+            className="inline-flex items-center gap-1.5 bg-white border border-slate-200 text-slate-700 rounded-md px-3 py-1.5 text-sm font-medium hover:bg-slate-50 transition-colors"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z" />
+            </svg>
+            Edit
+          </Link>
         </div>
       </div>
 

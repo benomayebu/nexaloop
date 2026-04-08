@@ -60,11 +60,11 @@ export function SidebarNav() {
             href={item.href}
             className={`flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors ${
               isActive
-                ? 'bg-indigo-50 text-indigo-600'
-                : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                ? 'bg-indigo-600 text-white'
+                : 'text-slate-300 hover:bg-slate-800 hover:text-white'
             }`}
           >
-            <span className={isActive ? 'text-indigo-600' : 'text-slate-400'}>
+            <span className={isActive ? 'text-white' : 'text-slate-400'}>
               {item.icon}
             </span>
             {item.label}

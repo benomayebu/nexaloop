@@ -19,17 +19,14 @@ export function AddProductSupplierForm({ productId, suppliers }: Props) {
   const [error, setError] = useState('');
   const [form, setForm] = useState({ supplierId: '', role: '' });
 
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
-
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
     setError('');
     try {
-      const res = await fetch(`${apiUrl}/products/${productId}/suppliers`, {
+      const res = await fetch(`/api/products/${productId}/suppliers`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
         body: JSON.stringify({ supplierId: form.supplierId, role: form.role }),
       });
       if (res.status === 409) {

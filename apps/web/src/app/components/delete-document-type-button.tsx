@@ -10,16 +10,13 @@ export function DeleteDocumentTypeButton({ id, name }: Props) {
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState('');
 
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
-
   async function handleDelete() {
     if (!confirm(`Deactivate document type "${name}"? Existing documents will not be affected.`)) return;
     setDeleting(true);
     setError('');
     try {
-      const res = await fetch(`${apiUrl}/document-types/${id}`, {
+      const res = await fetch(`/api/document-types/${id}`, {
         method: 'DELETE',
-        credentials: 'include',
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));

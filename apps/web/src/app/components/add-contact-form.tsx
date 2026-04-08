@@ -16,17 +16,14 @@ export function AddContactForm({ supplierId }: Props) {
   const [error, setError] = useState('');
   const [form, setForm] = useState({ name: '', email: '', phone: '', role: '' });
 
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
-
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
     setError('');
     try {
-      const res = await fetch(`${apiUrl}/suppliers/${supplierId}/contacts`, {
+      const res = await fetch(`/api/suppliers/${supplierId}/contacts`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
         body: JSON.stringify({
           name: form.name,
           email: form.email || undefined,

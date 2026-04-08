@@ -9,15 +9,12 @@ export function RemoveProductSupplierButton({ productId, linkId }: Props) {
   const router = useRouter();
   const [removing, setRemoving] = useState(false);
 
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
-
   async function handleRemove() {
     if (!confirm('Remove this supplier link?')) return;
     setRemoving(true);
     try {
-      await fetch(`${apiUrl}/products/${productId}/suppliers/${linkId}`, {
+      await fetch(`/api/products/${productId}/suppliers/${linkId}`, {
         method: 'DELETE',
-        credentials: 'include',
       });
       router.refresh();
     } finally {

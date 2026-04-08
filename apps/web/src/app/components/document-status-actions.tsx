@@ -11,18 +11,15 @@ export function DocumentStatusActions({ documentId, currentStatus }: Props) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
-
   if (currentStatus !== 'PENDING_REVIEW') return null;
 
   async function handleAction(status: 'APPROVED' | 'REJECTED') {
     setSaving(true);
     setError('');
     try {
-      const res = await fetch(`${apiUrl}/documents/${documentId}`, {
+      const res = await fetch(`/api/documents/${documentId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
         body: JSON.stringify({ status, reviewNotes: reviewNotes || undefined }),
       });
       if (!res.ok) {

@@ -18,17 +18,14 @@ export default function NewProductPage() {
     status: 'ACTIVE' as string, notes: '',
   });
 
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
-
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
     setError('');
     try {
-      const res = await fetch(`${apiUrl}/products`, {
+      const res = await fetch(`/api/products`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
         body: JSON.stringify({
           name: form.name,
           sku: form.sku,

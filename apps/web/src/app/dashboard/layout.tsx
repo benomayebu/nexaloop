@@ -19,31 +19,31 @@ export default async function DashboardLayout({
   return (
     <div className="min-h-screen bg-slate-50 flex">
       {/* Sidebar */}
-      <aside className="hidden md:flex md:flex-col md:w-64 bg-white border-r border-slate-200 fixed inset-y-0 z-40">
+      <aside className="hidden md:flex md:flex-col md:w-64 bg-slate-900 fixed inset-y-0 z-40">
         {/* Logo */}
-        <div className="flex items-center gap-2 px-6 py-5 border-b border-slate-200">
-          <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center">
+        <div className="flex items-center gap-2 px-6 py-5 border-b border-slate-800">
+          <div className="w-8 h-8 bg-indigo-500 rounded-lg flex items-center justify-center">
             <span className="text-white font-bold text-sm">N</span>
           </div>
-          <span className="text-lg font-bold text-slate-900 tracking-tight">N.E.X.A Loop</span>
+          <span className="text-lg font-bold text-white tracking-tight">N.E.X.A Loop</span>
         </div>
 
         {/* Nav */}
         <SidebarNav />
 
         {/* Org + user footer */}
-        <div className="mt-auto border-t border-slate-200 px-4 py-4">
+        <div className="mt-auto border-t border-slate-800 px-4 py-4">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center">
-              <span className="text-indigo-600 font-semibold text-xs">
+            <div className="w-8 h-8 bg-indigo-500 rounded-full flex items-center justify-center">
+              <span className="text-white font-semibold text-xs">
                 {me?.user?.name?.[0]?.toUpperCase() || me?.user?.email?.[0]?.toUpperCase() || '?'}
               </span>
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-slate-900 truncate">
+              <p className="text-sm font-medium text-white truncate">
                 {me?.user?.name || me?.user?.email || 'User'}
               </p>
-              <p className="text-xs text-slate-500 truncate">
+              <p className="text-xs text-slate-400 truncate">
                 {me?.org?.name || 'Organization'}
               </p>
             </div>

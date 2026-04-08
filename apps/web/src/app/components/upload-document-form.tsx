@@ -16,8 +16,6 @@ export function UploadDocumentForm({ supplierId, documentTypes }: Props) {
   const [form, setForm] = useState({ documentTypeId: documentTypes[0]?.id ?? '', issuedDate: '', expiryDate: '' });
   const [file, setFile] = useState<File | null>(null);
 
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
-
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!file) { setError('Please select a file'); return; }
@@ -30,9 +28,8 @@ export function UploadDocumentForm({ supplierId, documentTypes }: Props) {
       if (form.issuedDate) formData.append('issuedDate', form.issuedDate);
       if (form.expiryDate) formData.append('expiryDate', form.expiryDate);
 
-      const res = await fetch(`${apiUrl}/suppliers/${supplierId}/documents`, {
+      const res = await fetch(`/api/suppliers/${supplierId}/documents`, {
         method: 'POST',
-        credentials: 'include',
         body: formData,
       });
       if (!res.ok) {
