@@ -9,12 +9,13 @@ const config: Config = {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['DM Sans', 'ui-sans-serif', 'system-ui', 'sans-serif'],
-        mono: ['DM Mono', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
+        sans:    ['var(--font-dm-sans)',  'ui-sans-serif', 'system-ui', 'sans-serif'],
+        mono:    ['var(--font-dm-mono)',  'ui-monospace', 'SFMono-Regular', 'monospace'],
+        display: ['var(--font-sora)',     'ui-sans-serif', 'system-ui', 'sans-serif'],
       },
       colors: {
         brand: {
-          50: '#eef2ff',
+          50:  '#eef2ff',
           100: '#e0e7ff',
           500: '#6366f1',
           600: '#4f46e5',
