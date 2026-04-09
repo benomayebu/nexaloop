@@ -7,7 +7,16 @@ const config: Config = {
     './src/app/**/*.{js,ts,jsx,tsx,mdx}',
   ],
   theme: {
-    extend: {},
+    extend: {
+      fontFamily: {
+        display: [
+          'Sora',
+          'system-ui',
+          '-apple-system',
+          'sans-serif',
+        ],
+      },
+    },
   },
   plugins: [],
 };
