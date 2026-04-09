@@ -15,4 +15,16 @@ export class RegisterDto {
   @IsString()
   @IsOptional()
   name?: string;
+
+  @IsString()
+  @IsOptional()
+  industry?: string;
+
+  @IsString()
+  @IsOptional()
+  supplierCount?: string;
+
+  @IsString()
+  @IsOptional()
+  primaryConcern?: string;
 }

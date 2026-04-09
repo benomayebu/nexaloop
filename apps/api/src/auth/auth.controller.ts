@@ -21,6 +21,9 @@ export class AuthController {
       body.password,
       body.orgName,
       body.name,
+      body.industry,
+      body.supplierCount,
+      body.primaryConcern,
     );
     res.cookie('auth_token', result.token, {
       httpOnly: true,
