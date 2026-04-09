@@ -61,6 +61,9 @@ model Organization {
   name          String
   createdAt     DateTime           @default(now())
   updatedAt     DateTime           @updatedAt
+  industry      String?
+  supplierCount String?
+  primaryConcern String?
   members       UserOrganization[]
   suppliers     Supplier[]
   documentTypes DocumentType[]
