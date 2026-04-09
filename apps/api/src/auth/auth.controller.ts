@@ -24,6 +24,9 @@ export class AuthController {
       body.password,
       body.orgName,
       body.name,
+      body.industry,
+      body.supplierCount,
+      body.primaryConcern,
     );
     const isProduction = process.env.NODE_ENV === 'production';
     res.cookie('auth_token', result.token, {

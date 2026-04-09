@@ -23,7 +23,15 @@ export class AuthService {
     return safe;
   }
 
-  async register(email: string, password: string, orgName: string, name?: string) {
+  async register(
+    email: string,
+    password: string,
+    orgName: string,
+    name?: string,
+    industry?: string,
+    supplierCount?: string,
+    primaryConcern?: string,
+  ) {
     const existing = await this.prisma.user.findUnique({ where: { email } });
     if (existing) {
       throw new ConflictException('Email already in use');
@@ -33,7 +41,7 @@ export class AuthService {
 
     const result = await this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const org = await tx.organization.create({
-        data: { name: orgName },
+        data: { name: orgName, industry, supplierCount, primaryConcern },
       });
 
       const user = await tx.user.create({
