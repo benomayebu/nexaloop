@@ -1,0 +1,1259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>N.E.X.A Loop — Application Flow Documentation</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap');
+
+:root{
+  --ink:#0f172a;--ink2:#334155;--ink3:#64748b;
+  --accent:#4f46e5;--accent2:#818cf8;--accent-bg:#eef2ff;
+  --green:#059669;--green-bg:#ecfdf5;--green2:#d1fae5;
+  --amber:#d97706;--amber-bg:#fffbeb;--amber2:#fef3c7;
+  --red:#dc2626;--red-bg:#fef2f2;--red2:#fee2e2;
+  --blue:#2563eb;--blue-bg:#eff6ff;--blue2:#dbeafe;
+  --teal:#0d9488;--teal-bg:#f0fdfa;
+  --purple:#7c3aed;--purple-bg:#f5f3ff;
+  --border:#e2e8f0;--border2:#cbd5e1;
+  --bg:#f8fafc;--surface:#fff;
+  --mono:'DM Mono',monospace;--sans:'DM Sans',sans-serif;
+  --r:10px;--r2:6px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{font-family:var(--sans);background:var(--bg);color:var(--ink);font-size:14px;line-height:1.6}
+
+/* ── NAV ── */
+.nav{position:sticky;top:0;z-index:100;background:var(--surface);border-bottom:1px solid var(--border);padding:0 48px;display:flex;align-items:center;gap:0;height:52px}
+.nav-logo{font-size:15px;font-weight:600;color:var(--ink);margin-right:32px;white-space:nowrap}
+.nav-logo span{color:var(--accent)}
+.nav-links{display:flex;gap:0;overflow-x:auto;-ms-overflow-style:none;scrollbar-width:none}
+.nav-links::-webkit-scrollbar{display:none}
+.nav-link{font-size:12px;font-weight:500;color:var(--ink3);padding:0 14px;height:52px;display:flex;align-items:center;text-decoration:none;white-space:nowrap;border-bottom:2px solid transparent;transition:all .15s}
+.nav-link:hover{color:var(--accent);border-bottom-color:var(--accent)}
+
+/* ── COVER ── */
+.cover{background:var(--ink);color:#fff;padding:72px 64px 80px;position:relative;overflow:hidden}
+.cover::after{content:'';position:absolute;right:-80px;top:-80px;width:400px;height:400px;border-radius:50%;background:radial-gradient(circle,rgba(79,70,229,.25) 0%,transparent 70%);pointer-events:none}
+.cover-eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.2em;color:var(--accent2);text-transform:uppercase;margin-bottom:20px}
+.cover h1{font-size:52px;font-weight:600;line-height:1.08;margin-bottom:18px;position:relative;z-index:1}
+.cover h1 em{color:var(--accent2);font-style:normal}
+.cover-sub{font-size:17px;color:#94a3b8;font-weight:300;margin-bottom:52px;max-width:560px;line-height:1.65}
+.cover-chips{display:flex;flex-wrap:wrap;gap:10px}
+.chip{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);color:#cbd5e1;font-family:var(--mono);font-size:11px;padding:5px 12px;border-radius:20px}
+
+/* ── TOC ── */
+.toc{background:var(--surface);border-bottom:1px solid var(--border);padding:48px 64px}
+.toc-header{font-size:11px;font-weight:600;letter-spacing:.15em;text-transform:uppercase;color:var(--ink3);margin-bottom:24px}
+.toc-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:2px}
+.toc-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:var(--r2);text-decoration:none;color:var(--ink2);font-size:13px;transition:background .12s}
+.toc-item:hover{background:var(--accent-bg);color:var(--accent)}
+.toc-n{font-family:var(--mono);font-size:10px;color:var(--accent);background:var(--accent-bg);padding:2px 6px;border-radius:4px;flex-shrink:0}
+
+/* ── SECTION ── */
+.section{background:var(--surface);border-bottom:1px solid var(--border);padding:64px}
+.sec-tag{font-family:var(--mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--accent);margin-bottom:6px}
+.section h2{font-size:26px;font-weight:600;color:var(--ink);margin-bottom:6px}
+.sec-desc{color:var(--ink3);font-size:14px;line-height:1.7;max-width:620px;margin-bottom:36px}
+.section h3{font-size:15px;font-weight:600;color:var(--ink2);margin:32px 0 12px}
+
+/* ── DIAGRAM CARDS ── */
+.diagram{background:var(--bg);border:1px solid var(--border);border-radius:var(--r);padding:32px;margin:0 0 32px;overflow-x:auto}
+.diagram-caption{font-family:var(--mono);font-size:11px;color:var(--ink3);text-align:center;margin-top:16px;letter-spacing:.05em}
+
+/* ── STEP LIST ── */
+.steps{display:flex;flex-direction:column;margin:20px 0 32px}
+.step{display:flex;gap:0;align-items:stretch}
+.step-l{display:flex;flex-direction:column;align-items:center;width:36px;flex-shrink:0}
+.step-num{width:26px;height:26px;border-radius:50%;background:var(--accent);color:#fff;font-size:11px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.step-line{width:2px;background:var(--border);flex:1;margin:4px 0}
+.step:last-child .step-line{display:none}
+.step-body{padding:0 0 24px 14px;flex:1}
+.step-title{font-size:14px;font-weight:600;color:var(--ink);margin-bottom:3px}
+.step-text{font-size:13px;color:var(--ink3);line-height:1.65}
+.step-code{font-family:var(--mono);font-size:11px;background:var(--ink);color:#a5b4fc;padding:5px 10px;border-radius:var(--r2);margin-top:7px;display:inline-block}
+
+/* ── CALLOUT ── */
+.callout{border-left:3px solid var(--accent);background:var(--accent-bg);padding:12px 16px;border-radius:0 var(--r2) var(--r2) 0;font-size:13px;color:var(--ink2);margin:16px 0;line-height:1.65}
+.callout.warn{border-left-color:var(--amber);background:var(--amber-bg)}
+.callout.ok{border-left-color:var(--green);background:var(--green-bg)}
+.callout strong{color:var(--ink)}
+
+/* ── STATUS PILLS ── */
+.status-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:14px 0}
+.pill{padding:5px 14px;border-radius:20px;font-size:12px;font-weight:500;border:1.5px solid transparent}
+.pill.pending{background:var(--amber-bg);color:#92400e;border-color:var(--amber)}
+.pill.approved{background:var(--green-bg);color:#065f46;border-color:var(--green)}
+.pill.rejected{background:var(--red-bg);color:#7f1d1d;border-color:var(--red)}
+.pill.expired{background:var(--bg);color:var(--ink3);border-color:var(--border2)}
+.pill.active{background:var(--green-bg);color:#065f46;border-color:var(--green)}
+.pill.inactive{background:var(--bg);color:var(--ink3);border-color:var(--border2)}
+.arrow-sep{color:var(--ink3);font-size:18px;font-weight:300}
+.sep-note{font-size:11px;color:var(--ink3);font-family:var(--mono)}
+
+/* ── API TABLE ── */
+.api-table{width:100%;border-collapse:collapse;font-size:13px;margin:14px 0}
+.api-table th{background:var(--ink);color:#fff;padding:9px 14px;text-align:left;font-weight:500;font-size:12px}
+.api-table td{padding:8px 14px;border-bottom:1px solid var(--border);vertical-align:top}
+.api-table tr:nth-child(even) td{background:var(--bg)}
+.method{font-family:var(--mono);font-size:10px;font-weight:600;padding:2px 7px;border-radius:4px;display:inline-block}
+.get{background:var(--blue2);color:#1e40af}
+.post{background:var(--green2);color:#064e3b}
+.put{background:var(--amber2);color:#78350f}
+.del{background:var(--red2);color:#7f1d1d}
+.ep{font-family:var(--mono);font-size:12px}
+
+/* ── ENTITY CARDS ── */
+.entity-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px;margin:20px 0}
+.entity-card{border:1px solid var(--border);border-radius:var(--r);overflow:hidden}
+.entity-head{background:var(--ink);color:#fff;padding:9px 14px;font-size:12px;font-weight:600;display:flex;align-items:center;gap:8px}
+.entity-badge{font-family:var(--mono);font-size:9px;background:rgba(99,102,241,.35);color:var(--accent2);padding:2px 6px;border-radius:3px}
+.entity-fields{padding:10px 14px}
+.ef{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border);font-size:11px}
+.ef:last-child{border:none}
+.ef-name{font-family:var(--mono);color:var(--ink)}
+.ef-type{color:var(--ink3);font-size:10px}
+.ef-pk{color:var(--amber);font-size:10px;font-family:var(--mono)}
+.ef-fk{color:var(--blue);font-size:10px;font-family:var(--mono)}
+
+/* ── LEGEND ── */
+.legend{display:flex;flex-wrap:wrap;gap:14px;margin:14px 0}
+.legend-item{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ink3)}
+.l-dot{width:11px;height:11px;border-radius:3px;flex-shrink:0}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav">
+  <div class="nav-logo">N.E.X.A <span>Loop</span></div>
+  <div class="nav-links">
+    <a class="nav-link" href="#arch">Architecture</a>
+    <a class="nav-link" href="#auth">Auth Flow</a>
+    <a class="nav-link" href="#tenancy">Multi-Tenancy</a>
+    <a class="nav-link" href="#supplier">Suppliers</a>
+    <a class="nav-link" href="#docs">Documents</a>
+    <a class="nav-link" href="#products">Products</a>
+    <a class="nav-link" href="#pipeline">API Pipeline</a>
+    <a class="nav-link" href="#routing">Routing</a>
+    <a class="nav-link" href="#erd">ERD</a>
+    <a class="nav-link" href="#states">State Machines</a>
+  </div>
+</nav>
+
+<!-- COVER -->
+<div class="cover">
+  <div class="cover-eyebrow">Application Flow Documentation · v1.0 · March 2026</div>
+  <h1>N.E.X.A <em>Loop</em><br>Flow Architecture</h1>
+  <p class="cover-sub">Complete user and system flow reference for the Supply Chain Compliance & Traceability Platform — including Lucidchart-style diagrams for every major flow, swimlane breakdowns, the full API pipeline, entity relationship maps, and state machine specs.</p>
+  <div class="cover-chips">
+    <span class="chip">Next.js 15</span><span class="chip">NestJS 10</span><span class="chip">PostgreSQL 16</span>
+    <span class="chip">Prisma ORM</span><span class="chip">JWT · httpOnly</span><span class="chip">Docker Compose</span>
+  </div>
+</div>
+
+<!-- TOC -->
+<div class="toc">
+  <div class="toc-header">Contents</div>
+  <div class="toc-grid">
+    <a class="toc-item" href="#arch"><span class="toc-n">01</span>System Architecture</a>
+    <a class="toc-item" href="#auth"><span class="toc-n">02</span>Auth & Session Flow</a>
+    <a class="toc-item" href="#tenancy"><span class="toc-n">03</span>Multi-Tenancy Model</a>
+    <a class="toc-item" href="#supplier"><span class="toc-n">04</span>Supplier Management</a>
+    <a class="toc-item" href="#docs"><span class="toc-n">05</span>Document Lifecycle</a>
+    <a class="toc-item" href="#products"><span class="toc-n">06</span>Product Traceability</a>
+    <a class="toc-item" href="#pipeline"><span class="toc-n">07</span>API Request Pipeline</a>
+    <a class="toc-item" href="#routing"><span class="toc-n">08</span>Frontend Routing</a>
+    <a class="toc-item" href="#erd"><span class="toc-n">09</span>Entity Relationships</a>
+    <a class="toc-item" href="#states"><span class="toc-n">10</span>State Machines</a>
+  </div>
+</div>
+
+<!-- ══════════════════════════════ SECTION 01: ARCHITECTURE -->
+<div class="section" id="arch">
+  <div class="sec-tag">Section 01</div>
+  <h2>System Architecture Overview</h2>
+  <p class="sec-desc">N.E.X.A Loop is a pnpm monorepo with three Docker Compose services: <code>postgres</code>, <code>api</code> (NestJS on :3001), and <code>web</code> (Next.js on :3000). Server-side Next.js fetches use <code>API_URL=http://api:3001</code> for container-to-container routing; browser fetches use <code>NEXT_PUBLIC_API_URL</code>.</p>
+
+  <div class="diagram">
+    <svg width="100%" viewBox="0 0 900 480" xmlns="http://www.w3.org/2000/svg" font-family="DM Sans, sans-serif">
+      <defs>
+        <marker id="a1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+          <path d="M2 2L8 5L2 8" fill="none" stroke="#6366f1" stroke-width="1.5" stroke-linecap="round"/>
+        </marker>
+        <marker id="a2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+          <path d="M2 2L8 5L2 8" fill="none" stroke="#059669" stroke-width="1.5" stroke-linecap="round"/>
+        </marker>
+        <marker id="a3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+          <path d="M2 2L8 5L2 8" fill="none" stroke="#d97706" stroke-width="1.5" stroke-linecap="round"/>
+        </marker>
+        <marker id="a4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+          <path d="M2 2L8 5L2 8" fill="none" stroke="#94a3b8" stroke-width="1.5" stroke-linecap="round"/>
+        </marker>
+      </defs>
+
+      <!-- Docker Compose boundary -->
+      <rect x="160" y="20" width="720" height="440" rx="14" fill="none" stroke="#c7d2fe" stroke-width="1.5" stroke-dasharray="8 4"/>
+      <text x="176" y="42" font-size="11" fill="#818cf8" font-family="DM Mono, monospace" letter-spacing="1">docker-compose.yml</text>
+
+      <!-- BROWSER (outside) -->
+      <rect x="16" y="140" width="130" height="84" rx="8" fill="#f8fafc" stroke="#e2e8f0"/>
+      <text x="81" y="166" text-anchor="middle" font-size="10" fill="#94a3b8" font-family="DM Mono, monospace">BROWSER</text>
+      <rect x="28" y="174" width="106" height="38" rx="5" fill="#0f172a" stroke="#334155"/>
+      <text x="81" y="193" text-anchor="middle" font-size="11" fill="#a5b4fc" font-weight="500">Next.js 15</text>
+      <text x="81" y="207" text-anchor="middle" font-size="9" fill="#475569">App Router · :3000</text>
+
+      <!-- Arrow: Browser ↔ API label -->
+      <line x1="148" y1="180" x2="188" y2="180" stroke="#6366f1" stroke-width="1.5" marker-end="url(#a1)"/>
+      <rect x="152" y="165" width="34" height="14" rx="3" fill="#eef2ff"/>
+      <text x="169" y="176" text-anchor="middle" font-size="9" fill="#4f46e5" font-family="DM Mono, monospace">HTTP</text>
+
+      <!-- WEB SERVICE box -->
+      <rect x="190" y="58" width="220" height="310" rx="10" fill="#f0f4ff" stroke="#c7d2fe"/>
+      <text x="300" y="82" text-anchor="middle" font-size="10" fill="#6366f1" font-family="DM Mono, monospace">web · :3000</text>
+
+      <!-- Next.js Middleware -->
+      <rect x="206" y="94" width="188" height="60" rx="7" fill="#312e81" stroke="#4338ca"/>
+      <text x="300" y="116" text-anchor="middle" font-size="11" fill="white" font-weight="500">Next.js Middleware</text>
+      <text x="300" y="132" text-anchor="middle" font-size="10" fill="#a5b4fc">cookie check → redirect</text>
+
+      <!-- Server Components -->
+      <rect x="206" y="168" width="90" height="50" rx="7" fill="#1e293b" stroke="#334155"/>
+      <text x="251" y="188" text-anchor="middle" font-size="10" fill="#93c5fd" font-weight="500">Server</text>
+      <text x="251" y="202" text-anchor="middle" font-size="10" fill="#64748b">Components</text>
+
+      <!-- Client Components -->
+      <rect x="304" y="168" width="90" height="50" rx="7" fill="#1e293b" stroke="#334155"/>
+      <text x="349" y="188" text-anchor="middle" font-size="10" fill="#86efac" font-weight="500">Client</text>
+      <text x="349" y="202" text-anchor="middle" font-size="10" fill="#64748b">Components</text>
+
+      <!-- env note -->
+      <rect x="206" y="234" width="188" height="34" rx="5" fill="#fef3c7" stroke="#fcd34d"/>
+      <text x="300" y="250" text-anchor="middle" font-size="9" fill="#78350f" font-family="DM Mono, monospace">Server: API_URL=http://api:3001</text>
+      <text x="300" y="262" text-anchor="middle" font-size="9" fill="#78350f" font-family="DM Mono, monospace">Browser: NEXT_PUBLIC_API_URL</text>
+
+      <!-- Tailwind note -->
+      <rect x="206" y="278" width="188" height="76" rx="5" fill="#f0fdf4" stroke="#bbf7d0"/>
+      <text x="300" y="296" text-anchor="middle" font-size="10" fill="#14532d">Tailwind CSS · shadcn/ui</text>
+      <text x="300" y="312" text-anchor="middle" font-size="9" fill="#64748b">React Hook Form</text>
+      <text x="300" y="326" text-anchor="middle" font-size="9" fill="#64748b">Tanstack Query (planned)</text>
+      <text x="300" y="340" text-anchor="middle" font-size="9" fill="#64748b">Zod client validation</text>
+
+      <!-- API SERVICE box -->
+      <rect x="430" y="58" width="220" height="310" rx="10" fill="#f0fdf4" stroke="#a7f3d0"/>
+      <text x="540" y="82" text-anchor="middle" font-size="10" fill="#059669" font-family="DM Mono, monospace">api · :3001</text>
+
+      <!-- NestJS modules -->
+      <rect x="446" y="94" width="188" height="52" rx="7" fill="#064e3b" stroke="#10b981"/>
+      <text x="540" y="116" text-anchor="middle" font-size="11" fill="white" font-weight="500">NestJS 10</text>
+      <text x="540" y="131" text-anchor="middle" font-size="10" fill="#6ee7b7">Global ValidationPipe · Guards</text>
+
+      <rect x="446" y="158" width="90" height="44" rx="6" fill="#1e293b" stroke="#334155"/>
+      <text x="491" y="176" text-anchor="middle" font-size="10" fill="#a5b4fc">Auth</text>
+      <text x="491" y="190" text-anchor="middle" font-size="9" fill="#64748b">Module</text>
+
+      <rect x="544" y="158" width="90" height="44" rx="6" fill="#1e293b" stroke="#334155"/>
+      <text x="589" y="176" text-anchor="middle" font-size="10" fill="#a5b4fc">Suppliers</text>
+      <text x="589" y="190" text-anchor="middle" font-size="9" fill="#64748b">Module</text>
+
+      <rect x="446" y="210" width="90" height="44" rx="6" fill="#1e293b" stroke="#334155"/>
+      <text x="491" y="228" text-anchor="middle" font-size="10" fill="#a5b4fc">Documents</text>
+      <text x="491" y="242" text-anchor="middle" font-size="9" fill="#64748b">Module</text>
+
+      <rect x="544" y="210" width="90" height="44" rx="6" fill="#1e293b" stroke="#334155"/>
+      <text x="589" y="228" text-anchor="middle" font-size="10" fill="#a5b4fc">Products</text>
+      <text x="589" y="242" text-anchor="middle" font-size="9" fill="#64748b">Module</text>
+
+      <rect x="446" y="262" width="188" height="36" rx="5" fill="#0f2d1a" stroke="#065f46"/>
+      <text x="540" y="280" text-anchor="middle" font-size="10" fill="#34d399">Prisma Module (global · @Injectable)</text>
+      <text x="540" y="293" text-anchor="middle" font-size="9" fill="#64748b">Scopes all queries by orgId</text>
+
+      <!-- Storage -->
+      <rect x="446" y="306" width="188" height="48" rx="5" fill="#1c1917" stroke="#78716c"/>
+      <text x="540" y="324" text-anchor="middle" font-size="10" fill="#fcd34d">StorageService</text>
+      <text x="540" y="338" text-anchor="middle" font-size="9" fill="#78716c">./uploads/ (dev) → S3 (prod)</text>
+      <text x="540" y="350" text-anchor="middle" font-size="9" fill="#78716c">UUID filenames · multer memory</text>
+
+      <!-- Arrows: web → api -->
+      <line x1="412" y1="200" x2="428" y2="200" stroke="#6366f1" stroke-width="1.5" marker-end="url(#a1)"/>
+
+      <!-- DATABASE box -->
+      <rect x="668" y="58" width="196" height="310" rx="10" fill="#eff6ff" stroke="#bfdbfe"/>
+      <text x="766" y="82" text-anchor="middle" font-size="10" fill="#1d4ed8" font-family="DM Mono, monospace">postgres · :5432</text>
+
+      <!-- Cylinder -->
+      <ellipse cx="766" cy="138" rx="56" ry="14" fill="#1e3a8a" stroke="#2563eb"/>
+      <rect x="710" y="138" width="112" height="50" fill="#1e3a8a"/>
+      <ellipse cx="766" cy="188" rx="56" ry="14" fill="#1e3a8a" stroke="#2563eb"/>
+      <text x="766" y="168" text-anchor="middle" font-size="12" fill="white" font-weight="600">PostgreSQL 16</text>
+
+      <rect x="682" y="216" width="168" height="62" rx="6" fill="#dbeafe" stroke="#93c5fd"/>
+      <text x="766" y="234" text-anchor="middle" font-size="10" fill="#1e3a8a" font-weight="500">Prisma ORM</text>
+      <text x="766" y="249" text-anchor="middle" font-size="9" fill="#3b82f6">type-safe queries</text>
+      <text x="766" y="262" text-anchor="middle" font-size="9" fill="#3b82f6">prisma migrate dev</text>
+      <text x="766" y="275" text-anchor="middle" font-size="9" fill="#3b82f6">multi-tenant by design</text>
+
+      <rect x="682" y="292" width="168" height="62" rx="6" fill="#f8fafc" stroke="#e2e8f0"/>
+      <text x="766" y="310" text-anchor="middle" font-size="10" fill="#334155" font-weight="500">Schema</text>
+      <text x="766" y="325" text-anchor="middle" font-size="9" fill="#64748b">9 models · 6 enums</text>
+      <text x="766" y="339" text-anchor="middle" font-size="9" fill="#64748b">FK + unique constraints</text>
+      <text x="766" y="353" text-anchor="middle" font-size="9" fill="#64748b">5 migrations applied</text>
+
+      <!-- Arrow api → db -->
+      <line x1="650" y1="200" x2="666" y2="200" stroke="#059669" stroke-width="1.5" marker-end="url(#a2)"/>
+      <rect x="643" y="187" width="30" height="14" rx="3" fill="#ecfdf5"/>
+      <text x="658" y="198" text-anchor="middle" font-size="9" fill="#059669" font-family="DM Mono, monospace">SQL</text>
+
+      <!-- Bottom labels -->
+      <text x="300" y="400" text-anchor="middle" font-size="11" fill="#6366f1" font-weight="500">apps/web</text>
+      <text x="540" y="400" text-anchor="middle" font-size="11" fill="#059669" font-weight="500">apps/api</text>
+      <text x="766" y="400" text-anchor="middle" font-size="11" fill="#2563eb" font-weight="500">postgres</text>
+
+      <!-- Bidirectional arrow web→api return -->
+      <path d="M300 155 L300 148 L540 148 L540 155" fill="none" stroke="#6366f1" stroke-width="1" stroke-dasharray="4 3"/>
+      <text x="420" y="145" text-anchor="middle" font-size="9" fill="#818cf8">API calls (server-to-server inside Docker)</text>
+    </svg>
+    <div class="diagram-caption">Fig 1.1 — Docker Compose service topology: web · api · postgres</div>
+  </div>
+
+  <div class="legend">
+    <div class="legend-item"><div class="l-dot" style="background:#6366f1"></div>Next.js Frontend (web)</div>
+    <div class="legend-item"><div class="l-dot" style="background:#059669"></div>NestJS API (api)</div>
+    <div class="legend-item"><div class="l-dot" style="background:#2563eb"></div>PostgreSQL (postgres)</div>
+    <div class="legend-item"><div class="l-dot" style="background:#d97706"></div>File Storage</div>
+    <div class="legend-item"><div class="l-dot" style="background:#c7d2fe" style="border:1px solid #818cf8"></div>Docker boundary</div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════ SECTION 02: AUTH FLOW -->
+<div class="section" id="auth">
+  <div class="sec-tag">Section 02</div>
+  <h2>Authentication &amp; Session Flow</h2>
+  <p class="sec-desc">JWT stored as an httpOnly cookie. Payload: <code>{ sub, email, orgId }</code>. The token is stateless — no Redis session store required. Expiry: 7 days. All protected endpoints require the cookie; the API guard verifies the signature and attaches <code>req.user</code>.</p>
+
+  <!-- SWIMLANE DIAGRAM -->
+  <div class="diagram">
+    <svg width="100%" viewBox="0 0 900 520" xmlns="http://www.w3.org/2000/svg" font-family="DM Sans, sans-serif">
+      <defs>
+        <marker id="sw1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+          <path d="M2 2L8 5L2 8" fill="none" stroke="#6366f1" stroke-width="1.5" stroke-linecap="round"/>
+        </marker>
+        <marker id="sw2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+          <path d="M2 2L8 5L2 8" fill="none" stroke="#059669" stroke-width="1.5" stroke-linecap="round"/>
+        </marker>
+        <marker id="sw3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+          <path d="M2 2L8 5L2 8" fill="none" stroke="#2563eb" stroke-width="1.5" stroke-linecap="round"/>
+        </marker>
+        <marker id="sw4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+          <path d="M2 2L8 5L2 8" fill="none" stroke="#d97706" stroke-width="1.5" stroke-linecap="round"/>
+        </marker>
+      </defs>
+
+      <!-- Lane backgrounds -->
+      <rect x="0" y="0" width="225" height="520" fill="#f8fafc" stroke="#e2e8f0"/>
+      <rect x="225" y="0" width="225" height="520" fill="#fefce8" stroke="#e2e8f0"/>
+      <rect x="450" y="0" width="225" height="520" fill="#f0fdf4" stroke="#e2e8f0"/>
+      <rect x="675" y="0" width="225" height="520" fill="#eff6ff" stroke="#e2e8f0"/>
+
+      <!-- Lane headers -->
+      <rect x="0" y="0" width="225" height="30" fill="#0f172a"/>
+      <rect x="225" y="0" width="225" height="30" fill="#78350f"/>
+      <rect x="450" y="0" width="225" height="30" fill="#14532d"/>
+      <rect x="675" y="0" width="225" height="30" fill="#1e3a8a"/>
+
+      <text x="112" y="20" text-anchor="middle" font-size="10" fill="white" font-family="DM Mono, monospace" letter-spacing="1">BROWSER</text>
+      <text x="337" y="20" text-anchor="middle" font-size="10" fill="#fef3c7" font-family="DM Mono, monospace" letter-spacing="1">MIDDLEWARE</text>
+      <text x="562" y="20" text-anchor="middle" font-size="10" fill="#dcfce7" font-family="DM Mono, monospace" letter-spacing="1">NESTJS API</text>
+      <text x="787" y="20" text-anchor="middle" font-size="10" fill="#dbeafe" font-family="DM Mono, monospace" letter-spacing="1">DATABASE</text>
+
+      <!-- ── REGISTRATION SECTION ── -->
+      <text x="450" y="60" text-anchor="middle" font-size="11" fill="#6366f1" font-weight="600">── REGISTRATION ──</text>
+
+      <!-- 1. Form -->
+      <rect x="18" y="70" width="189" height="48" rx="7" fill="#e0e7ff" stroke="#6366f1"/>
+      <text x="112" y="89" text-anchor="middle" font-size="11" fill="#312e81" font-weight="500">Register form</text>
+      <text x="112" y="104" text-anchor="middle" font-size="9" fill="#4338ca" font-family="DM Mono, monospace">email · pwd · orgName</text>
+
+      <!-- POST /auth/register -->
+      <line x1="208" y1="94" x2="450" y2="94" stroke="#6366f1" stroke-width="1.5" marker-end="url(#sw1)"/>
+      <rect x="248" y="80" width="152" height="16" rx="3" fill="white" stroke="#c7d2fe"/>
+      <text x="324" y="92" text-anchor="middle" font-size="9" fill="#4f46e5" font-family="DM Mono, monospace">POST /auth/register</text>
+
+      <!-- 2. ValidationPipe -->
+      <rect x="468" y="108" width="189" height="48" rx="7" fill="#dcfce7" stroke="#16a34a"/>
+      <text x="562" y="127" text-anchor="middle" font-size="11" fill="#14532d" font-weight="500">ValidationPipe</text>
+      <text x="562" y="142" text-anchor="middle" font-size="9" fill="#166534">RegisterDto · email · pwd≥8 · orgName≥2</text>
+
+      <!-- Transaction arrow -->
+      <line x1="659" y1="132" x2="675" y2="132" stroke="#2563eb" stroke-width="1.5" marker-end="url(#sw3)"/>
+
+      <!-- 3. $transaction -->
+      <rect x="693" y="108" width="189" height="80" rx="7" fill="#dbeafe" stroke="#2563eb"/>
+      <text x="787" y="127" text-anchor="middle" font-size="11" fill="#1e3a8a" font-weight="500">$transaction</text>
+      <text x="787" y="143" text-anchor="middle" font-size="9" fill="#1d4ed8">1. CREATE Organization</text>
+      <text x="787" y="157" text-anchor="middle" font-size="9" fill="#1d4ed8">2. CREATE User (bcrypt)</text>
+      <text x="787" y="171" text-anchor="middle" font-size="9" fill="#1d4ed8">3. CREATE UserOrg OWNER</text>
+
+      <!-- Return from DB -->
+      <line x1="693" y1="172" x2="659" y2="172" stroke="#2563eb" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#sw3)"/>
+
+      <!-- 4. JWT sign -->
+      <rect x="468" y="172" width="189" height="40" rx="7" fill="#dcfce7" stroke="#16a34a"/>
+      <text x="562" y="189" text-anchor="middle" font-size="11" fill="#14532d" font-weight="500">jwtService.sign()</text>
+      <text x="562" y="204" text-anchor="middle" font-size="9" fill="#166534">{ sub, email, orgId } · 7d expiry</text>
+
+      <!-- Set-Cookie response -->
+      <line x1="468" y1="192" x2="225" y2="192" stroke="#059669" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#sw2)"/>
+      <rect x="274" y="178" width="144" height="16" rx="3" fill="white" stroke="#a7f3d0"/>
+      <text x="346" y="190" text-anchor="middle" font-size="9" fill="#059669" font-family="DM Mono, monospace">Set-Cookie: auth_token</text>
+
+      <!-- Cookie stored -->
+      <rect x="18" y="218" width="189" height="40" rx="7" fill="#e0e7ff" stroke="#6366f1"/>
+      <text x="112" y="236" text-anchor="middle" font-size="11" fill="#312e81" font-weight="500">httpOnly cookie stored</text>
+      <text x="112" y="250" text-anchor="middle" font-size="9" fill="#4338ca">secure · sameSite:lax · 7 days</text>
+
+      <!-- Redirect -->
+      <line x1="112" y1="258" x2="112" y2="274" stroke="#6366f1" stroke-width="1.5" marker-end="url(#sw1)"/>
+      <rect x="18" y="274" width="189" height="32" rx="7" fill="#312e81" stroke="#4f46e5"/>
+      <text x="112" y="295" text-anchor="middle" font-size="11" fill="white" font-weight="600">→ /dashboard</text>
+
+      <!-- ── PROTECTED REQUEST ── -->
+      <line x1="0" y1="330" x2="900" y2="330" stroke="#e2e8f0" stroke-width="1" stroke-dasharray="6 4"/>
+      <text x="450" y="352" text-anchor="middle" font-size="11" fill="#d97706" font-weight="600">── PROTECTED REQUEST (every /dashboard/* route) ──</text>
+
+      <!-- Request -->
+      <rect x="18" y="362" width="189" height="32" rx="7" fill="#fef3c7" stroke="#d97706"/>
+      <text x="112" y="382" text-anchor="middle" font-size="11" fill="#78350f" font-weight="500">Navigate to /dashboard/suppliers</text>
+
+      <!-- Middleware -->
+      <line x1="208" y1="378" x2="225" y2="378" stroke="#d97706" stroke-width="1.5" marker-end="url(#sw4)"/>
+      <rect x="243" y="362" width="189" height="52" rx="7" fill="#fef3c7" stroke="#d97706"/>
+      <text x="337" y="381" text-anchor="middle" font-size="11" fill="#78350f" font-weight="500">Next.js Middleware</text>
+      <text x="337" y="395" text-anchor="middle" font-size="9" fill="#92400e">cookie present? → forward</text>
+      <text x="337" y="408" text-anchor="middle" font-size="9" fill="#92400e">no cookie? → /login 302</text>
+
+      <!-- JwtAuthGuard -->
+      <line x1="433" y1="388" x2="450" y2="388" stroke="#d97706" stroke-width="1.5" marker-end="url(#sw4)"/>
+      <rect x="468" y="362" width="189" height="68" rx="7" fill="#dcfce7" stroke="#16a34a"/>
+      <text x="562" y="381" text-anchor="middle" font-size="11" fill="#14532d" font-weight="500">JwtAuthGuard</text>
+      <text x="562" y="395" text-anchor="middle" font-size="9" fill="#166534">1. extract cookie token</text>
+      <text x="562" y="409" text-anchor="middle" font-size="9" fill="#166534">2. verify signature + expiry</text>
+      <text x="562" y="423" text-anchor="middle" font-size="9" fill="#166534">3. attach decoded → req.user</text>
+
+      <!-- @CurrentOrg decorator -->
+      <rect x="468" y="442" width="189" height="40" rx="7" fill="#dbeafe" stroke="#2563eb"/>
+      <text x="562" y="458" text-anchor="middle" font-size="11" fill="#1e3a8a" font-weight="500">@CurrentUser() / @CurrentOrg()</text>
+      <text x="562" y="472" text-anchor="middle" font-size="9" fill="#1d4ed8">orgId from JWT — never from body</text>
+
+      <!-- 401 branch -->
+      <line x1="562" y1="430" x2="562" y2="442" stroke="#2563eb" stroke-width="1.5" marker-end="url(#sw3)"/>
+    </svg>
+    <div class="diagram-caption">Fig 2.1 — Swimlane: Registration &amp; protected request auth flow across Browser → Middleware → API → DB</div>
+  </div>
+
+  <div class="callout">
+    <strong>Security invariant:</strong> <code>orgId</code> is extracted from the verified JWT payload via <code>@CurrentOrg()</code>. It is never accepted from the request body on any protected endpoint. Any attempt to send <code>orgId</code> in the body is silently stripped by <code>whitelist: true</code> on the global <code>ValidationPipe</code>.
+  </div>
+
+  <h3>Registration — step-by-step</h3>
+  <div class="steps">
+    <div class="step"><div class="step-l"><div class="step-num">1</div><div class="step-line"></div></div><div class="step-body"><div class="step-title">User submits registration form</div><div class="step-text">React Hook Form validates client-side. Submits <code>POST /auth/register</code> with JSON body.</div><div class="step-code">{ email, password, orgName, name? }</div></div></div>
+    <div class="step"><div class="step-l"><div class="step-num">2</div><div class="step-line"></div></div><div class="step-body"><div class="step-title">Global ValidationPipe checks RegisterDto</div><div class="step-text">IsEmail(), MinLength(8) on password, MinLength(2) on orgName. Unknown fields stripped. 400 thrown on failure before the handler runs.</div></div></div>
+    <div class="step"><div class="step-l"><div class="step-num">3</div><div class="step-line"></div></div><div class="step-body"><div class="step-title">Prisma $transaction: Org → User → UserOrg</div><div class="step-text">All three inserts are atomic. If any fails the entire transaction rolls back. Password hashed with bcrypt (10 rounds). Role set to OWNER.</div><div class="step-code">tx.organization.create() → tx.user.create() → tx.userOrganization.create()</div></div></div>
+    <div class="step"><div class="step-l"><div class="step-num">4</div><div class="step-line"></div></div><div class="step-body"><div class="step-title">JWT signed → Set-Cookie httpOnly</div><div class="step-text">Payload: { sub, email, orgId }. 7-day expiry. Cookie: httpOnly, sameSite: lax, secure in production. passwordHash is never included in the response (stripped via sanitizeUser()).</div></div></div>
+    <div class="step"><div class="step-l"><div class="step-num">5</div><div class="step-line"></div></div><div class="step-body"><div class="step-title">Frontend redirects to /dashboard</div><div class="step-text">All subsequent requests include the cookie automatically. Middleware verifies cookie presence on every /dashboard/* route via the matcher pattern.</div></div></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════ SECTION 03: MULTI-TENANCY -->
+<div class="section" id="tenancy">
+  <div class="sec-tag">Section 03</div>
+  <h2>Multi-Tenancy Data Model</h2>
+  <p class="sec-desc">Every entity table carries an <code>orgId</code> FK. All service methods scope every query to <code>orgId</code> extracted from the JWT. The database enforces foreign key constraints; the service layer enforces scope. No query can leak cross-tenant data.</p>
+
+  <div class="diagram">
+    <svg width="100%" viewBox="0 0 900 340" xmlns="http://www.w3.org/2000/svg" font-family="DM Sans, sans-serif">
+      <defs>
+        <marker id="mt1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+          <path d="M2 2L8 5L2 8" fill="none" stroke="#6366f1" stroke-width="1.5" stroke-linecap="round"/>
+        </marker>
+      </defs>
+
+      <!-- Organisation root -->
+      <rect x="320" y="20" width="260" height="60" rx="10" fill="#312e81" stroke="#6366f1" stroke-width="2"/>
+      <text x="450" y="46" text-anchor="middle" font-size="14" fill="white" font-weight="600">Organisation</text>
+      <text x="450" y="66" text-anchor="middle" font-size="10" fill="#a5b4fc" font-family="DM Mono, monospace">id · name · createdAt · updatedAt</text>
+
+      <!-- UserOrganisation -->
+      <rect x="20" y="160" width="200" height="68" rx="8" fill="#1e293b" stroke="#818cf8"/>
+      <text x="120" y="182" text-anchor="middle" font-size="12" fill="white" font-weight="500">UserOrganisation</text>
+      <text x="120" y="197" text-anchor="middle" font-size="10" fill="#c4b5fd">userId · organisationId</text>
+      <text x="120" y="212" text-anchor="middle" font-size="10" fill="#818cf8">role: OWNER|ADMIN|USER|VIEWER</text>
+
+      <!-- Supplier -->
+      <rect x="240" y="160" width="200" height="68" rx="8" fill="#1e293b" stroke="#34d399"/>
+      <text x="340" y="182" text-anchor="middle" font-size="12" fill="white" font-weight="500">Supplier</text>
+      <text x="340" y="197" text-anchor="middle" font-size="10" fill="#6ee7b7">orgId ← FK (required)</text>
+      <text x="340" y="212" text-anchor="middle" font-size="10" fill="#4ade80">type · status · riskLevel</text>
+
+      <!-- DocumentType -->
+      <rect x="460" y="160" width="200" height="68" rx="8" fill="#1e293b" stroke="#fbbf24"/>
+      <text x="560" y="182" text-anchor="middle" font-size="12" fill="white" font-weight="500">DocumentType</text>
+      <text x="560" y="197" text-anchor="middle" font-size="10" fill="#fde68a">orgId ← FK (required)</text>
+      <text x="560" y="212" text-anchor="middle" font-size="10" fill="#fbbf24">name · isActive · supplierTypes[]</text>
+
+      <!-- Product -->
+      <rect x="680" y="160" width="200" height="68" rx="8" fill="#1e293b" stroke="#f9a8d4"/>
+      <text x="780" y="182" text-anchor="middle" font-size="12" fill="white" font-weight="500">Product</text>
+      <text x="780" y="197" text-anchor="middle" font-size="10" fill="#f9a8d4">orgId ← FK (required)</text>
+      <text x="780" y="212" text-anchor="middle" font-size="10" fill="#f472b6">@@unique([orgId, sku])</text>
+
+      <!-- Document (child of Supplier + DocType) -->
+      <rect x="240" y="280" width="200" height="52" rx="8" fill="#1e293b" stroke="#60a5fa"/>
+      <text x="340" y="300" text-anchor="middle" font-size="12" fill="white" font-weight="500">Document</text>
+      <text x="340" y="316" text-anchor="middle" font-size="10" fill="#93c5fd">orgId · supplierId · docTypeId</text>
+
+      <!-- ProductSupplier join -->
+      <rect x="520" y="280" width="200" height="52" rx="8" fill="#1e293b" stroke="#a78bfa"/>
+      <text x="620" y="300" text-anchor="middle" font-size="12" fill="white" font-weight="500">ProductSupplier</text>
+      <text x="620" y="316" text-anchor="middle" font-size="10" fill="#c4b5fd">productId · supplierId · role</text>
+
+      <!-- Arrows from Org down -->
+      <line x1="380" y1="80" x2="160" y2="158" stroke="#818cf8" stroke-width="1.5" marker-end="url(#mt1)"/>
+      <line x1="420" y1="80" x2="340" y2="158" stroke="#34d399" stroke-width="1.5" marker-end="url(#mt1)"/>
+      <line x1="480" y1="80" x2="560" y2="158" stroke="#fbbf24" stroke-width="1.5" marker-end="url(#mt1)"/>
+      <line x1="520" y1="80" x2="780" y2="158" stroke="#f9a8d4" stroke-width="1.5" marker-end="url(#mt1)"/>
+
+      <!-- Arrows Supplier → Document -->
+      <line x1="340" y1="228" x2="340" y2="278" stroke="#60a5fa" stroke-width="1.5" marker-end="url(#mt1)"/>
+      <!-- Arrow DocType → Document (dashed) -->
+      <path d="M560 228 L560 254 L440 254 L440 278" fill="none" stroke="#60a5fa" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#mt1)"/>
+      <!-- Arrows Supplier + Product → ProductSupplier (dashed) -->
+      <path d="M440 228 L440 254 L620 254 L620 278" fill="none" stroke="#a78bfa" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#mt1)"/>
+      <line x1="780" y1="228" x2="720" y2="278" stroke="#a78bfa" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#mt1)"/>
+
+      <!-- Cardinality labels -->
+      <text x="292" y="120" text-anchor="middle" font-size="9" fill="#34d399" font-family="DM Mono, monospace">1:many</text>
+      <text x="398" y="120" text-anchor="middle" font-size="9" fill="#34d399" font-family="DM Mono, monospace">1:many</text>
+      <text x="510" y="110" text-anchor="middle" font-size="9" fill="#fbbf24" font-family="DM Mono, monospace">1:many</text>
+      <text x="660" y="110" text-anchor="middle" font-size="9" fill="#f9a8d4" font-family="DM Mono, monospace">1:many</text>
+    </svg>
+    <div class="diagram-caption">Fig 3.1 — Organisation-scoped entity hierarchy. Every entity carries orgId as a non-nullable FK.</div>
+  </div>
+
+  <div class="callout">
+    <strong>Service-layer pattern:</strong> Always <code>findFirst({ where: { id, orgId } })</code> — never <code>findUnique({ where: { id } })</code>. Contact and ProductSupplier mutations verify ownership by joining through the parent entity (supplier → orgId, product → orgId) before any write.
+  </div>
+</div>
+
+<!-- ══════════════════════════════ SECTION 04: SUPPLIER MANAGEMENT -->
+<div class="section" id="supplier">
+  <div class="sec-tag">Section 04</div>
+  <h2>Supplier Management Flow</h2>
+  <p class="sec-desc">Suppliers are the root entity — Contacts, Documents, and ProductSupplier links all hang off them. Delete is a soft-delete (status → INACTIVE) to preserve audit history. The list endpoint supports multi-filter querying.</p>
+
+  <div class="diagram">
+    <svg width="100%" viewBox="0 0 900 430" xmlns="http://www.w3.org/2000/svg" font-family="DM Sans, sans-serif">
+      <defs>
+        <marker id="sup1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+          <path d="M2 2L8 5L2 8" fill="none" stroke="#6366f1" stroke-width="1.5" stroke-linecap="round"/>
+        </marker>
+        <marker id="sup2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+          <path d="M2 2L8 5L2 8" fill="none" stroke="#059669" stroke-width="1.5" stroke-linecap="round"/>
+        </marker>
+        <marker id="sup3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+          <path d="M2 2L8 5L2 8" fill="none" stroke="#dc2626" stroke-width="1.5" stroke-linecap="round"/>
+        </marker>
+      </defs>
+
+      <!-- Start node -->
+      <circle cx="50" cy="50" r="24" fill="#312e81"/>
+      <text x="50" y="55" text-anchor="middle" font-size="11" fill="white" font-weight="600">START</text>
+
+      <!-- Supplier List Page -->
+      <rect x="96" y="26" width="180" height="48" rx="8" fill="#312e81" stroke="#6366f1"/>
+      <text x="186" y="46" text-anchor="middle" font-size="11" fill="white" font-weight="500">/dashboard/suppliers</text>
+      <text x="186" y="62" text-anchor="middle" font-size="9" fill="#a5b4fc">Server Component · GET /suppliers</text>
+      <line x1="74" y1="50" x2="94" y2="50" stroke="#6366f1" stroke-width="1.5" marker-end="url(#sup1)"/>
+
+      <!-- Filter / search -->
+      <rect x="296" y="26" width="180" height="48" rx="8" fill="#1e293b" stroke="#334155"/>
+      <text x="386" y="46" text-anchor="middle" font-size="11" fill="#a5b4fc" font-weight="500">Filter query params</text>
+      <text x="386" y="62" text-anchor="middle" font-size="9" fill="#64748b" font-family="DM Mono, monospace">?type= &status= &riskLevel= &q=</text>
+      <line x1="276" y1="50" x2="294" y2="50" stroke="#6366f1" stroke-width="1.5" marker-end="url(#sup1)"/>
+
+      <!-- DB findMany -->
+      <rect x="496" y="26" width="210" height="48" rx="8" fill="#064e3b" stroke="#10b981"/>
+      <text x="601" y="46" text-anchor="middle" font-size="11" fill="#34d399" font-weight="500">findMany({ where: { orgId } })</text>
+      <text x="601" y="62" text-anchor="middle" font-size="9" fill="#6ee7b7">+ filters · mode: insensitive</text>
+      <line x1="476" y1="50" x2="494" y2="50" stroke="#059669" stroke-width="1.5" marker-end="url(#sup2)"/>
+
+      <!-- Render table -->
+      <rect x="726" y="26" width="160" height="48" rx="8" fill="#312e81" stroke="#818cf8"/>
+      <text x="806" y="46" text-anchor="middle" font-size="11" fill="white" font-weight="500">Table rendered</text>
+      <text x="806" y="62" text-anchor="middle" font-size="9" fill="#a5b4fc">type · status · risk badges</text>
+      <line x1="706" y1="50" x2="724" y2="50" stroke="#6366f1" stroke-width="1.5" marker-end="url(#sup1)"/>
+
+      <!-- ── ADD PATH ── -->
+      <text x="450" y="108" text-anchor="middle" font-size="11" fill="#d97706" font-weight="600">── ADD SUPPLIER ──</text>
+
+      <rect x="20" y="120" width="170" height="44" rx="8" fill="#fef3c7" stroke="#d97706"/>
+      <text x="105" y="140" text-anchor="middle" font-size="11" fill="#78350f" font-weight="500">+ Add Supplier button</text>
+      <text x="105" y="154" text-anchor="middle" font-size="9" fill="#92400e">→ /suppliers/new</text>
+
+      <line x1="191" y1="142" x2="210" y2="142" stroke="#d97706" stroke-width="1.5" marker-end="url(#sup1)"/>
+
+      <rect x="212" y="120" width="200" height="44" rx="8" fill="#fef3c7" stroke="#d97706"/>
+      <text x="312" y="140" text-anchor="middle" font-size="11" fill="#78350f" font-weight="500">Fill supplier form</text>
+      <text x="312" y="154" text-anchor="middle" font-size="9" fill="#92400e">name (req) · type (req) · country (req)</text>
+
+      <line x1="413" y1="142" x2="432" y2="142" stroke="#d97706" stroke-width="1.5" marker-end="url(#sup1)"/>
+
+      <rect x="434" y="120" width="160" height="44" rx="8" fill="#dcfce7" stroke="#16a34a"/>
+      <text x="514" y="140" text-anchor="middle" font-size="11" fill="#14532d" font-weight="500">ValidationPipe</text>
+      <text x="514" y="154" text-anchor="middle" font-size="9" fill="#166534">CreateSupplierDto</text>
+
+      <line x1="595" y1="142" x2="614" y2="142" stroke="#059669" stroke-width="1.5" marker-end="url(#sup2)"/>
+
+      <rect x="616" y="120" width="264" height="44" rx="8" fill="#064e3b" stroke="#10b981"/>
+      <text x="748" y="140" text-anchor="middle" font-size="11" fill="#34d399" font-weight="500">supplier.create({ ...data, orgId })</text>
+      <text x="748" y="154" text-anchor="middle" font-size="9" fill="#6ee7b7">orgId always from JWT — HTTP 201</text>
+
+      <!-- ── DETAIL PATH ── -->
+      <text x="450" y="198" text-anchor="middle" font-size="11" fill="#2563eb" font-weight="600">── SUPPLIER DETAIL ──</text>
+
+      <rect x="20" y="210" width="160" height="44" rx="8" fill="#dbeafe" stroke="#2563eb"/>
+      <text x="100" y="229" text-anchor="middle" font-size="11" fill="#1e3a8a" font-weight="500">Click row</text>
+      <text x="100" y="243" text-anchor="middle" font-size="9" fill="#1d4ed8">/suppliers/[id]</text>
+
+      <line x1="181" y1="232" x2="200" y2="232" stroke="#2563eb" stroke-width="1.5" marker-end="url(#sup1)"/>
+
+      <rect x="202" y="210" width="200" height="44" rx="8" fill="#1e293b" stroke="#334155"/>
+      <text x="302" y="229" text-anchor="middle" font-size="11" fill="#34d399" font-weight="500">GET /suppliers/:id</text>
+      <text x="302" y="243" text-anchor="middle" font-size="9" fill="#64748b">findFirst({ id, orgId }) + contacts[]</text>
+
+      <line x1="403" y1="232" x2="422" y2="232" stroke="#2563eb" stroke-width="1.5" marker-end="url(#sup1)"/>
+
+      <!-- Tabs -->
+      <rect x="424" y="204" width="460" height="56" rx="8" fill="#0f172a" stroke="#1e293b"/>
+      <rect x="436" y="215" width="130" height="34" rx="6" fill="#312e81" stroke="#6366f1"/>
+      <text x="501" y="232" text-anchor="middle" font-size="10" fill="white" font-weight="500">Overview</text>
+      <text x="501" y="245" text-anchor="middle" font-size="9" fill="#a5b4fc">fields + contacts</text>
+      <rect x="576" y="215" width="130" height="34" rx="6" fill="#064e3b" stroke="#10b981"/>
+      <text x="641" y="232" text-anchor="middle" font-size="10" fill="white" font-weight="500">Documents</text>
+      <text x="641" y="245" text-anchor="middle" font-size="9" fill="#6ee7b7">?tab=documents</text>
+      <rect x="716" y="215" width="158" height="34" rx="6" fill="#1e1b4b" stroke="#4338ca" stroke-dasharray="3 2"/>
+      <text x="795" y="232" text-anchor="middle" font-size="10" fill="#818cf8" font-weight="500">Products</text>
+      <text x="795" y="245" text-anchor="middle" font-size="9" fill="#4338ca">?tab=products (Phase 4)</text>
+
+      <!-- ── DELETE PATH ── -->
+      <text x="450" y="294" text-anchor="middle" font-size="11" fill="#dc2626" font-weight="600">── SOFT DELETE ──</text>
+
+      <rect x="20" y="306" width="170" height="40" rx="8" fill="#fef2f2" stroke="#dc2626"/>
+      <text x="105" y="326" text-anchor="middle" font-size="11" fill="#7f1d1d" font-weight="500">DELETE /suppliers/:id</text>
+
+      <line x1="191" y1="326" x2="210" y2="326" stroke="#dc2626" stroke-width="1.5" marker-end="url(#sup3)"/>
+
+      <rect x="212" y="306" width="180" height="40" rx="8" fill="#1e293b" stroke="#334155"/>
+      <text x="302" y="326" text-anchor="middle" font-size="11" fill="#fca5a5" font-weight="500">verify { id, orgId }</text>
+
+      <line x1="393" y1="326" x2="412" y2="326" stroke="#dc2626" stroke-width="1.5" marker-end="url(#sup3)"/>
+
+      <rect x="414" y="306" width="240" height="40" rx="8" fill="#7f1d1d" stroke="#dc2626"/>
+      <text x="534" y="326" text-anchor="middle" font-size="11" fill="white" font-weight="500">update({ status: 'INACTIVE' })</text>
+
+      <line x1="655" y1="326" x2="674" y2="326" stroke="#dc2626" stroke-width="1.5" marker-end="url(#sup3)"/>
+
+      <rect x="676" y="306" width="140" height="40" rx="8" fill="#dcfce7" stroke="#16a34a"/>
+      <text x="746" y="326" text-anchor="middle" font-size="11" fill="#14532d" font-weight="500">HTTP 200 OK</text>
+
+      <!-- Contact flow note -->
+      <rect x="20" y="368" width="860" height="50" rx="8" fill="#f0fdf4" stroke="#a7f3d0"/>
+      <text x="450" y="387" text-anchor="middle" font-size="11" fill="#14532d" font-weight="500">Contact operations: POST /suppliers/:id/contacts · PUT /contacts/:id · DELETE /contacts/:id → 204</text>
+      <text x="450" y="404" text-anchor="middle" font-size="9" fill="#166534">verifyContactOwnership() always joins Contact → Supplier.orgId before mutation. Hard delete (prisma.contact.delete) — not soft.</text>
+    </svg>
+    <div class="diagram-caption">Fig 4.1 — Supplier list, create, detail/tabs, soft delete, and contact management flows</div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════ SECTION 05: DOCUMENT LIFECYCLE -->
+<div class="section" id="docs">
+  <div class="sec-tag">Section 05</div>
+  <h2>Document Lifecycle Flow</h2>
+  <p class="sec-desc">Documents pass through a defined status workflow. The reviewer identity is always derived from the verified JWT — it cannot be supplied via the request body. File uploads use multer memory storage; filenames are UUID-based (unguessable). File size is capped at 20 MB.</p>
+
+  <div class="diagram">
+    <svg width="100%" viewBox="0 0 900 460" xmlns="http://www.w3.org/2000/svg" font-family="DM Sans, sans-serif">
+      <defs>
+        <marker id="doc1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+          <path d="M2 2L8 5L2 8" fill="none" stroke="#6366f1" stroke-width="1.5" stroke-linecap="round"/>
+        </marker>
+        <marker id="doc2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+          <path d="M2 2L8 5L2 8" fill="none" stroke="#059669" stroke-width="1.5" stroke-linecap="round"/>
+        </marker>
+      </defs>
+
+      <!-- Title band -->
+      <text x="450" y="26" text-anchor="middle" font-size="12" fill="#2563eb" font-weight="600">UPLOAD FLOW</text>
+
+      <!-- Step 1: Open tab -->
+      <rect x="20" y="38" width="170" height="52" rx="8" fill="#dbeafe" stroke="#2563eb"/>
+      <text x="105" y="57" text-anchor="middle" font-size="11" fill="#1e3a8a" font-weight="500">Open Documents tab</text>
+      <text x="105" y="72" text-anchor="middle" font-size="9" fill="#1d4ed8">supplier/:id?tab=documents</text>
+      <line x1="191" y1="64" x2="210" y2="64" stroke="#6366f1" stroke-width="1.5" marker-end="url(#doc1)"/>
+
+      <!-- Step 2: Parallel fetch -->
+      <rect x="212" y="38" width="220" height="52" rx="8" fill="#1e293b" stroke="#334155"/>
+      <text x="322" y="57" text-anchor="middle" font-size="11" fill="#34d399" font-weight="500">Promise.all([ ... ])</text>
+      <text x="322" y="71" text-anchor="middle" font-size="9" fill="#64748b">GET /suppliers/:id/documents</text>
+      <text x="322" y="82" text-anchor="middle" font-size="9" fill="#64748b">GET /document-types</text>
+      <line x1="433" y1="64" x2="452" y2="64" stroke="#6366f1" stroke-width="1.5" marker-end="url(#doc1)"/>
+
+      <!-- Step 3: Modal -->
+      <rect x="454" y="38" width="180" height="52" rx="8" fill="#312e81" stroke="#6366f1"/>
+      <text x="544" y="57" text-anchor="middle" font-size="11" fill="white" font-weight="500">UploadDocumentForm</text>
+      <text x="544" y="72" text-anchor="middle" font-size="9" fill="#a5b4fc">modal · select docType · pick file</text>
+      <line x1="635" y1="64" x2="654" y2="64" stroke="#6366f1" stroke-width="1.5" marker-end="url(#doc1)"/>
+
+      <!-- FormData box -->
+      <rect x="656" y="38" width="224" height="52" rx="8" fill="#fef3c7" stroke="#d97706"/>
+      <text x="768" y="57" text-anchor="middle" font-size="11" fill="#78350f" font-weight="500">FormData (no Content-Type)</text>
+      <text x="768" y="71" text-anchor="middle" font-size="9" fill="#92400e" font-family="DM Mono, monospace">file · documentTypeId · issuedDate?</text>
+
+      <!-- POST multipart -->
+      <path d="M544 90 L544 112" fill="none" stroke="#6366f1" stroke-width="1.5" marker-end="url(#doc1)"/>
+      <rect x="250" y="114" width="400" height="28" rx="6" fill="#0f172a" stroke="#334155"/>
+      <text x="450" y="133" text-anchor="middle" font-size="11" fill="#a5b4fc" font-weight="500">POST /suppliers/:supplierId/documents   (multipart/form-data)</text>
+
+      <!-- Upload service box -->
+      <path d="M450 142 L450 162" fill="none" stroke="#6366f1" stroke-width="1.5" marker-end="url(#doc1)"/>
+      <rect x="150" y="164" width="600" height="130" rx="10" fill="#0f172a" stroke="#1e293b"/>
+      <text x="450" y="188" text-anchor="middle" font-size="10" fill="#94a3b8" font-family="DM Mono, monospace" letter-spacing="1">DOCUMENTS SERVICE — 5-STEP UPLOAD SEQUENCE</text>
+
+      <rect x="166" y="198" width="110" height="32" rx="6" fill="#1e293b" stroke="#334155"/>
+      <text x="221" y="214" text-anchor="middle" font-size="9" fill="#fca5a5">① file required?</text>
+      <text x="221" y="225" text-anchor="middle" font-size="8" fill="#ef4444">400 if missing</text>
+
+      <rect x="286" y="198" width="110" height="32" rx="6" fill="#1e293b" stroke="#334155"/>
+      <text x="341" y="214" text-anchor="middle" font-size="9" fill="#6ee7b7">② verify supplier</text>
+      <text x="341" y="225" text-anchor="middle" font-size="8" fill="#34d399">orgId ownership</text>
+
+      <rect x="406" y="198" width="110" height="32" rx="6" fill="#1e293b" stroke="#334155"/>
+      <text x="461" y="214" text-anchor="middle" font-size="9" fill="#6ee7b7">③ verify docType</text>
+      <text x="461" y="225" text-anchor="middle" font-size="8" fill="#34d399">orgId + isActive</text>
+
+      <rect x="526" y="198" width="110" height="32" rx="6" fill="#1e293b" stroke="#334155"/>
+      <text x="581" y="214" text-anchor="middle" font-size="9" fill="#fde68a">④ StorageService</text>
+      <text x="581" y="225" text-anchor="middle" font-size="8" fill="#f59e0b">.saveFile(buffer)</text>
+
+      <rect x="646" y="198" width="90" height="32" rx="6" fill="#1e293b" stroke="#334155"/>
+      <text x="691" y="214" text-anchor="middle" font-size="9" fill="#fde68a">UUID filename</text>
+      <text x="691" y="225" text-anchor="middle" font-size="8" fill="#f59e0b">+ extname</text>
+
+      <rect x="166" y="242" width="570" height="40" rx="6" fill="#064e3b" stroke="#065f46"/>
+      <text x="451" y="260" text-anchor="middle" font-size="10" fill="#34d399" font-weight="500">⑤ document.create({ orgId, supplierId, documentTypeId, fileUrl, mimeType: file.mimetype, uploadedByUserId: userId })</text>
+      <text x="451" y="275" text-anchor="middle" font-size="9" fill="#6ee7b7">mimeType from server-detected file.mimetype only — never from body</text>
+
+      <!-- HTTP 201 -->
+      <path d="M450 294 L450 314" fill="none" stroke="#059669" stroke-width="1.5" marker-end="url(#doc2)"/>
+      <rect x="280" y="316" width="340" height="36" rx="8" fill="#064e3b" stroke="#10b981"/>
+      <text x="450" y="334" text-anchor="middle" font-size="11" fill="#34d399" font-weight="500">HTTP 201 Created — status: PENDING_REVIEW</text>
+      <text x="450" y="348" text-anchor="middle" font-size="9" fill="#6ee7b7">router.refresh() triggers re-fetch</text>
+
+      <!-- Review path -->
+      <text x="450" y="380" text-anchor="middle" font-size="11" fill="#d97706" font-weight="600">── REVIEW: PUT /documents/:id ──</text>
+
+      <rect x="20" y="392" width="180" height="40" rx="8" fill="#fef3c7" stroke="#d97706"/>
+      <text x="110" y="416" text-anchor="middle" font-size="11" fill="#78350f" font-weight="500">Click Approve / Reject</text>
+      <line x1="201" y1="412" x2="220" y2="412" stroke="#d97706" stroke-width="1.5" marker-end="url(#doc1)"/>
+
+      <rect x="222" y="392" width="240" height="40" rx="8" fill="#1e293b" stroke="#334155"/>
+      <text x="342" y="410" text-anchor="middle" font-size="10" fill="#a5b4fc">verify { id, orgId } → ownership</text>
+      <line x1="463" y1="412" x2="482" y2="412" stroke="#059669" stroke-width="1.5" marker-end="url(#doc2)"/>
+
+      <rect x="484" y="392" width="396" height="40" rx="8" fill="#064e3b" stroke="#10b981"/>
+      <text x="682" y="410" text-anchor="middle" font-size="10" fill="#34d399" font-weight="500">status → APPROVED | REJECTED · reviewedByUserId = userId (JWT) · 200</text>
+    </svg>
+    <div class="diagram-caption">Fig 5.1 — Document upload pipeline (5-step) and review lifecycle</div>
+  </div>
+
+  <h3>Document Status Machine</h3>
+  <div class="status-row">
+    <div class="pill pending">PENDING_REVIEW</div>
+    <span class="arrow-sep">→</span>
+    <div class="pill approved">APPROVED</div>
+    <span class="arrow-sep">·</span>
+    <div class="pill pending">PENDING_REVIEW</div>
+    <span class="arrow-sep">→</span>
+    <div class="pill rejected">REJECTED</div>
+    <span class="arrow-sep">·</span>
+    <div class="pill approved">APPROVED</div>
+    <span class="arrow-sep">→</span>
+    <div class="pill expired">EXPIRED</div>
+    <span class="sep-note">(nightly cron — Phase 5)</span>
+  </div>
+
+  <div class="callout warn">
+    <strong>Security invariant:</strong> <code>reviewedByUserId</code> is always set from <code>@CurrentUser()</code> in the service layer. <code>UpdateDocumentDto</code> intentionally does not include <code>reviewedByUserId</code> — any attempt to supply it is rejected by <code>forbidNonWhitelisted: true</code>.
+  </div>
+</div>
+
+<!-- ══════════════════════════════ SECTION 06: PRODUCTS -->
+<div class="section" id="products">
+  <div class="sec-tag">Section 06</div>
+  <h2>Product &amp; Traceability Flow</h2>
+  <p class="sec-desc">Products map to multiple suppliers via the <code>ProductSupplier</code> join table with a role. A garment can have a CUT_AND_SEW factory, a FABRIC_SUPPLIER mill, a YARN_SUPPLIER spinner, and a TRIM_SUPPLIER — all linked. SKU is unique per organisation. Delete is soft (DISCONTINUED).</p>
+
+  <div class="diagram">
+    <svg width="100%" viewBox="0 0 900 370" xmlns="http://www.w3.org/2000/svg" font-family="DM Sans, sans-serif">
+      <defs>
+        <marker id="pr1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+          <path d="M2 2L8 5L2 8" fill="none" stroke="#a78bfa" stroke-width="1.5" stroke-linecap="round"/>
+        </marker>
+        <marker id="pr2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+          <path d="M2 2L8 5L2 8" fill="none" stroke="#059669" stroke-width="1.5" stroke-linecap="round"/>
+        </marker>
+      </defs>
+
+      <!-- Product entity -->
+      <rect x="20" y="20" width="220" height="130" rx="10" fill="#1e293b" stroke="#f472b6" stroke-width="2"/>
+      <text x="130" y="46" text-anchor="middle" font-size="13" fill="white" font-weight="600">Product</text>
+      <text x="130" y="64" text-anchor="middle" font-size="10" fill="#f9a8d4">id · orgId (FK) · name</text>
+      <text x="130" y="78" text-anchor="middle" font-size="10" fill="#f9a8d4">sku · category · season</text>
+      <text x="130" y="92" text-anchor="middle" font-size="10" fill="#f9a8d4">status · notes</text>
+      <rect x="34" y="104" width="192" height="32" rx="5" fill="#4c0519" stroke="#e11d48"/>
+      <text x="130" y="124" text-anchor="middle" font-size="9" fill="#fda4af" font-family="DM Mono, monospace">@@unique([orgId, sku])</text>
+
+      <!-- ProductSupplier join -->
+      <rect x="340" y="80" width="220" height="100" rx="10" fill="#1e293b" stroke="#a78bfa" stroke-width="2"/>
+      <text x="450" y="106" text-anchor="middle" font-size="13" fill="white" font-weight="600">ProductSupplier</text>
+      <text x="450" y="122" text-anchor="middle" font-size="10" fill="#c4b5fd">id · productId (FK) · supplierId (FK)</text>
+      <text x="450" y="136" text-anchor="middle" font-size="9" fill="#c4b5fd">role: CUT_AND_SEW | FABRIC_SUPPLIER</text>
+      <text x="450" y="149" text-anchor="middle" font-size="9" fill="#c4b5fd">YARN_SUPPLIER | TRIM_SUPPLIER | OTHER</text>
+      <rect x="354" y="155" width="192" height="16" rx="3" fill="#2e1065" stroke="#7c3aed"/>
+      <text x="450" y="167" text-anchor="middle" font-size="8" fill="#a78bfa" font-family="DM Mono, monospace">@@unique([productId, supplierId, role])</text>
+
+      <!-- Supplier entity -->
+      <rect x="660" y="20" width="220" height="90" rx="10" fill="#1e293b" stroke="#34d399" stroke-width="2"/>
+      <text x="770" y="46" text-anchor="middle" font-size="13" fill="white" font-weight="600">Supplier</text>
+      <text x="770" y="64" text-anchor="middle" font-size="10" fill="#6ee7b7">id · orgId (FK) · name · type</text>
+      <text x="770" y="78" text-anchor="middle" font-size="10" fill="#6ee7b7">country · status · riskLevel</text>
+
+      <!-- Arrows -->
+      <line x1="240" y1="100" x2="338" y2="120" stroke="#a78bfa" stroke-width="1.5" marker-end="url(#pr1)"/>
+      <text x="280" y="102" text-anchor="middle" font-size="9" fill="#a78bfa">productId</text>
+      <line x1="660" y1="82" x2="562" y2="124" stroke="#a78bfa" stroke-width="1.5" marker-end="url(#pr1)"/>
+      <text x="628" y="88" text-anchor="middle" font-size="9" fill="#a78bfa">supplierId</text>
+
+      <!-- Example product -->
+      <rect x="20" y="200" width="860" height="152" rx="10" fill="#0f172a" stroke="#1e293b"/>
+      <text x="450" y="222" text-anchor="middle" font-size="10" fill="#94a3b8" font-family="DM Mono, monospace" letter-spacing="1">EXAMPLE — "Organic Linen Shirt" SKU: OLS-001 → 3 SUPPLIER LINKS</text>
+
+      <rect x="38" y="234" width="252" height="100" rx="8" fill="#1e293b" stroke="#34d399"/>
+      <text x="164" y="256" text-anchor="middle" font-size="11" fill="#34d399" font-weight="500">Link 1 — CUT_AND_SEW</text>
+      <text x="164" y="272" text-anchor="middle" font-size="10" fill="white">Eko Textiles Ltd</text>
+      <text x="164" y="287" text-anchor="middle" font-size="9" fill="#6ee7b7">Type: TIER1_FACTORY</text>
+      <text x="164" y="302" text-anchor="middle" font-size="9" fill="#64748b">Portugal · ACTIVE · LOW risk</text>
+      <text x="164" y="317" text-anchor="middle" font-size="9" fill="#64748b">4 APPROVED documents</text>
+
+      <rect x="324" y="234" width="252" height="100" rx="8" fill="#1e293b" stroke="#60a5fa"/>
+      <text x="450" y="256" text-anchor="middle" font-size="11" fill="#60a5fa" font-weight="500">Link 2 — FABRIC_SUPPLIER</text>
+      <text x="450" y="272" text-anchor="middle" font-size="10" fill="white">Nordic Linen Mills</text>
+      <text x="450" y="287" text-anchor="middle" font-size="9" fill="#93c5fd">Type: MILL</text>
+      <text x="450" y="302" text-anchor="middle" font-size="9" fill="#64748b">Finland · ACTIVE · MEDIUM risk</text>
+      <text x="450" y="317" text-anchor="middle" font-size="9" fill="#64748b">2 PENDING_REVIEW docs</text>
+
+      <rect x="610" y="234" width="252" height="100" rx="8" fill="#1e293b" stroke="#f472b6"/>
+      <text x="736" y="256" text-anchor="middle" font-size="11" fill="#f472b6" font-weight="500">Link 3 — YARN_SUPPLIER</text>
+      <text x="736" y="272" text-anchor="middle" font-size="10" fill="white">Baltic Flax Spinners</text>
+      <text x="736" y="287" text-anchor="middle" font-size="9" fill="#f9a8d4">Type: SPINNER</text>
+      <text x="736" y="302" text-anchor="middle" font-size="9" fill="#64748b">Lithuania · ACTIVE · HIGH risk</text>
+      <text x="736" y="317" text-anchor="middle" font-size="9" fill="#64748b">1 REJECTED doc — needs review</text>
+    </svg>
+    <div class="diagram-caption">Fig 6.1 — Product ↔ ProductSupplier ↔ Supplier entity model with multi-tier example</div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════ SECTION 07: API PIPELINE -->
+<div class="section" id="pipeline">
+  <div class="sec-tag">Section 07</div>
+  <h2>API Request / Response Pipeline</h2>
+  <p class="sec-desc">Every request travels the NestJS pipeline in strict order. Understanding this order is critical for debugging — a 401 means the guard fired, a 400 means the pipe fired, a 403/404/409 means the service fired.</p>
+
+  <div class="diagram">
+    <svg width="100%" viewBox="0 0 900 200" xmlns="http://www.w3.org/2000/svg" font-family="DM Sans, sans-serif">
+      <defs>
+        <marker id="pp1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+          <path d="M2 2L8 5L2 8" fill="none" stroke="#94a3b8" stroke-width="1.5" stroke-linecap="round"/>
+        </marker>
+      </defs>
+
+      <!-- Request arrow label -->
+      <text x="450" y="22" text-anchor="middle" font-size="10" fill="#94a3b8" font-family="DM Mono, monospace" letter-spacing="1">NESTJS REQUEST PIPELINE (left → right)</text>
+
+      <!-- Pipeline stages -->
+      <rect x="10" y="34" width="104" height="60" rx="8" fill="#1e293b" stroke="#334155"/>
+      <text x="62" y="57" text-anchor="middle" font-size="10" fill="#94a3b8" font-weight="500">Incoming</text>
+      <text x="62" y="71" text-anchor="middle" font-size="10" fill="#94a3b8" font-weight="500">Request</text>
+      <text x="62" y="84" text-anchor="middle" font-size="9" fill="#475569">HTTP · cookie</text>
+      <line x1="115" y1="64" x2="134" y2="64" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#pp1)"/>
+
+      <rect x="136" y="34" width="110" height="60" rx="8" fill="#1e293b" stroke="#d97706"/>
+      <text x="191" y="57" text-anchor="middle" font-size="10" fill="#fde68a" font-weight="500">cookieParser</text>
+      <text x="191" y="71" text-anchor="middle" font-size="10" fill="#fde68a" font-weight="500">Middleware</text>
+      <text x="191" y="84" text-anchor="middle" font-size="9" fill="#78350f">parse cookies</text>
+      <line x1="247" y1="64" x2="266" y2="64" stroke="#d97706" stroke-width="1.5" marker-end="url(#pp1)"/>
+
+      <rect x="268" y="34" width="110" height="60" rx="8" fill="#1e293b" stroke="#dc2626"/>
+      <text x="323" y="57" text-anchor="middle" font-size="10" fill="#fca5a5" font-weight="500">JwtAuthGuard</text>
+      <text x="323" y="71" text-anchor="middle" font-size="10" fill="#fca5a5" font-weight="500">Guard</text>
+      <text x="323" y="84" text-anchor="middle" font-size="9" fill="#7f1d1d">verify JWT</text>
+      <line x1="379" y1="64" x2="398" y2="64" stroke="#dc2626" stroke-width="1.5" marker-end="url(#pp1)"/>
+
+      <rect x="400" y="34" width="110" height="60" rx="8" fill="#1e293b" stroke="#6366f1"/>
+      <text x="455" y="57" text-anchor="middle" font-size="10" fill="#a5b4fc" font-weight="500">Validation</text>
+      <text x="455" y="71" text-anchor="middle" font-size="10" fill="#a5b4fc" font-weight="500">Pipe</text>
+      <text x="455" y="84" text-anchor="middle" font-size="9" fill="#312e81">DTO · whitelist</text>
+      <line x1="511" y1="64" x2="530" y2="64" stroke="#6366f1" stroke-width="1.5" marker-end="url(#pp1)"/>
+
+      <rect x="532" y="34" width="110" height="60" rx="8" fill="#1e293b" stroke="#34d399"/>
+      <text x="587" y="57" text-anchor="middle" font-size="10" fill="#6ee7b7" font-weight="500">Controller</text>
+      <text x="587" y="71" text-anchor="middle" font-size="10" fill="#6ee7b7" font-weight="500">Handler</text>
+      <text x="587" y="84" text-anchor="middle" font-size="9" fill="#064e3b">@CurrentOrg/User</text>
+      <line x1="643" y1="64" x2="662" y2="64" stroke="#34d399" stroke-width="1.5" marker-end="url(#pp1)"/>
+
+      <rect x="664" y="34" width="110" height="60" rx="8" fill="#1e293b" stroke="#818cf8"/>
+      <text x="719" y="57" text-anchor="middle" font-size="10" fill="#c4b5fd" font-weight="500">Service</text>
+      <text x="719" y="71" text-anchor="middle" font-size="10" fill="#c4b5fd" font-weight="500">Method</text>
+      <text x="719" y="84" text-anchor="middle" font-size="9" fill="#4c1d95">orgId scoping</text>
+      <line x1="775" y1="64" x2="794" y2="64" stroke="#818cf8" stroke-width="1.5" marker-end="url(#pp1)"/>
+
+      <rect x="796" y="34" width="94" height="60" rx="8" fill="#064e3b" stroke="#10b981"/>
+      <text x="843" y="57" text-anchor="middle" font-size="10" fill="#34d399" font-weight="500">Prisma</text>
+      <text x="843" y="71" text-anchor="middle" font-size="10" fill="#34d399" font-weight="500">Query</text>
+      <text x="843" y="84" text-anchor="middle" font-size="9" fill="#064e3b">PostgreSQL</text>
+
+      <!-- Error arrows pointing down -->
+      <line x1="323" y1="94" x2="323" y2="118" stroke="#dc2626" stroke-width="1" stroke-dasharray="3 2"/>
+      <text x="323" y="132" text-anchor="middle" font-size="9" fill="#dc2626" font-family="DM Mono, monospace">401</text>
+
+      <line x1="455" y1="94" x2="455" y2="118" stroke="#6366f1" stroke-width="1" stroke-dasharray="3 2"/>
+      <text x="455" y="132" text-anchor="middle" font-size="9" fill="#6366f1" font-family="DM Mono, monospace">400</text>
+
+      <line x1="719" y1="94" x2="719" y2="118" stroke="#818cf8" stroke-width="1" stroke-dasharray="3 2"/>
+      <text x="719" y="132" text-anchor="middle" font-size="9" fill="#818cf8" font-family="DM Mono, monospace">404 · 409 · 403</text>
+
+      <!-- Response return arrow -->
+      <line x1="843" y1="150" x2="843" y2="166" stroke="#10b981" stroke-width="1.5"/>
+      <rect x="550" y="168" width="310" height="24" rx="6" fill="#064e3b" stroke="#10b981"/>
+      <text x="705" y="184" text-anchor="middle" font-size="10" fill="#34d399" font-weight="500">JSON response (200 / 201 / 204) ← flows back to browser</text>
+      <line x1="550" y1="180" x2="120" y2="180" stroke="#10b981" stroke-width="1.5" stroke-dasharray="4 2"/>
+    </svg>
+    <div class="diagram-caption">Fig 7.1 — NestJS request pipeline: error exit points and response path</div>
+  </div>
+
+  <h3>Complete API Reference</h3>
+  <table class="api-table">
+    <tr><th>Method</th><th>Endpoint</th><th>Auth</th><th>Description</th><th>Returns</th></tr>
+    <tr><td><span class="method post">POST</span></td><td class="ep">/auth/register</td><td>—</td><td>Create org + owner user. Body: email, password≥8, orgName≥2, name?</td><td>201 + cookie</td></tr>
+    <tr><td><span class="method post">POST</span></td><td class="ep">/auth/login</td><td>—</td><td>Authenticate. Returns cookie + sanitised user</td><td>200 + cookie</td></tr>
+    <tr><td><span class="method get">GET</span></td><td class="ep">/auth/me</td><td>🔒</td><td>Current user + org + role via UserOrg join</td><td>200</td></tr>
+    <tr><td><span class="method post">POST</span></td><td class="ep">/auth/logout</td><td>—</td><td>Clears auth cookie</td><td>200</td></tr>
+    <tr><td><span class="method get">GET</span></td><td class="ep">/suppliers</td><td>🔒</td><td>List. Query: type, status, riskLevel, q</td><td>200 [ ]</td></tr>
+    <tr><td><span class="method post">POST</span></td><td class="ep">/suppliers</td><td>🔒</td><td>Create supplier</td><td>201</td></tr>
+    <tr><td><span class="method get">GET</span></td><td class="ep">/suppliers/:id</td><td>🔒</td><td>Detail + contacts[ ] + productLinks (Phase 4)</td><td>200</td></tr>
+    <tr><td><span class="method put">PUT</span></td><td class="ep">/suppliers/:id</td><td>🔒</td><td>Update fields</td><td>200</td></tr>
+    <tr><td><span class="method del">DELETE</span></td><td class="ep">/suppliers/:id</td><td>🔒</td><td>Soft delete → INACTIVE</td><td>200</td></tr>
+    <tr><td><span class="method post">POST</span></td><td class="ep">/suppliers/:id/contacts</td><td>🔒</td><td>Add contact</td><td>201</td></tr>
+    <tr><td><span class="method put">PUT</span></td><td class="ep">/contacts/:id</td><td>🔒</td><td>Update contact (ownership via supplier join)</td><td>200</td></tr>
+    <tr><td><span class="method del">DELETE</span></td><td class="ep">/contacts/:id</td><td>🔒</td><td>Hard delete contact</td><td>204</td></tr>
+    <tr><td><span class="method get">GET</span></td><td class="ep">/document-types</td><td>🔒</td><td>List active types for org</td><td>200 [ ]</td></tr>
+    <tr><td><span class="method post">POST</span></td><td class="ep">/document-types</td><td>🔒</td><td>Create type</td><td>201</td></tr>
+    <tr><td><span class="method put">PUT</span></td><td class="ep">/document-types/:id</td><td>🔒</td><td>Update type</td><td>200</td></tr>
+    <tr><td><span class="method del">DELETE</span></td><td class="ep">/document-types/:id</td><td>🔒</td><td>Soft delete. 409 if documents reference it</td><td>204</td></tr>
+    <tr><td><span class="method get">GET</span></td><td class="ep">/suppliers/:id/documents</td><td>🔒</td><td>List docs with documentType + uploadedBy</td><td>200 [ ]</td></tr>
+    <tr><td><span class="method post">POST</span></td><td class="ep">/suppliers/:id/documents</td><td>🔒</td><td>Upload multipart/form-data. 20 MB limit</td><td>201</td></tr>
+    <tr><td><span class="method put">PUT</span></td><td class="ep">/documents/:id</td><td>🔒</td><td>Update status / review notes. Reviewer set from JWT</td><td>200</td></tr>
+    <tr><td><span class="method get">GET</span></td><td class="ep">/products</td><td>🔒</td><td>List + _count.suppliers. Query: status, category, q</td><td>200 [ ]</td></tr>
+    <tr><td><span class="method post">POST</span></td><td class="ep">/products</td><td>🔒</td><td>Create. 409 ConflictException on dup SKU</td><td>201</td></tr>
+    <tr><td><span class="method get">GET</span></td><td class="ep">/products/:id</td><td>🔒</td><td>Detail + suppliers[ ]{ id, role, supplier }</td><td>200</td></tr>
+    <tr><td><span class="method put">PUT</span></td><td class="ep">/products/:id</td><td>🔒</td><td>Update. 409 on dup SKU change</td><td>200</td></tr>
+    <tr><td><span class="method del">DELETE</span></td><td class="ep">/products/:id</td><td>🔒</td><td>Soft delete → DISCONTINUED</td><td>200</td></tr>
+    <tr><td><span class="method post">POST</span></td><td class="ep">/products/:id/suppliers</td><td>🔒</td><td>Link supplier + role. 409 on dup combo</td><td>201</td></tr>
+    <tr><td><span class="method del">DELETE</span></td><td class="ep">/products/:id/suppliers/:linkId</td><td>🔒</td><td>Remove link. Org verified via join</td><td>204</td></tr>
+  </table>
+</div>
+
+<!-- ══════════════════════════════ SECTION 08: ROUTING -->
+<div class="section" id="routing">
+  <div class="sec-tag">Section 08</div>
+  <h2>Frontend Page Routing</h2>
+  <p class="sec-desc">Next.js 15 App Router. Middleware protects all <code>/dashboard/*</code> routes. Server Components call <code>API_URL</code> (container DNS). Client Components call <code>NEXT_PUBLIC_API_URL</code> (browser-visible).</p>
+
+  <div class="diagram">
+    <svg width="100%" viewBox="0 0 900 380" xmlns="http://www.w3.org/2000/svg" font-family="DM Sans, sans-serif">
+      <defs>
+        <marker id="rt1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+          <path d="M2 2L8 5L2 8" fill="none" stroke="#6366f1" stroke-width="1.5" stroke-linecap="round"/>
+        </marker>
+        <marker id="rt2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+          <path d="M2 2L8 5L2 8" fill="none" stroke="#34d399" stroke-width="1.5" stroke-linecap="round"/>
+        </marker>
+        <marker id="rt3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+          <path d="M2 2L8 5L2 8" fill="none" stroke="#f472b6" stroke-width="1.5" stroke-linecap="round"/>
+        </marker>
+        <marker id="rt4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+          <path d="M2 2L8 5L2 8" fill="none" stroke="#fbbf24" stroke-width="1.5" stroke-linecap="round"/>
+        </marker>
+      </defs>
+
+      <!-- Root -->
+      <rect x="340" y="10" width="220" height="36" rx="8" fill="#334155" stroke="#475569"/>
+      <text x="450" y="33" text-anchor="middle" font-size="11" fill="white" font-weight="500">/ (root redirect → /login)</text>
+
+      <!-- Auth routes -->
+      <rect x="80" y="80" width="160" height="36" rx="8" fill="#312e81" stroke="#6366f1"/>
+      <text x="160" y="103" text-anchor="middle" font-size="11" fill="white" font-weight="500">/login</text>
+      <line x1="390" y1="46" x2="220" y2="78" stroke="#6366f1" stroke-width="1.5" marker-end="url(#rt1)"/>
+
+      <rect x="260" y="80" width="160" height="36" rx="8" fill="#312e81" stroke="#6366f1"/>
+      <text x="340" y="103" text-anchor="middle" font-size="11" fill="white" font-weight="500">/register</text>
+      <line x1="430" y1="46" x2="380" y2="78" stroke="#6366f1" stroke-width="1.5" marker-end="url(#rt1)"/>
+
+      <!-- Dashboard layout -->
+      <rect x="460" y="80" width="240" height="48" rx="8" fill="#1e3a8a" stroke="#2563eb" stroke-width="2"/>
+      <text x="580" y="100" text-anchor="middle" font-size="12" fill="white" font-weight="600">/dashboard</text>
+      <text x="580" y="118" text-anchor="middle" font-size="9" fill="#93c5fd">layout.tsx — header + nav + auth check</text>
+      <line x1="480" y1="46" x2="580" y2="78" stroke="#2563eb" stroke-width="1.5" marker-end="url(#rt1)"/>
+
+      <!-- Dashboard page -->
+      <rect x="460" y="164" width="240" height="36" rx="8" fill="#1e293b" stroke="#2563eb"/>
+      <text x="580" y="186" text-anchor="middle" font-size="11" fill="#93c5fd" font-weight="500">/dashboard  (page.tsx)</text>
+      <line x1="580" y1="128" x2="580" y2="162" stroke="#2563eb" stroke-width="1.5" marker-end="url(#rt1)"/>
+
+      <!-- Suppliers branch -->
+      <rect x="60" y="240" width="190" height="36" rx="8" fill="#1e293b" stroke="#34d399"/>
+      <text x="155" y="263" text-anchor="middle" font-size="11" fill="#6ee7b7" font-weight="500">/suppliers</text>
+      <line x1="510" y1="192" x2="210" y2="238" stroke="#34d399" stroke-width="1.5" marker-end="url(#rt2)"/>
+
+      <rect x="10" y="310" width="240" height="52" rx="8" fill="#1e293b" stroke="#34d399"/>
+      <text x="130" y="332" text-anchor="middle" font-size="11" fill="#6ee7b7" font-weight="500">/suppliers/[id]</text>
+      <text x="130" y="347" text-anchor="middle" font-size="9" fill="#064e3b" font-family="DM Mono, monospace">?tab=overview|documents|products</text>
+      <line x1="110" y1="276" x2="80" y2="308" stroke="#34d399" stroke-width="1.5" marker-end="url(#rt2)"/>
+
+      <!-- Products branch -->
+      <rect x="300" y="240" width="190" height="36" rx="8" fill="#1e293b" stroke="#f472b6"/>
+      <text x="395" y="263" text-anchor="middle" font-size="11" fill="#f9a8d4" font-weight="500">/products</text>
+      <line x1="540" y1="192" x2="395" y2="238" stroke="#f472b6" stroke-width="1.5" marker-end="url(#rt3)"/>
+
+      <rect x="260" y="310" width="240" height="52" rx="8" fill="#1e293b" stroke="#f472b6"/>
+      <text x="380" y="332" text-anchor="middle" font-size="11" fill="#f9a8d4" font-weight="500">/products/[id]</text>
+      <text x="380" y="347" text-anchor="middle" font-size="9" fill="#4c0519">supplier links table · add · remove</text>
+      <line x1="350" y1="276" x2="340" y2="308" stroke="#f472b6" stroke-width="1.5" marker-end="url(#rt3)"/>
+
+      <!-- Settings branch -->
+      <rect x="560" y="240" width="190" height="36" rx="8" fill="#1e293b" stroke="#fbbf24"/>
+      <text x="655" y="263" text-anchor="middle" font-size="11" fill="#fde68a" font-weight="500">/settings</text>
+      <line x1="620" y1="192" x2="655" y2="238" stroke="#fbbf24" stroke-width="1.5" marker-end="url(#rt4)"/>
+
+      <rect x="520" y="310" width="280" height="52" rx="8" fill="#1e293b" stroke="#fbbf24"/>
+      <text x="660" y="332" text-anchor="middle" font-size="11" fill="#fde68a" font-weight="500">/settings/document-types</text>
+      <text x="660" y="347" text-anchor="middle" font-size="9" fill="#78350f">create · edit · deactivate types</text>
+      <line x1="655" y1="276" x2="655" y2="308" stroke="#fbbf24" stroke-width="1.5" marker-end="url(#rt4)"/>
+
+      <!-- Middleware label -->
+      <rect x="0" y="0" width="58" height="380" rx="0" fill="#0f172a" opacity=".0"/>
+      <rect x="820" y="160" width="76" height="80" rx="8" fill="#fef3c7" stroke="#d97706"/>
+      <text x="858" y="185" text-anchor="middle" font-size="9" fill="#78350f" font-weight="500">Middleware</text>
+      <text x="858" y="199" text-anchor="middle" font-size="8" fill="#92400e">protects all</text>
+      <text x="858" y="211" text-anchor="middle" font-size="8" fill="#92400e">/dashboard/*</text>
+      <text x="858" y="225" text-anchor="middle" font-size="8" fill="#92400e">cookie → 302</text>
+    </svg>
+    <div class="diagram-caption">Fig 8.1 — Next.js App Router page hierarchy. All /dashboard/* routes protected by Middleware.</div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════ SECTION 09: ERD -->
+<div class="section" id="erd">
+  <div class="sec-tag">Section 09</div>
+  <h2>Entity Relationship Diagram</h2>
+  <p class="sec-desc">Full Prisma schema entity map. All non-auth entities carry <code>orgId</code> as a non-nullable FK. Unique constraints are shown in amber. Named relations (UploadedDocuments / ReviewedDocuments) allow Prisma to distinguish two FK paths from Document → User.</p>
+
+  <div class="entity-grid">
+    <div class="entity-card">
+      <div class="entity-head">Organisation <span class="entity-badge">ROOT TENANT</span></div>
+      <div class="entity-fields">
+        <div class="ef"><span class="ef-name">id</span><span class="ef-pk">PK · cuid()</span></div>
+        <div class="ef"><span class="ef-name">name</span><span class="ef-type">String</span></div>
+        <div class="ef"><span class="ef-name">createdAt</span><span class="ef-type">DateTime</span></div>
+        <div class="ef"><span class="ef-name">members →</span><span class="ef-fk">UserOrg[ ]</span></div>
+        <div class="ef"><span class="ef-name">suppliers →</span><span class="ef-fk">Supplier[ ]</span></div>
+        <div class="ef"><span class="ef-name">documentTypes →</span><span class="ef-fk">DocType[ ]</span></div>
+        <div class="ef"><span class="ef-name">products →</span><span class="ef-fk">Product[ ]</span></div>
+      </div>
+    </div>
+    <div class="entity-card">
+      <div class="entity-head">User</div>
+      <div class="entity-fields">
+        <div class="ef"><span class="ef-name">id</span><span class="ef-pk">PK · cuid()</span></div>
+        <div class="ef"><span class="ef-name">email</span><span class="ef-type">String @unique</span></div>
+        <div class="ef"><span class="ef-name">passwordHash</span><span class="ef-type">never returned</span></div>
+        <div class="ef"><span class="ef-name">name</span><span class="ef-type">String?</span></div>
+        <div class="ef"><span class="ef-name">organizations →</span><span class="ef-fk">UserOrg[ ]</span></div>
+        <div class="ef"><span class="ef-name">uploadedDocs →</span><span class="ef-fk">Document[ ] @rel</span></div>
+        <div class="ef"><span class="ef-name">reviewedDocs →</span><span class="ef-fk">Document[ ] @rel</span></div>
+      </div>
+    </div>
+    <div class="entity-card">
+      <div class="entity-head">UserOrganisation <span class="entity-badge">JOIN</span></div>
+      <div class="entity-fields">
+        <div class="ef"><span class="ef-name">id</span><span class="ef-pk">PK</span></div>
+        <div class="ef"><span class="ef-name">userId</span><span class="ef-fk">FK → User</span></div>
+        <div class="ef"><span class="ef-name">organisationId</span><span class="ef-fk">FK → Org</span></div>
+        <div class="ef"><span class="ef-name">role</span><span class="ef-type">OWNER|ADMIN|USER|VIEWER</span></div>
+        <div class="ef"><span class="ef-name">@@unique</span><span class="ef-pk">[userId, orgId]</span></div>
+      </div>
+    </div>
+    <div class="entity-card">
+      <div class="entity-head">Supplier</div>
+      <div class="entity-fields">
+        <div class="ef"><span class="ef-name">id</span><span class="ef-pk">PK · cuid()</span></div>
+        <div class="ef"><span class="ef-name">orgId</span><span class="ef-fk">FK → Org (required)</span></div>
+        <div class="ef"><span class="ef-name">name</span><span class="ef-type">String</span></div>
+        <div class="ef"><span class="ef-name">supplierCode</span><span class="ef-type">String?</span></div>
+        <div class="ef"><span class="ef-name">type</span><span class="ef-type">SupplierType enum</span></div>
+        <div class="ef"><span class="ef-name">status</span><span class="ef-type">SupplierStatus @ACTIVE</span></div>
+        <div class="ef"><span class="ef-name">riskLevel</span><span class="ef-type">RiskLevel @UNKNOWN</span></div>
+        <div class="ef"><span class="ef-name">contacts →</span><span class="ef-fk">Contact[ ]</span></div>
+        <div class="ef"><span class="ef-name">documents →</span><span class="ef-fk">Document[ ]</span></div>
+        <div class="ef"><span class="ef-name">productLinks →</span><span class="ef-fk">ProductSupplier[ ]</span></div>
+      </div>
+    </div>
+    <div class="entity-card">
+      <div class="entity-head">Document</div>
+      <div class="entity-fields">
+        <div class="ef"><span class="ef-name">id</span><span class="ef-pk">PK · cuid()</span></div>
+        <div class="ef"><span class="ef-name">orgId</span><span class="ef-fk">FK → Org (required)</span></div>
+        <div class="ef"><span class="ef-name">supplierId</span><span class="ef-fk">FK → Supplier</span></div>
+        <div class="ef"><span class="ef-name">documentTypeId</span><span class="ef-fk">FK → DocType</span></div>
+        <div class="ef"><span class="ef-name">fileUrl</span><span class="ef-type">String (UUID path)</span></div>
+        <div class="ef"><span class="ef-name">mimeType</span><span class="ef-type">server-detected only</span></div>
+        <div class="ef"><span class="ef-name">status</span><span class="ef-type">DocumentStatus enum</span></div>
+        <div class="ef"><span class="ef-name">uploadedByUserId</span><span class="ef-fk">FK → User @rel</span></div>
+        <div class="ef"><span class="ef-name">reviewedByUserId</span><span class="ef-fk">FK? → User @rel</span></div>
+        <div class="ef"><span class="ef-name">issuedDate</span><span class="ef-type">DateTime?</span></div>
+        <div class="ef"><span class="ef-name">expiryDate</span><span class="ef-type">DateTime?</span></div>
+        <div class="ef"><span class="ef-name">reviewNotes</span><span class="ef-type">String?</span></div>
+      </div>
+    </div>
+    <div class="entity-card">
+      <div class="entity-head">Product</div>
+      <div class="entity-fields">
+        <div class="ef"><span class="ef-name">id</span><span class="ef-pk">PK · cuid()</span></div>
+        <div class="ef"><span class="ef-name">orgId</span><span class="ef-fk">FK → Org (required)</span></div>
+        <div class="ef"><span class="ef-name">name</span><span class="ef-type">String</span></div>
+        <div class="ef"><span class="ef-name">sku</span><span class="ef-type">String</span></div>
+        <div class="ef"><span class="ef-name">@@unique</span><span class="ef-pk">[orgId, sku]</span></div>
+        <div class="ef"><span class="ef-name">category</span><span class="ef-type">String?</span></div>
+        <div class="ef"><span class="ef-name">season</span><span class="ef-type">String?</span></div>
+        <div class="ef"><span class="ef-name">status</span><span class="ef-type">ProductStatus @ACTIVE</span></div>
+        <div class="ef"><span class="ef-name">suppliers →</span><span class="ef-fk">ProductSupplier[ ]</span></div>
+      </div>
+    </div>
+    <div class="entity-card">
+      <div class="entity-head">ProductSupplier <span class="entity-badge">JOIN</span></div>
+      <div class="entity-fields">
+        <div class="ef"><span class="ef-name">id</span><span class="ef-pk">PK · cuid()</span></div>
+        <div class="ef"><span class="ef-name">productId</span><span class="ef-fk">FK → Product</span></div>
+        <div class="ef"><span class="ef-name">supplierId</span><span class="ef-fk">FK → Supplier</span></div>
+        <div class="ef"><span class="ef-name">role</span><span class="ef-type">ProductSupplierRole</span></div>
+        <div class="ef"><span class="ef-name">@@unique</span><span class="ef-pk">[productId, supplierId, role]</span></div>
+      </div>
+    </div>
+    <div class="entity-card">
+      <div class="entity-head">DocumentType</div>
+      <div class="entity-fields">
+        <div class="ef"><span class="ef-name">id</span><span class="ef-pk">PK · cuid()</span></div>
+        <div class="ef"><span class="ef-name">orgId</span><span class="ef-fk">FK → Org (required)</span></div>
+        <div class="ef"><span class="ef-name">name</span><span class="ef-type">String</span></div>
+        <div class="ef"><span class="ef-name">description</span><span class="ef-type">String?</span></div>
+        <div class="ef"><span class="ef-name">requiredForSupplierTypes</span><span class="ef-type">SupplierType[ ]</span></div>
+        <div class="ef"><span class="ef-name">isActive</span><span class="ef-type">Boolean @default(true)</span></div>
+        <div class="ef"><span class="ef-name">documents →</span><span class="ef-fk">Document[ ]</span></div>
+      </div>
+    </div>
+    <div class="entity-card">
+      <div class="entity-head">Contact</div>
+      <div class="entity-fields">
+        <div class="ef"><span class="ef-name">id</span><span class="ef-pk">PK · cuid()</span></div>
+        <div class="ef"><span class="ef-name">supplierId</span><span class="ef-fk">FK → Supplier</span></div>
+        <div class="ef"><span class="ef-name">name</span><span class="ef-type">String</span></div>
+        <div class="ef"><span class="ef-name">email</span><span class="ef-type">String?</span></div>
+        <div class="ef"><span class="ef-name">phone</span><span class="ef-type">String?</span></div>
+        <div class="ef"><span class="ef-name">role</span><span class="ef-type">String?</span></div>
+        <div class="ef"><span class="ef-name">DELETE</span><span class="ef-type">hard delete only</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════ SECTION 10: STATE MACHINES -->
+<div class="section" id="states">
+  <div class="sec-tag">Section 10</div>
+  <h2>State &amp; Status Machines</h2>
+  <p class="sec-desc">Every mutable entity has a defined status enum. Compliance-critical entities use soft deletes to preserve history. Join records and contacts use hard deletes since they can be recreated without losing compliance data.</p>
+
+  <h3>Supplier status</h3>
+  <div class="status-row">
+    <div class="pill" style="background:#fffbeb;color:#78350f;border-color:#d97706">PROSPECT</div>
+    <span class="arrow-sep">→</span>
+    <div class="pill active">ACTIVE</div>
+    <span class="arrow-sep">→</span>
+    <div class="pill inactive">INACTIVE</div>
+    <span class="sep-note" style="margin-left:8px">soft delete via DELETE /suppliers/:id · reversible via PUT</span>
+  </div>
+
+  <h3>Document status</h3>
+  <div class="status-row">
+    <div class="pill pending">PENDING_REVIEW</div>
+    <span class="arrow-sep">→</span>
+    <div class="pill approved">APPROVED</div>
+    <span class="arrow-sep">·</span>
+    <div class="pill pending">PENDING_REVIEW</div>
+    <span class="arrow-sep">→</span>
+    <div class="pill rejected">REJECTED</div>
+    <span class="arrow-sep">·</span>
+    <div class="pill approved">APPROVED</div>
+    <span class="arrow-sep">→</span>
+    <div class="pill expired">EXPIRED</div>
+    <span class="sep-note" style="margin-left:8px">nightly cron job (Phase 5) checks expiryDate</span>
+  </div>
+
+  <h3>Product status</h3>
+  <div class="status-row">
+    <div class="pill active">ACTIVE</div>
+    <span class="arrow-sep">→</span>
+    <div class="pill inactive">DISCONTINUED</div>
+    <span class="sep-note" style="margin-left:8px">soft delete via DELETE /products/:id · reversible via PUT</span>
+  </div>
+
+  <h3>Deletion strategy</h3>
+  <table class="api-table">
+    <tr><th>Entity</th><th>Delete type</th><th>Mechanism</th><th>Reversible?</th><th>Reason</th></tr>
+    <tr><td>Supplier</td><td>Soft</td><td>status → INACTIVE</td><td>Yes</td><td>Preserve document + contact history</td></tr>
+    <tr><td>Contact</td><td>Hard</td><td>prisma.contact.delete()</td><td>No (re-add)</td><td>No compliance history on contacts</td></tr>
+    <tr><td>DocumentType</td><td>Soft</td><td>isActive → false · 409 if docs exist</td><td>Yes</td><td>Documents reference type; can't break FK</td></tr>
+    <tr><td>Document</td><td>N/A</td><td>status update only (REJECTED/EXPIRED)</td><td>—</td><td>Audit trail must be immutable</td></tr>
+    <tr><td>Product</td><td>Soft</td><td>status → DISCONTINUED</td><td>Yes</td><td>Preserve traceability mapping history</td></tr>
+    <tr><td>ProductSupplier</td><td>Hard</td><td>prisma.productSupplier.delete()</td><td>No (re-link)</td><td>Link can be recreated; no extra history</td></tr>
+  </table>
+
+  <div class="callout ok">
+    <strong>Audit trail principle:</strong> All compliance-relevant entities (Documents, Suppliers, Products, DocumentTypes) use soft deletes. Only relationship tables (Contacts, ProductSupplier links) use hard deletes. This ensures that even after a supplier or product is deactivated, its complete document history and approval audit trail remain queryable for regulatory purposes.
+  </div>
+</div>
+
+</body>
+</html>

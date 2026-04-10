@@ -4,6 +4,7 @@ import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import * as cookieParser from 'cookie-parser';
 import { join } from 'path';
+import * as fs from 'fs';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
@@ -19,12 +20,18 @@ async function bootstrap() {
     origin: process.env.WEB_URL || 'http://localhost:3000',
     credentials: true,
   });
-  // Serve uploaded files at GET /uploads/:filename.
-  // Note: in production this should be replaced with object storage (e.g. S3)
-  // so that the uploads directory is not publicly readable on the server.
-  app.useStaticAssets(join(process.cwd(), 'uploads'), { prefix: '/uploads' });
-  const port = process.env.PORT || 3001;
-  await app.listen(port);
+  // Serve uploaded files at GET /uploads/:filename (dev/local only).
+  // In production with S3, this directory won't exist — skip if absent.
+  const uploadsDir = join(process.cwd(), 'uploads');
+  if (fs.existsSync(uploadsDir)) {
+    app.useStaticAssets(uploadsDir, { prefix: '/uploads' });
+  }
+  const port = parseInt(process.env.PORT || '3001', 10);
+  // Bind to 0.0.0.0 — required for Railway/Docker container networking
+  await app.listen(port, '0.0.0.0');
   console.log(`API running on port ${port}`);
 }
-bootstrap();
+bootstrap().catch((err) => {
+  console.error('Failed to start API:', err);
+  process.exit(1);
+});

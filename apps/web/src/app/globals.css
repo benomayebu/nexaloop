@@ -1,3 +1,52 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* ─── Animation Keyframes ─────────────────────────────── */
+
+/* Mesh gradient orb A */
+@keyframes mesh-a {
+  0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.12; }
+  50%       { transform: translate(50px, -40px) scale(1.15); opacity: 0.18; }
+}
+
+/* Mesh gradient orb B */
+@keyframes mesh-b {
+  0%, 100% { transform: translate(0, 0) scale(1.05); opacity: 0.14; }
+  50%       { transform: translate(-40px, 50px) scale(0.95); opacity: 0.09; }
+}
+
+/* Hero visual card float */
+@keyframes card-float {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-10px); }
+}
+
+/* Compliance score gauge fill (used in hero-visual) */
+@keyframes gauge-fill {
+  from { stroke-dashoffset: 251; }
+  to   { stroke-dashoffset: 38; }
+}
+
+/* Scroll-triggered fade-up (applied via JS) */
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ─── Scroll fade-in utility ──────────────────────────── */
+.scroll-fade {
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity 0.35s ease-out, transform 0.35s ease-out;
+}
+
+.scroll-fade.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Stagger delays for sibling .scroll-fade elements */
+.scroll-fade:nth-child(2) { transition-delay: 0.1s; }
+.scroll-fade:nth-child(3) { transition-delay: 0.2s; }
+.scroll-fade:nth-child(4) { transition-delay: 0.3s; }

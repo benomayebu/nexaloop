@@ -1,6 +1,13 @@
 node_modules
 .env
+.env.*
 dist
 .next
 build
 *.log
+*.tsbuildinfo
+.claude/
+apps/api/jest.config.js
+apps/api/jest.config.d.ts
+apps/api/jest.config.js.map
+.superpowers/

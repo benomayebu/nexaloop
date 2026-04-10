@@ -1,4 +1,4 @@
-import { IsString, IsEnum, IsOptional, MinLength } from 'class-validator';
+import { IsString, IsEnum, IsOptional, IsBoolean, IsNumber, IsDateString, Min, Max, MinLength } from 'class-validator';
 import { ProductStatus } from '@prisma/client';
 
 export class CreateProductDto {
@@ -25,4 +25,41 @@ export class CreateProductDto {
   @IsString()
   @IsOptional()
   notes?: string;
+
+  // DPP fields
+  @IsBoolean()
+  @IsOptional()
+  dppEnabled?: boolean;
+
+  @IsString()
+  @IsOptional()
+  materialComposition?: string;
+
+  @IsString()
+  @IsOptional()
+  countryOfOrigin?: string;
+
+  @IsDateString()
+  @IsOptional()
+  manufacturingDate?: string;
+
+  @IsNumber()
+  @IsOptional()
+  weight?: number;
+
+  @IsString()
+  @IsOptional()
+  weightUnit?: string;
+
+  @IsNumber()
+  @Min(0)
+  @Max(100)
+  @IsOptional()
+  recycledContent?: number;
+
+  @IsNumber()
+  @Min(1)
+  @Max(10)
+  @IsOptional()
+  repairabilityScore?: number;
 }

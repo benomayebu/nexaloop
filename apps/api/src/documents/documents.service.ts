@@ -111,6 +111,16 @@ export class DocumentsService {
     });
   }
 
+  async getForDownload(orgId: string, documentId: string) {
+    const doc = await this.prisma.document.findFirst({
+      where: { id: documentId, orgId },
+    });
+    if (!doc) {
+      throw new NotFoundException('Document not found');
+    }
+    return { doc, downloadUrl: await this.storageService.getDownloadUrl(doc.fileUrl) };
+  }
+
   // --- Private helpers ---
 
   private async verifySupplierOwnership(

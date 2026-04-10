@@ -1,5 +1,6 @@
 import { Controller, Post, Get, Body, Res, UseGuards } from '@nestjs/common';
 import { Response } from 'express';
+import { Throttle } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { CurrentUser } from './current-user.decorator';
@@ -11,6 +12,8 @@ import { LoginDto } from './dto/login.dto';
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
+  // Stricter rate limit on auth endpoints: 5 attempts per 60s
+  @Throttle({ default: { ttl: 60_000, limit: 5 } })
   @Post('register')
   async register(
     @Body() body: RegisterDto,
@@ -25,26 +28,30 @@ export class AuthController {
       body.supplierCount,
       body.primaryConcern,
     );
+    const isProduction = process.env.NODE_ENV === 'production';
     res.cookie('auth_token', result.token, {
       httpOnly: true,
-      sameSite: 'lax',
+      sameSite: isProduction ? 'none' : 'lax',
       maxAge: 7 * 24 * 60 * 60 * 1000,
-      secure: process.env.NODE_ENV === 'production',
+      secure: isProduction,
     });
     return { token: result.token, user: result.user, org: result.org };
   }
 
+  // Stricter rate limit on auth endpoints: 5 attempts per 60s
+  @Throttle({ default: { ttl: 60_000, limit: 5 } })
   @Post('login')
   async login(
     @Body() body: LoginDto,
     @Res({ passthrough: true }) res: Response,
   ) {
     const result = await this.authService.login(body.email, body.password);
+    const isProduction = process.env.NODE_ENV === 'production';
     res.cookie('auth_token', result.token, {
       httpOnly: true,
-      sameSite: 'lax',
+      sameSite: isProduction ? 'none' : 'lax',
       maxAge: 7 * 24 * 60 * 60 * 1000,
-      secure: process.env.NODE_ENV === 'production',
+      secure: isProduction,
     });
     return { token: result.token, user: result.user, org: result.org };
   }
