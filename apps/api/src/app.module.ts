@@ -6,6 +6,7 @@ import { SuppliersModule } from './suppliers/suppliers.module';
 import { DocumentTypesModule } from './document-types/document-types.module';
 import { DocumentsModule } from './documents/documents.module';
 import { ProductsModule } from './products/products.module';
+import { OnboardingModule } from './onboarding/onboarding.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { ProductsModule } from './products/products.module';
     DocumentTypesModule,
     DocumentsModule,
     ProductsModule,
+    OnboardingModule,
   ],
   controllers: [AppController],
 })
