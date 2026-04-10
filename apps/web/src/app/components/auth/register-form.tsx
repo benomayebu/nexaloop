@@ -110,7 +110,7 @@ export function RegisterForm() {
         step2Form.setError('root', { message: err.message || 'Registration failed' });
         return;
       }
-      router.push('/dashboard');
+      router.push('/onboarding');
     } catch {
       step2Form.setError('root', { message: 'Network error. Please try again.' });
     }

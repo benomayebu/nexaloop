@@ -58,19 +58,20 @@ model User {
 }
 
 model Organization {
-  id            String             @id @default(cuid())
-  name          String
-  createdAt     DateTime           @default(now())
-  updatedAt     DateTime           @updatedAt
-  industry      String?
-  supplierCount String?
-  primaryConcern String?
-  members       UserOrganization[]
-  suppliers     Supplier[]
-  documentTypes DocumentType[]
-  documents     Document[]
-  products      Product[]
-  notifications Notification[]
+  id                 String             @id @default(cuid())
+  name               String
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  industry           String?
+  supplierCount      String?
+  primaryConcern     String?
+  onboardingComplete Boolean            @default(false)
+  members            UserOrganization[]
+  suppliers          Supplier[]
+  documentTypes      DocumentType[]
+  documents          Document[]
+  products           Product[]
+  notifications      Notification[]
 }
 
 model UserOrganization {

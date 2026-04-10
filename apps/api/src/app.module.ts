@@ -9,6 +9,7 @@ import { SuppliersModule } from './suppliers/suppliers.module';
 import { DocumentTypesModule } from './document-types/document-types.module';
 import { DocumentsModule } from './documents/documents.module';
 import { ProductsModule } from './products/products.module';
+import { OnboardingModule } from './onboarding/onboarding.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { DppModule } from './dpp/dpp.module';
@@ -25,6 +26,7 @@ import { EprModule } from './epr/epr.module';
     DocumentTypesModule,
     DocumentsModule,
     ProductsModule,
+    OnboardingModule,
     DashboardModule,
     NotificationsModule,
     DppModule,
