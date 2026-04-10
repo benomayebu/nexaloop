@@ -31,13 +31,18 @@ export function OnboardingWizard({ me }: Props) {
   const completeOnboarding = async (data?: SupplierData) => {
     setIsLoading(true);
     try {
-      await fetch('/api/onboarding/complete', {
+      const res = await fetch('/api/onboarding/complete', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data ?? {}),
       });
-    } finally {
-      router.push('/dashboard');
+      if (res.ok) {
+        router.push('/dashboard');
+      } else {
+        setIsLoading(false);
+      }
+    } catch {
+      setIsLoading(false);
     }
   };
 
