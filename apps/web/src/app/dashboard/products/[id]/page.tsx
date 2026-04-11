@@ -5,6 +5,7 @@ import { AddProductSupplierForm } from '../../../components/add-product-supplier
 import { RemoveProductSupplierButton } from '../../../components/remove-product-supplier-button';
 import { DppToggle } from '../../../components/dpp-toggle';
 import { EprDownloadButton } from '../../../components/epr-download-button';
+import { ArchiveProductButton } from '../../../components/archive-product-button';
 
 interface ProductSupplierLink {
   id: string;
@@ -85,6 +86,9 @@ export default async function ProductDetailPage({
             </svg>
             Edit
           </Link>
+          {product.status === 'ACTIVE' && (
+            <ArchiveProductButton productId={product.id} productName={product.name} />
+          )}
         </div>
       </div>
 
@@ -237,7 +241,7 @@ export default async function ProductDetailPage({
                   <div>
                     <p className="text-sm font-medium text-indigo-900">Public DPP URL</p>
                     <a href={`/dpp/${product.id}`} target="_blank" rel="noopener noreferrer" className="text-sm text-indigo-600 hover:underline break-all">
-                      {typeof window !== 'undefined' ? window.location.origin : ''}/dpp/{product.id}
+                      {process.env.NEXT_PUBLIC_APP_URL ?? ''}/dpp/{product.id}
                     </a>
                   </div>
                 </div>
