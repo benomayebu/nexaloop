@@ -1,12 +1,16 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaService } from '../prisma/prisma.service';
+import { EmailService } from './email.service';
 
 @Injectable()
 export class NotificationsService {
   private readonly logger = new Logger(NotificationsService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly emailService: EmailService,
+  ) {}
 
   // ── List notifications for user ──────────────────────────────────
   async listForUser(orgId: string, userId: string, unreadOnly = false) {
@@ -104,61 +108,37 @@ export class NotificationsService {
     this.logger.log('Running daily expiry check...');
 
     const now = new Date();
-    const thirtyDaysFromNow = new Date();
+    const thirtyDaysFromNow = new Date(now);
     thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
-    const sevenDaysFromNow = new Date();
+    const sevenDaysFromNow = new Date(now);
     sevenDaysFromNow.setDate(sevenDaysFromNow.getDate() + 7);
 
-    // Find approved documents expiring within 30 days
-    const expiringDocs = await this.prisma.document.findMany({
-      where: {
-        status: 'APPROVED',
-        expiryDate: {
-          gte: now,
-          lte: thirtyDaysFromNow,
-        },
-      },
-      include: {
-        supplier: { select: { name: true } },
-        documentType: { select: { name: true } },
-        org: {
-          select: {
-            id: true,
-            members: { select: { userId: true } },
-          },
-        },
-      },
-    });
-
-    // Find already-expired documents that haven't been marked
+    // ── Step 1: Mark APPROVED docs whose expiryDate has passed as EXPIRED ──
     const expiredDocs = await this.prisma.document.findMany({
-      where: {
-        status: 'APPROVED',
-        expiryDate: { lt: now },
-      },
+      where: { status: 'APPROVED', expiryDate: { lt: now } },
       include: {
         supplier: { select: { name: true } },
         documentType: { select: { name: true } },
         org: {
           select: {
             id: true,
-            members: { select: { userId: true } },
+            members: {
+              select: { userId: true, user: { select: { email: true } } },
+            },
           },
         },
       },
     });
 
-    // Mark expired docs
     if (expiredDocs.length > 0) {
+      // Bulk-mark as EXPIRED first (idempotent — these won't be picked up again)
       await this.prisma.document.updateMany({
-        where: {
-          id: { in: expiredDocs.map((d) => d.id) },
-        },
+        where: { id: { in: expiredDocs.map((d) => d.id) } },
         data: { status: 'EXPIRED' },
       });
 
-      // Notify for expired documents
       for (const doc of expiredDocs) {
+        // In-app notification for each org member
         await this.notifyOrg(doc.orgId, {
           type: 'DOCUMENT_EXPIRED',
           title: 'Document Expired',
@@ -166,21 +146,69 @@ export class NotificationsService {
           entityType: 'document',
           entityId: doc.id,
         });
+
+        // Email each member — fire-and-forget, catch per-recipient to avoid
+        // one bad address aborting the rest
+        for (const member of doc.org.members) {
+          this.emailService
+            .sendExpiredNotice(
+              member.user.email,
+              doc.documentType.name,
+              doc.supplier.name,
+            )
+            .catch((err) =>
+              this.logger.error(`Email failed for ${member.user.email}: ${err}`),
+            );
+        }
       }
 
       this.logger.log(`Marked ${expiredDocs.length} documents as expired`);
     }
 
-    // Notify for documents expiring within 7 days (urgent)
-    const urgentDocs = expiringDocs.filter(
-      (d) => d.expiryDate && d.expiryDate <= sevenDaysFromNow,
-    );
+    // ── Step 2: Warn about docs expiring within 7 days ────────────────────
+    // Fetch docs expiring ≤7 days from now
+    const urgentDocs = await this.prisma.document.findMany({
+      where: {
+        status: 'APPROVED',
+        expiryDate: { gte: now, lte: sevenDaysFromNow },
+      },
+      include: {
+        supplier: { select: { name: true } },
+        documentType: { select: { name: true } },
+        org: {
+          select: {
+            id: true,
+            members: {
+              select: { userId: true, user: { select: { email: true } } },
+            },
+          },
+        },
+      },
+    });
+
+    let warningSent = 0;
 
     for (const doc of urgentDocs) {
+      // ── Deduplication: skip if a DOCUMENT_EXPIRING notification for this
+      //    document was already created within the last 23 hours.
+      //    This prevents daily spam when the cron runs repeatedly.
+      const twentyThreeHoursAgo = new Date(now.getTime() - 23 * 60 * 60 * 1000);
+      const alreadySent = await this.prisma.notification.count({
+        where: {
+          orgId: doc.orgId,
+          type: 'DOCUMENT_EXPIRING',
+          entityId: doc.id,
+          createdAt: { gte: twentyThreeHoursAgo },
+        },
+      });
+
+      if (alreadySent > 0) continue;
+
       const daysLeft = Math.ceil(
         (doc.expiryDate!.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
       );
 
+      // In-app notification
       await this.notifyOrg(doc.orgId, {
         type: 'DOCUMENT_EXPIRING',
         title: 'Document Expiring Soon',
@@ -188,10 +216,26 @@ export class NotificationsService {
         entityType: 'document',
         entityId: doc.id,
       });
+
+      // Email each member
+      for (const member of doc.org.members) {
+        this.emailService
+          .sendExpiryWarning(
+            member.user.email,
+            doc.documentType.name,
+            doc.supplier.name,
+            daysLeft,
+          )
+          .catch((err) =>
+            this.logger.error(`Email failed for ${member.user.email}: ${err}`),
+          );
+      }
+
+      warningSent++;
     }
 
     this.logger.log(
-      `Expiry check complete: ${expiredDocs.length} expired, ${urgentDocs.length} urgent warnings`,
+      `Expiry check complete: ${expiredDocs.length} expired, ${warningSent} warnings sent`,
     );
   }
 }
