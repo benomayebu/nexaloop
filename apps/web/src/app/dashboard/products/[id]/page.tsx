@@ -1,11 +1,13 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import QRCode from 'qrcode';
 import { apiFetch, apiFetchList } from '../../../../lib/api';
 import { AddProductSupplierForm } from '../../../components/add-product-supplier-form';
 import { RemoveProductSupplierButton } from '../../../components/remove-product-supplier-button';
 import { DppToggle } from '../../../components/dpp-toggle';
 import { EprDownloadButton } from '../../../components/epr-download-button';
 import { ArchiveProductButton } from '../../../components/archive-product-button';
+import { CopyUrlButton } from '../../../components/copy-url-button';
 
 interface ProductSupplierLink {
   id: string;
@@ -222,43 +224,95 @@ export default async function ProductDetailPage({
 
       {/* DPP tab */}
       {activeTab === 'dpp' && (
-        <div className="space-y-6">
-          <div className="bg-white border border-slate-200 rounded-lg shadow-sm p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-base font-semibold text-slate-900">Digital Product Passport</h2>
-              <DppToggle productId={product.id} enabled={product.dppEnabled} />
+        <DppTab product={product} />
+      )}
+    </div>
+  );
+}
+
+async function DppTab({ product }: { product: Product }) {
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? '';
+  const dppUrl = `${appUrl}/dpp/${product.id}`;
+
+  let qrSvg: string | null = null;
+  if (product.dppEnabled) {
+    try {
+      qrSvg = await QRCode.toString(dppUrl, { type: 'svg', margin: 1, width: 160 });
+    } catch {
+      // QR generation is best-effort — page still works without it
+    }
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="bg-white border border-slate-200 rounded-lg shadow-sm p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-base font-semibold text-slate-900">Digital Product Passport</h2>
+          <DppToggle productId={product.id} enabled={product.dppEnabled} />
+        </div>
+        <p className="text-sm text-slate-600 mb-4">
+          The EU ESPR regulation requires Digital Product Passports for textile products.
+          Enable DPP to generate a public product page with traceability data that can be accessed via QR code.
+        </p>
+
+        {product.dppEnabled ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-4">
+            {/* URL block */}
+            <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-4">
+              <p className="text-sm font-semibold text-indigo-900 mb-2">Public DPP URL</p>
+              <div className="flex items-start gap-2">
+                <a
+                  href={`/dpp/${product.id}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm text-indigo-600 hover:underline break-all flex-1"
+                >
+                  {dppUrl}
+                </a>
+                <CopyUrlButton url={dppUrl} />
+              </div>
+              <a
+                href={`/dpp/${product.id}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 mt-3 text-xs font-medium text-indigo-600 hover:text-indigo-800"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+                </svg>
+                Open Public Page
+              </a>
             </div>
-            <p className="text-sm text-slate-600 mb-4">
-              The EU ESPR regulation requires Digital Product Passports for textile products.
-              Enable DPP to generate a public product page with traceability data that can be accessed via QR code.
-            </p>
-            {product.dppEnabled && (
-              <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-4">
-                <div className="flex items-center gap-3">
-                  <svg className="w-5 h-5 text-indigo-600 flex-shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
-                  </svg>
-                  <div>
-                    <p className="text-sm font-medium text-indigo-900">Public DPP URL</p>
-                    <a href={`/dpp/${product.id}`} target="_blank" rel="noopener noreferrer" className="text-sm text-indigo-600 hover:underline break-all">
-                      {process.env.NEXT_PUBLIC_APP_URL ?? ''}/dpp/{product.id}
-                    </a>
-                  </div>
-                </div>
+
+            {/* QR code */}
+            {qrSvg && (
+              <div className="flex flex-col items-center gap-2 bg-white border border-slate-200 rounded-lg p-4">
+                <p className="text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1">QR Code</p>
+                <div
+                  className="w-40 h-40"
+                  dangerouslySetInnerHTML={{ __html: qrSvg }}
+                />
+                <p className="text-xs text-slate-400 text-center">
+                  Scan to view the public DPP page
+                </p>
               </div>
             )}
           </div>
-
-          <div className="bg-white border border-slate-200 rounded-lg shadow-sm p-6">
-            <h2 className="text-base font-semibold text-slate-900 mb-4">EPR Export</h2>
-            <p className="text-sm text-slate-600 mb-4">
-              Download Extended Producer Responsibility data for regulatory reporting.
-              Includes all active products with supply chain and compliance information.
-            </p>
-            <EprDownloadButton />
+        ) : (
+          <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 text-sm text-slate-500">
+            Toggle DPP on above to generate a public traceability page and QR code for this product.
           </div>
-        </div>
-      )}
+        )}
+      </div>
+
+      <div className="bg-white border border-slate-200 rounded-lg shadow-sm p-6">
+        <h2 className="text-base font-semibold text-slate-900 mb-2">EPR Export</h2>
+        <p className="text-sm text-slate-600 mb-4">
+          Download Extended Producer Responsibility data for regulatory reporting.
+          Includes all active products with supply chain and compliance information.
+        </p>
+        <EprDownloadButton />
+      </div>
     </div>
   );
 }

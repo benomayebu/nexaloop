@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  Optional,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { StorageService } from './storage/storage.service';
@@ -15,7 +16,7 @@ export class DocumentsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly storageService: StorageService,
-    private readonly notificationsService: NotificationsService,
+    @Optional() private readonly notificationsService: NotificationsService,
   ) {}
 
   async upload(
@@ -61,7 +62,7 @@ export class DocumentsService {
 
     // 5. Notify the org that a new document is awaiting review (fire-and-forget)
     this.notificationsService
-      .notifyOrg(orgId, {
+      ?.notifyOrg(orgId, {
         type: 'DOCUMENT_UPLOADED',
         title: 'New Document Uploaded',
         message: `${documentType.name} for ${supplier.name} has been uploaded and is pending review.`,
@@ -134,7 +135,7 @@ export class DocumentsService {
       const action =
         dto.status === DocumentStatus.APPROVED ? 'approved' : 'rejected';
       this.notificationsService
-        .notifyOrg(orgId, {
+        ?.notifyOrg(orgId, {
           type: 'DOCUMENT_REVIEWED',
           title: `Document ${action.charAt(0).toUpperCase() + action.slice(1)}`,
           message: `${existing.documentType.name} for ${existing.supplier.name} has been ${action}.`,
