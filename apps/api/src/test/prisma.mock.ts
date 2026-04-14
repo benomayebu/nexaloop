@@ -23,6 +23,7 @@ export function createMockPrisma() {
       create: jest.fn(),
       update: jest.fn(),
       count: jest.fn(),
+      groupBy: jest.fn(),
     },
     contact: {
       findFirst: jest.fn(),

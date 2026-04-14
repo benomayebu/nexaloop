@@ -85,7 +85,7 @@ export class DashboardService {
       {} as Record<string, number>,
     );
 
-    const riskBreakdown = suppliersByRisk.reduce(
+    const riskBreakdown = (suppliersByRisk ?? []).reduce(
       (acc, item) => {
         acc[item.riskLevel] = item._count.id;
         return acc;
