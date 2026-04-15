@@ -9,7 +9,15 @@ import { StorageService } from './storage/storage.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { UploadDocumentDto } from './dto/upload-document.dto';
 import { UpdateDocumentDto } from './dto/update-document.dto';
-import { DocumentStatus } from '@prisma/client';
+import { DocumentStatus, SupplierStatus } from '@prisma/client';
+
+// Priority order for selecting the "best" document per supplier+docType cell
+const STATUS_PRIORITY: Record<DocumentStatus, number> = {
+  [DocumentStatus.APPROVED]: 4,
+  [DocumentStatus.PENDING_REVIEW]: 3,
+  [DocumentStatus.REJECTED]: 2,
+  [DocumentStatus.EXPIRED]: 1,
+};
 
 @Injectable()
 export class DocumentsService {
@@ -146,6 +154,88 @@ export class DocumentsService {
     }
 
     return updated;
+  }
+
+  async listAll(
+    orgId: string,
+    filters: { status?: DocumentStatus; supplierId?: string; q?: string },
+  ) {
+    return this.prisma.document.findMany({
+      where: {
+        orgId,
+        ...(filters.status ? { status: filters.status } : {}),
+        ...(filters.supplierId ? { supplierId: filters.supplierId } : {}),
+        ...(filters.q
+          ? {
+              OR: [
+                { supplier: { name: { contains: filters.q, mode: 'insensitive' } } },
+                { documentType: { name: { contains: filters.q, mode: 'insensitive' } } },
+              ],
+            }
+          : {}),
+      },
+      include: {
+        supplier: { select: { id: true, name: true } },
+        documentType: { select: { id: true, name: true } },
+        uploadedBy: { select: { id: true, name: true } },
+      },
+      orderBy: [{ status: 'asc' }, { updatedAt: 'desc' }],
+      take: 200,
+    });
+  }
+
+  async getCoverage(orgId: string) {
+    // Fetch active suppliers, active document types, and all documents in parallel
+    const [suppliers, documentTypes, documents] = await Promise.all([
+      this.prisma.supplier.findMany({
+        where: { orgId, status: SupplierStatus.ACTIVE },
+        select: { id: true, name: true, type: true },
+        orderBy: { name: 'asc' },
+      }),
+      this.prisma.documentType.findMany({
+        where: { orgId, isActive: true },
+        select: { id: true, name: true, requiredForSupplierTypes: true },
+        orderBy: { name: 'asc' },
+      }),
+      this.prisma.document.findMany({
+        where: { orgId },
+        select: { id: true, supplierId: true, documentTypeId: true, status: true, expiryDate: true },
+      }),
+    ]);
+
+    // Index documents by "supplierId:documentTypeId" → best-status document
+    const bestDoc = new Map<string, { id: string; status: DocumentStatus; expiryDate: Date | null }>();
+    for (const doc of documents) {
+      const key = `${doc.supplierId}:${doc.documentTypeId}`;
+      const existing = bestDoc.get(key);
+      if (!existing || STATUS_PRIORITY[doc.status] > STATUS_PRIORITY[existing.status]) {
+        bestDoc.set(key, { id: doc.id, status: doc.status, expiryDate: doc.expiryDate });
+      }
+    }
+
+    // Build matrix rows
+    return {
+      suppliers,
+      documentTypes,
+      cells: suppliers.flatMap((supplier) =>
+        documentTypes
+          .filter(
+            (dt) =>
+              dt.requiredForSupplierTypes.length === 0 ||
+              dt.requiredForSupplierTypes.includes(supplier.type as never),
+          )
+          .map((dt) => {
+            const doc = bestDoc.get(`${supplier.id}:${dt.id}`);
+            return {
+              supplierId: supplier.id,
+              documentTypeId: dt.id,
+              status: doc?.status ?? 'MISSING',
+              documentId: doc?.id ?? null,
+              expiryDate: doc?.expiryDate ?? null,
+            };
+          }),
+      ),
+    };
   }
 
   async getForDownload(orgId: string, documentId: string) {
