@@ -5,6 +5,7 @@ import {
   Put,
   Body,
   Param,
+  Query,
   Res,
   UseGuards,
   UseInterceptors,
@@ -21,11 +22,29 @@ import { CurrentOrg } from '../auth/current-org.decorator';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { UploadDocumentDto } from './dto/upload-document.dto';
 import { UpdateDocumentDto } from './dto/update-document.dto';
+import { DocumentStatus } from '@prisma/client';
 
 @Controller()
 @UseGuards(JwtAuthGuard)
 export class DocumentsController {
   constructor(private readonly documentsService: DocumentsService) {}
+
+  // ── These two routes MUST come before documents/:id to avoid :id matching 'coverage'
+
+  @Get('documents')
+  listAllDocuments(
+    @CurrentOrg() orgId: string,
+    @Query('status') status?: DocumentStatus,
+    @Query('supplierId') supplierId?: string,
+    @Query('q') q?: string,
+  ) {
+    return this.documentsService.listAll(orgId, { status, supplierId, q });
+  }
+
+  @Get('documents/coverage')
+  getCoverage(@CurrentOrg() orgId: string) {
+    return this.documentsService.getCoverage(orgId);
+  }
 
   @Post('suppliers/:supplierId/documents')
   @UseInterceptors(FileInterceptor('file', { storage: memoryStorage(), limits: { fileSize: 20 * 1024 * 1024 } }))
