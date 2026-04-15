@@ -14,6 +14,7 @@ import { DashboardModule } from './dashboard/dashboard.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { DppModule } from './dpp/dpp.module';
 import { EprModule } from './epr/epr.module';
+import { SettingsModule } from './settings/settings.module';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { EprModule } from './epr/epr.module';
     NotificationsModule,
     DppModule,
     EprModule,
+    SettingsModule,
   ],
   controllers: [AppController],
   providers: [
