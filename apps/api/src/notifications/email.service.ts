@@ -81,6 +81,40 @@ export class EmailService {
     });
   }
 
+  async sendPasswordReset(to: string, resetUrl: string): Promise<void> {
+    await this.sendEmail({
+      to,
+      subject: '[N.E.X.A Loop] Reset your password',
+      html: `
+        <div style="font-family:sans-serif;max-width:600px;margin:0 auto;">
+          <div style="background:#4f46e5;padding:24px;border-radius:8px 8px 0 0;">
+            <h1 style="color:white;margin:0;font-size:20px;">N.E.X.A Loop</h1>
+          </div>
+          <div style="background:white;padding:24px;border:1px solid #e2e8f0;border-top:none;border-radius:0 0 8px 8px;">
+            <h2 style="color:#1e293b;margin-top:0;">Reset your password</h2>
+            <p style="color:#475569;">
+              We received a request to reset your N.E.X.A Loop password.
+              Click the button below to choose a new password.
+              This link expires in <strong>1 hour</strong>.
+            </p>
+            <a href="${resetUrl}"
+               style="display:inline-block;background:#4f46e5;color:white;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:600;margin:8px 0 16px;">
+              Reset Password
+            </a>
+            <p style="color:#94a3b8;font-size:13px;">
+              If you didn't request a password reset you can safely ignore this email.
+              Your password will not change.
+            </p>
+            <p style="color:#94a3b8;font-size:12px;border-top:1px solid #f1f5f9;padding-top:12px;margin-top:12px;">
+              If the button doesn't work, paste this link into your browser:<br/>
+              <span style="color:#4f46e5;">${resetUrl}</span>
+            </p>
+          </div>
+        </div>
+      `,
+    });
+  }
+
   async sendExpiredNotice(
     to: string,
     documentTypeName: string,
