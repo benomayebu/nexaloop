@@ -4,7 +4,7 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { Prisma, ProductStatus, DocumentStatus } from '@prisma/client';
+import { Prisma, ProductStatus, DocumentStatus, SupplierType } from '@prisma/client';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { AddProductSupplierDto } from './dto/add-product-supplier.dto';
@@ -20,13 +20,13 @@ export interface ComplianceCell {
   supplierId: string;
   documentTypeId: string;
   applicable: boolean;
-  status: DocumentStatus | 'MISSING';
+  status: DocumentStatus | 'MISSING' | null;
   documentId: string | null;
   expiryDate: Date | null;
 }
 
 export interface ProductComplianceResult {
-  suppliers: { id: string; name: string; type: string; riskLevel: string }[];
+  suppliers: { id: string; name: string; type: SupplierType; riskLevel: string }[];
   documentTypes: { id: string; name: string; applicableTo: string[] }[];
   cells: ComplianceCell[];
   summary: { compliant: number; total: number; score: number };
@@ -312,7 +312,7 @@ export class ProductsService {
       documentTypes.map((dt) => {
         const applicable =
           dt.requiredForSupplierTypes.length === 0 ||
-          dt.requiredForSupplierTypes.includes(supplier.type as never);
+          dt.requiredForSupplierTypes.includes(supplier.type);
         const doc = applicable
           ? bestDoc.get(`${supplier.id}:${dt.id}`)
           : undefined;
@@ -320,9 +320,7 @@ export class ProductsService {
           supplierId: supplier.id,
           documentTypeId: dt.id,
           applicable,
-          status: applicable
-            ? (doc?.status ?? 'MISSING')
-            : ('MISSING' as DocumentStatus | 'MISSING'),
+          status: applicable ? (doc?.status ?? 'MISSING') : null,
           documentId: doc?.id ?? null,
           expiryDate: doc?.expiryDate ?? null,
         };

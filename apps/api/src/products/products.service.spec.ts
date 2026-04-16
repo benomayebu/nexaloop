@@ -27,7 +27,7 @@ describe('ProductsService', () => {
         { id: 'p-1', _count: { suppliers: 0 }, suppliers: [] },
       ]);
       const result = await service.list(orgId, {});
-      expect((result[0] as any).complianceScore).toBeNull();
+      expect(result[0].complianceScore).toBeNull();
       expect(result[0]).not.toHaveProperty('suppliers');
     });
 
@@ -43,7 +43,7 @@ describe('ProductsService', () => {
         },
       ]);
       const result = await service.list(orgId, {});
-      expect((result[0] as any).complianceScore).toBe(100);
+      expect(result[0].complianceScore).toBe(100);
     });
 
     it('should return complianceScore 50 when half of linked suppliers have an approved document', async () => {
@@ -58,7 +58,7 @@ describe('ProductsService', () => {
         },
       ]);
       const result = await service.list(orgId, {});
-      expect((result[0] as any).complianceScore).toBe(50);
+      expect(result[0].complianceScore).toBe(50);
     });
 
     it('should return complianceScore 0 when no linked supplier has an approved document', async () => {
@@ -70,7 +70,7 @@ describe('ProductsService', () => {
         },
       ]);
       const result = await service.list(orgId, {});
-      expect((result[0] as any).complianceScore).toBe(0);
+      expect(result[0].complianceScore).toBe(0);
     });
 
     it('should apply search filter', async () => {
@@ -248,12 +248,12 @@ describe('ProductsService', () => {
 
     it('throws NotFoundException for a product not in this org', async () => {
       prisma.product.findFirst.mockResolvedValue(null);
-      await expect((service as any).getProductCompliance(orgId, productId)).rejects.toThrow(NotFoundException);
+      await expect(service.getProductCompliance(orgId, productId)).rejects.toThrow(NotFoundException);
     });
 
     it('returns empty grid with score 100 when product has no linked suppliers', async () => {
       prisma.product.findFirst.mockResolvedValue({ id: productId, suppliers: [] });
-      const result = await (service as any).getProductCompliance(orgId, productId);
+      const result = await service.getProductCompliance(orgId, productId);
       expect(result.suppliers).toEqual([]);
       expect(result.cells).toEqual([]);
       expect(result.summary).toEqual({ compliant: 0, total: 0, score: 100 });
@@ -269,7 +269,7 @@ describe('ProductsService', () => {
       ]);
       prisma.document.findMany.mockResolvedValue([]);
 
-      const result = await (service as any).getProductCompliance(orgId, productId);
+      const result = await service.getProductCompliance(orgId, productId);
       expect(result.cells[0]).toMatchObject({
         supplierId: 's-1',
         documentTypeId: 'dt-1',
@@ -290,7 +290,7 @@ describe('ProductsService', () => {
         { id: 'd-1', supplierId: 's-1', documentTypeId: 'dt-1', status: 'APPROVED', expiryDate: null },
       ]);
 
-      const result = await (service as any).getProductCompliance(orgId, productId);
+      const result = await service.getProductCompliance(orgId, productId);
       expect(result.cells[0].status).toBe('APPROVED');
       expect(result.summary.compliant).toBe(1);
       expect(result.summary.score).toBe(100);
@@ -306,8 +306,9 @@ describe('ProductsService', () => {
       ]);
       prisma.document.findMany.mockResolvedValue([]);
 
-      const result = await (service as any).getProductCompliance(orgId, productId);
+      const result = await service.getProductCompliance(orgId, productId);
       expect(result.cells[0].applicable).toBe(false);
+      expect(result.cells[0].status).toBeNull();
       expect(result.summary.compliant).toBe(0);
     });
 
@@ -327,7 +328,7 @@ describe('ProductsService', () => {
         { id: 'd-2', supplierId: 's-1', documentTypeId: 'dt-2', status: 'PENDING_REVIEW', expiryDate: null },
       ]);
 
-      const result = await (service as any).getProductCompliance(orgId, productId);
+      const result = await service.getProductCompliance(orgId, productId);
       expect(result.summary.compliant).toBe(0);
       expect(result.summary.score).toBe(0);
     });

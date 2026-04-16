@@ -41,7 +41,7 @@ interface ComplianceCell {
   supplierId: string;
   documentTypeId: string;
   applicable: boolean;
-  status: 'APPROVED' | 'PENDING_REVIEW' | 'REJECTED' | 'EXPIRED' | 'MISSING';
+  status: 'APPROVED' | 'PENDING_REVIEW' | 'REJECTED' | 'EXPIRED' | 'MISSING' | null;
   documentId: string | null;
   expiryDate: string | null;
 }
@@ -524,12 +524,12 @@ function ComplianceTab({
                         </td>
                       );
                     }
-                    const style = CELL_STYLE[cell.status] ?? CELL_STYLE.MISSING;
+                    const style = CELL_STYLE[cell.status ?? 'MISSING'] ?? CELL_STYLE.MISSING;
                     return (
                       <td key={dt.id} className="px-3 py-3 text-center">
                         <span
                           className={`inline-flex items-center justify-center w-7 h-7 rounded-full text-sm font-bold ${style.cell}`}
-                          title={cell.status}
+                          title={cell.status ?? undefined}
                         >
                           {style.icon}
                         </span>
