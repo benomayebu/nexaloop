@@ -7,6 +7,8 @@ import { CurrentUser } from './current-user.decorator';
 import { CurrentOrg } from './current-org.decorator';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -63,6 +65,22 @@ export class AuthController {
     @CurrentOrg() orgId: string,
   ) {
     return this.authService.getMe(userId, orgId);
+  }
+
+  // Stricter rate limit: 3 requests per 15 minutes (brute-force protection)
+  @Throttle({ default: { ttl: 15 * 60_000, limit: 3 } })
+  @Post('forgot-password')
+  async forgotPassword(@Body() body: ForgotPasswordDto) {
+    await this.authService.forgotPassword(body.email);
+    // Always return the same response — never reveal whether the email exists
+    return { message: 'If an account exists for this email, a reset link has been sent.' };
+  }
+
+  @Throttle({ default: { ttl: 15 * 60_000, limit: 5 } })
+  @Post('reset-password')
+  async resetPassword(@Body() body: ResetPasswordDto) {
+    await this.authService.resetPassword(body.token, body.newPassword);
+    return { message: 'Password updated successfully.' };
   }
 
   @Post('logout')

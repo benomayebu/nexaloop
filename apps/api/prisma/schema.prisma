@@ -45,16 +45,32 @@ enum DocumentStatus {
 }
 
 model User {
-  id                String             @id @default(cuid())
-  email             String             @unique
-  passwordHash      String
-  name              String?
-  createdAt         DateTime           @default(now())
-  updatedAt         DateTime           @updatedAt
-  organizations     UserOrganization[]
-  uploadedDocuments Document[]         @relation("UploadedDocuments")
-  reviewedDocuments Document[]         @relation("ReviewedDocuments")
-  notifications     Notification[]
+  id                   String               @id @default(cuid())
+  email                String               @unique
+  passwordHash         String
+  name                 String?
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime             @updatedAt
+  organizations        UserOrganization[]
+  uploadedDocuments    Document[]           @relation("UploadedDocuments")
+  reviewedDocuments    Document[]           @relation("ReviewedDocuments")
+  notifications        Notification[]
+  passwordResetTokens  PasswordResetToken[]
+}
+
+// ─── Phase 10: Password Reset ─────────────────────────────────────
+
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id])
+  tokenHash String    @unique // SHA-256 hash of the raw token
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([tokenHash])
+  @@index([userId])
 }
 
 model Organization {

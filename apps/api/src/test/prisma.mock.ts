@@ -70,6 +70,12 @@ export function createMockPrisma() {
       updateMany: jest.fn(),
       count: jest.fn(),
     },
+    passwordResetToken: {
+      findFirst: jest.fn(),
+      create: jest.fn(),
+      update: jest.fn(),
+      updateMany: jest.fn(),
+    },
     $transaction: jest.fn((cb: (tx: unknown) => Promise<unknown>) => {
       // By default, pass the mock prisma itself as the transaction client
       // Tests can override this behavior
