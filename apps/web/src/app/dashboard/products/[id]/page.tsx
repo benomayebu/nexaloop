@@ -24,6 +24,35 @@ interface Product {
 }
 interface SupplierOption { id: string; name: string; country: string; type: string; }
 
+interface ComplianceSupplier {
+  id: string;
+  name: string;
+  type: string;
+  riskLevel: string;
+}
+
+interface ComplianceDocType {
+  id: string;
+  name: string;
+  applicableTo: string[];
+}
+
+interface ComplianceCell {
+  supplierId: string;
+  documentTypeId: string;
+  applicable: boolean;
+  status: 'APPROVED' | 'PENDING_REVIEW' | 'REJECTED' | 'EXPIRED' | 'MISSING';
+  documentId: string | null;
+  expiryDate: string | null;
+}
+
+interface ProductComplianceData {
+  suppliers: ComplianceSupplier[];
+  documentTypes: ComplianceDocType[];
+  cells: ComplianceCell[];
+  summary: { compliant: number; total: number; score: number };
+}
+
 function formatLabel(v: string) { return v.replace(/_/g, ' '); }
 
 function Badge({ children, variant }: { children: React.ReactNode; variant: 'emerald' | 'amber' | 'red' | 'slate' | 'indigo' }) {
@@ -55,10 +84,18 @@ export default async function ProductDetailPage({
 
   if (!product) notFound();
 
+  let complianceData: ProductComplianceData | null = null;
+  if (activeTab === 'compliance') {
+    complianceData = await apiFetch<ProductComplianceData>(
+      `/products/${id}/compliance`,
+    );
+  }
+
   const tabs = [
     { key: 'overview', label: 'Overview', href: `/dashboard/products/${id}` },
     { key: 'suppliers', label: `Suppliers (${product.suppliers.length})`, href: `/dashboard/products/${id}?tab=suppliers` },
     { key: 'dpp', label: 'DPP', href: `/dashboard/products/${id}?tab=dpp` },
+    { key: 'compliance', label: 'Compliance', href: `/dashboard/products/${id}?tab=compliance` },
   ];
 
   return (
@@ -226,6 +263,11 @@ export default async function ProductDetailPage({
       {activeTab === 'dpp' && (
         <DppTab product={product} />
       )}
+
+      {/* Compliance tab */}
+      {activeTab === 'compliance' && (
+        <ComplianceTab data={complianceData} productId={id} />
+      )}
     </div>
   );
 }
@@ -322,6 +364,211 @@ function DetailRow({ label, value }: { label: string; value: React.ReactNode }) 
     <div>
       <dt className="text-sm font-medium text-slate-500">{label}</dt>
       <dd className="mt-1 text-sm text-slate-900">{value ?? '—'}</dd>
+    </div>
+  );
+}
+
+const CELL_STYLE: Record<string, { icon: string; cell: string }> = {
+  APPROVED:       { icon: '✓', cell: 'bg-emerald-50 text-emerald-700' },
+  PENDING_REVIEW: { icon: '⏱', cell: 'bg-amber-50 text-amber-700'   },
+  REJECTED:       { icon: '✗', cell: 'bg-red-50 text-red-700'        },
+  EXPIRED:        { icon: '⊘', cell: 'bg-slate-100 text-slate-500'   },
+  MISSING:        { icon: '—', cell: 'bg-rose-50 text-rose-600'      },
+};
+
+const RISK_BADGE: Record<string, string> = {
+  HIGH:    'bg-red-50 text-red-700 border-red-200',
+  MEDIUM:  'bg-amber-50 text-amber-700 border-amber-200',
+  LOW:     'bg-emerald-50 text-emerald-700 border-emerald-200',
+  UNKNOWN: 'bg-slate-50 text-slate-600 border-slate-200',
+};
+
+function ComplianceTab({
+  data,
+  productId,
+}: {
+  data: ProductComplianceData | null;
+  productId: string;
+}) {
+  if (!data) {
+    return (
+      <div className="bg-white border border-slate-200 rounded-lg shadow-sm p-8 text-center text-sm text-slate-400">
+        Could not load compliance data.
+      </div>
+    );
+  }
+
+  if (data.suppliers.length === 0) {
+    return (
+      <div className="bg-white border border-slate-200 rounded-lg shadow-sm p-8 text-center">
+        <p className="text-sm text-slate-600 font-medium">No suppliers linked</p>
+        <p className="text-xs text-slate-400 mt-1">
+          Link suppliers on the Suppliers tab to track compliance.
+        </p>
+        <Link
+          href={`/dashboard/products/${productId}?tab=suppliers`}
+          className="mt-4 inline-flex items-center gap-1.5 text-sm font-medium text-indigo-600 hover:text-indigo-700"
+        >
+          Go to Suppliers →
+        </Link>
+      </div>
+    );
+  }
+
+  const { suppliers, documentTypes, cells, summary } = data;
+
+  function cellFor(supplierId: string, documentTypeId: string) {
+    return cells.find(
+      (c) => c.supplierId === supplierId && c.documentTypeId === documentTypeId,
+    );
+  }
+
+  function gapCount(supplierId: string) {
+    return cells.filter(
+      (c) =>
+        c.supplierId === supplierId &&
+        c.applicable &&
+        (c.status === 'MISSING' || c.status === 'EXPIRED' || c.status === 'REJECTED'),
+    ).length;
+  }
+
+  const scoreColour =
+    summary.score >= 80
+      ? 'text-emerald-700'
+      : summary.score >= 50
+        ? 'text-amber-700'
+        : 'text-red-700';
+
+  return (
+    <div className="space-y-4">
+      {/* Summary bar */}
+      <div className="bg-white border border-slate-200 rounded-lg shadow-sm px-5 py-4 flex items-center gap-6">
+        <div>
+          <p className="text-xs text-slate-500 uppercase tracking-wider font-semibold mb-0.5">
+            Supplier Compliance
+          </p>
+          <p className="text-sm text-slate-700">
+            <span className={`text-2xl font-bold ${scoreColour}`}>
+              {summary.score}%
+            </span>
+            {' '}
+            <span className="text-slate-500">
+              ({summary.compliant}/{summary.total} suppliers fully compliant)
+            </span>
+          </p>
+        </div>
+        <div className="flex-1">
+          <div className="w-full bg-slate-100 rounded-full h-2">
+            <div
+              className={`h-2 rounded-full transition-all ${
+                summary.score >= 80
+                  ? 'bg-emerald-500'
+                  : summary.score >= 50
+                    ? 'bg-amber-400'
+                    : 'bg-red-400'
+              }`}
+              style={{ width: `${summary.score}%` }}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Matrix */}
+      <div className="bg-white border border-slate-200 rounded-lg shadow-sm overflow-x-auto">
+        <table className="min-w-full text-sm">
+          <thead className="bg-slate-50 border-b border-slate-200">
+            <tr>
+              <th className="sticky left-0 z-10 bg-slate-50 px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
+                Supplier
+              </th>
+              {documentTypes.map((dt) => (
+                <th
+                  key={dt.id}
+                  className="px-3 py-3 text-center text-xs font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap max-w-[120px]"
+                  title={dt.name}
+                >
+                  <span className="block truncate max-w-[100px]">{dt.name}</span>
+                </th>
+              ))}
+              <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                Gaps
+              </th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100">
+            {suppliers.map((supplier) => {
+              const gaps = gapCount(supplier.id);
+              return (
+                <tr key={supplier.id} className="hover:bg-slate-50 transition-colors">
+                  <td className="sticky left-0 z-10 bg-white px-4 py-3 whitespace-nowrap">
+                    <Link
+                      href={`/dashboard/suppliers/${supplier.id}`}
+                      className="font-medium text-indigo-600 hover:text-indigo-800 text-sm"
+                    >
+                      {supplier.name}
+                    </Link>
+                    <div className="mt-0.5">
+                      <span
+                        className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium border ${RISK_BADGE[supplier.riskLevel] ?? RISK_BADGE.UNKNOWN}`}
+                      >
+                        {supplier.riskLevel}
+                      </span>
+                    </div>
+                  </td>
+                  {documentTypes.map((dt) => {
+                    const cell = cellFor(supplier.id, dt.id);
+                    if (!cell || !cell.applicable) {
+                      return (
+                        <td key={dt.id} className="px-3 py-3 text-center">
+                          <span className="text-slate-300 text-base">·</span>
+                        </td>
+                      );
+                    }
+                    const style = CELL_STYLE[cell.status] ?? CELL_STYLE.MISSING;
+                    return (
+                      <td key={dt.id} className="px-3 py-3 text-center">
+                        <span
+                          className={`inline-flex items-center justify-center w-7 h-7 rounded-full text-sm font-bold ${style.cell}`}
+                          title={cell.status}
+                        >
+                          {style.icon}
+                        </span>
+                      </td>
+                    );
+                  })}
+                  <td className="px-4 py-3 text-center">
+                    {gaps > 0 ? (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200">
+                        {gaps} gap{gaps !== 1 ? 's' : ''}
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                        ✓
+                      </span>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Legend */}
+      <div className="flex flex-wrap gap-4 text-xs text-slate-500">
+        {Object.entries(CELL_STYLE).map(([status, style]) => (
+          <span key={status} className="flex items-center gap-1.5">
+            <span className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-xs font-bold ${style.cell}`}>
+              {style.icon}
+            </span>
+            {status.replace('_', ' ')}
+          </span>
+        ))}
+        <span className="flex items-center gap-1.5">
+          <span className="text-slate-300 text-base leading-none">·</span>
+          N/A
+        </span>
+      </div>
     </div>
   );
 }
