@@ -4,10 +4,33 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { Prisma, ProductStatus } from '@prisma/client';
+import { Prisma, ProductStatus, DocumentStatus } from '@prisma/client';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { AddProductSupplierDto } from './dto/add-product-supplier.dto';
+
+const STATUS_PRIORITY: Record<DocumentStatus, number> = {
+  [DocumentStatus.APPROVED]:       4,
+  [DocumentStatus.PENDING_REVIEW]: 3,
+  [DocumentStatus.REJECTED]:       2,
+  [DocumentStatus.EXPIRED]:        1,
+};
+
+export interface ComplianceCell {
+  supplierId: string;
+  documentTypeId: string;
+  applicable: boolean;
+  status: DocumentStatus | 'MISSING';
+  documentId: string | null;
+  expiryDate: Date | null;
+}
+
+export interface ProductComplianceResult {
+  suppliers: { id: string; name: string; type: string; riskLevel: string }[];
+  documentTypes: { id: string; name: string; applicableTo: string[] }[];
+  cells: ComplianceCell[];
+  summary: { compliant: number; total: number; score: number };
+}
 
 @Injectable()
 export class ProductsService {
@@ -17,7 +40,7 @@ export class ProductsService {
     orgId: string,
     filters: { status?: ProductStatus; category?: string; q?: string },
   ) {
-    return this.prisma.product.findMany({
+    const products = await this.prisma.product.findMany({
       where: {
         orgId,
         ...(filters.status ? { status: filters.status } : {}),
@@ -31,8 +54,36 @@ export class ProductsService {
             }
           : {}),
       },
-      include: { _count: { select: { suppliers: true } } },
+      include: {
+        _count: { select: { suppliers: true } },
+        suppliers: {
+          include: {
+            supplier: {
+              select: {
+                id: true,
+                documents: {
+                  where: { orgId, status: 'APPROVED' },
+                  select: { id: true },
+                  take: 1,
+                },
+              },
+            },
+          },
+        },
+      },
       orderBy: { updatedAt: 'desc' },
+    });
+
+    // Compute compliance score in-memory; strip the nested supplier detail
+    return products.map(({ suppliers, ...product }) => {
+      const total = suppliers.length;
+      const compliant = suppliers.filter(
+        (link) => link.supplier.documents.length > 0,
+      ).length;
+      return {
+        ...product,
+        complianceScore: total === 0 ? null : Math.round((compliant / total) * 100),
+      };
     });
   }
 
@@ -186,5 +237,122 @@ export class ProductsService {
       throw new NotFoundException('Supplier link not found');
     }
     await this.prisma.productSupplier.delete({ where: { id: linkId } });
+  }
+
+  async getProductCompliance(
+    orgId: string,
+    productId: string,
+  ): Promise<ProductComplianceResult> {
+    const product = await this.prisma.product.findFirst({
+      where: { id: productId, orgId },
+      include: {
+        suppliers: {
+          include: {
+            supplier: {
+              select: { id: true, name: true, type: true, riskLevel: true },
+            },
+          },
+        },
+      },
+    });
+    if (!product) throw new NotFoundException('Product not found');
+
+    const suppliers = product.suppliers.map((link) => link.supplier);
+
+    if (suppliers.length === 0) {
+      return {
+        suppliers: [],
+        documentTypes: [],
+        cells: [],
+        summary: { compliant: 0, total: 0, score: 100 },
+      };
+    }
+
+    const supplierIds = suppliers.map((s) => s.id);
+
+    const [documentTypes, documents] = await Promise.all([
+      this.prisma.documentType.findMany({
+        where: { orgId, isActive: true },
+        select: { id: true, name: true, requiredForSupplierTypes: true },
+        orderBy: { name: 'asc' },
+      }),
+      this.prisma.document.findMany({
+        where: { orgId, supplierId: { in: supplierIds } },
+        select: {
+          id: true,
+          supplierId: true,
+          documentTypeId: true,
+          status: true,
+          expiryDate: true,
+        },
+      }),
+    ]);
+
+    // Index documents: "supplierId:documentTypeId" → best-status document
+    const bestDoc = new Map<
+      string,
+      { id: string; status: DocumentStatus; expiryDate: Date | null }
+    >();
+    for (const doc of documents) {
+      const key = `${doc.supplierId}:${doc.documentTypeId}`;
+      const existing = bestDoc.get(key);
+      if (
+        !existing ||
+        STATUS_PRIORITY[doc.status] > STATUS_PRIORITY[existing.status]
+      ) {
+        bestDoc.set(key, {
+          id: doc.id,
+          status: doc.status,
+          expiryDate: doc.expiryDate,
+        });
+      }
+    }
+
+    const cells: ComplianceCell[] = suppliers.flatMap((supplier) =>
+      documentTypes.map((dt) => {
+        const applicable =
+          dt.requiredForSupplierTypes.length === 0 ||
+          dt.requiredForSupplierTypes.includes(supplier.type as never);
+        const doc = applicable
+          ? bestDoc.get(`${supplier.id}:${dt.id}`)
+          : undefined;
+        return {
+          supplierId: supplier.id,
+          documentTypeId: dt.id,
+          applicable,
+          status: applicable
+            ? (doc?.status ?? 'MISSING')
+            : ('MISSING' as DocumentStatus | 'MISSING'),
+          documentId: doc?.id ?? null,
+          expiryDate: doc?.expiryDate ?? null,
+        };
+      }),
+    );
+
+    // A supplier is "fully compliant" if all applicable doc types are APPROVED
+    const compliant = suppliers.filter((supplier) => {
+      const applicableCells = cells.filter(
+        (c) => c.supplierId === supplier.id && c.applicable,
+      );
+      return (
+        applicableCells.length > 0 &&
+        applicableCells.every((c) => c.status === DocumentStatus.APPROVED)
+      );
+    }).length;
+
+    return {
+      suppliers,
+      documentTypes: documentTypes.map((dt) => ({
+        id: dt.id,
+        name: dt.name,
+        applicableTo: dt.requiredForSupplierTypes,
+      })),
+      cells,
+      summary: {
+        compliant,
+        total: suppliers.length,
+        score: Math.round((compliant / suppliers.length) * 100),
+      },
+    };
   }
 }
