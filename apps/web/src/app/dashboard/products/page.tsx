@@ -12,6 +12,7 @@ interface Product {
   status: string;
   updatedAt: string;
   _count: { suppliers: number };
+  complianceScore: number | null;
 }
 
 function Badge({ children, variant }: { children: React.ReactNode; variant: 'emerald' | 'amber' | 'red' | 'slate' }) {
@@ -98,20 +99,38 @@ export default async function ProductsPage({
                 )}
               </div>
 
-              {/* Compliance score placeholder bar */}
+              {/* Live compliance score */}
               <div className="mt-3 pt-3 border-t border-slate-100">
-                <div className="flex items-center justify-between text-xs mb-1">
+                <div className="flex items-center justify-between text-xs mb-1.5">
                   <span className="text-slate-500">Compliance</span>
-                  <span className="font-medium text-slate-700">
-                    {product._count.suppliers > 0 ? 'Linked' : '0%'}
+                  <span className={`font-medium ${
+                    product.complianceScore === null
+                      ? 'text-slate-400'
+                      : product.complianceScore >= 80
+                        ? 'text-emerald-700'
+                        : product.complianceScore >= 50
+                          ? 'text-amber-700'
+                          : 'text-red-700'
+                  }`}>
+                    {product.complianceScore === null ? '—' : `${product.complianceScore}%`}
                   </span>
                 </div>
-                <div className="w-full bg-slate-100 rounded-full h-1.5">
-                  <div
-                    className={`h-1.5 rounded-full transition-all ${product._count.suppliers > 0 ? 'bg-emerald-500' : 'bg-slate-200'}`}
-                    style={{ width: product._count.suppliers > 0 ? '100%' : '0%' }}
-                  />
-                </div>
+                {product.complianceScore !== null ? (
+                  <div className="w-full bg-slate-100 rounded-full h-1.5">
+                    <div
+                      className={`h-1.5 rounded-full transition-all ${
+                        product.complianceScore >= 80
+                          ? 'bg-emerald-500'
+                          : product.complianceScore >= 50
+                            ? 'bg-amber-400'
+                            : 'bg-red-400'
+                      }`}
+                      style={{ width: `${product.complianceScore}%` }}
+                    />
+                  </div>
+                ) : (
+                  <div className="w-full bg-slate-100 rounded-full h-1.5" />
+                )}
               </div>
             </Link>
           ))}

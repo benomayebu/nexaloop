@@ -11,7 +11,7 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
-import { ProductsService } from './products.service';
+import { ProductsService, ProductComplianceResult } from './products.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CurrentOrg } from '../auth/current-org.decorator';
 import { CreateProductDto } from './dto/create-product.dto';
@@ -42,6 +42,14 @@ export class ProductsController {
   @Get('products/:id')
   findOne(@CurrentOrg() orgId: string, @Param('id') id: string) {
     return this.productsService.findOne(orgId, id);
+  }
+
+  @Get('products/:id/compliance')
+  getProductCompliance(
+    @CurrentOrg() orgId: string,
+    @Param('id') id: string,
+  ): Promise<ProductComplianceResult> {
+    return this.productsService.getProductCompliance(orgId, id);
   }
 
   @Put('products/:id')
