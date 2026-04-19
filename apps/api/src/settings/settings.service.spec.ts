@@ -8,6 +8,7 @@ import * as bcrypt from 'bcrypt';
 import { Role } from '@prisma/client';
 import { SettingsService } from './settings.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { EmailService } from '../notifications/email.service';
 import { createMockPrisma, MockPrisma } from '../test/prisma.mock';
 
 jest.mock('bcrypt');
@@ -15,6 +16,7 @@ jest.mock('bcrypt');
 describe('SettingsService', () => {
   let service: SettingsService;
   let prisma: MockPrisma;
+  const mockEmailService = { sendTeamInvite: jest.fn() };
 
   const orgId = 'org-1';
   const ownerId = 'user-owner';
@@ -23,17 +25,18 @@ describe('SettingsService', () => {
 
   beforeEach(async () => {
     prisma = createMockPrisma();
+    mockEmailService.sendTeamInvite.mockResolvedValue(undefined);
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         SettingsService,
         { provide: PrismaService, useValue: prisma },
+        { provide: EmailService, useValue: mockEmailService },
       ],
     }).compile();
     service = module.get<SettingsService>(SettingsService);
     jest.clearAllMocks();
   });
 
-  // ── Helper: mock requireRole as OWNER ────────────────────────────
   function mockAsOwner(userId = ownerId) {
     prisma.userOrganization.findFirst.mockResolvedValue({ role: Role.OWNER, userId });
   }
@@ -107,18 +110,58 @@ describe('SettingsService', () => {
   // ── inviteMember ─────────────────────────────────────────────────
 
   describe('inviteMember', () => {
-    it('creates a UserOrganization for an existing user', async () => {
-      mockAsAdmin();
-      const invitedUser = { id: 'user-new', email: 'new@ex.com', name: 'New' };
-      prisma.user.findFirst.mockResolvedValue(invitedUser);
-      prisma.userOrganization.findFirst
-        .mockResolvedValueOnce({ role: Role.ADMIN })  // requireRole check
-        .mockResolvedValueOnce(null);                  // duplicate membership check
-      const membership = { id: 'm-2', role: Role.USER, createdAt: new Date(), user: invitedUser };
-      prisma.userOrganization.create.mockResolvedValue(membership);
+    it('creates invite token and sends email for new user', async () => {
+      prisma.userOrganization.findFirst.mockResolvedValueOnce({ role: Role.ADMIN });
+      prisma.user.findFirst
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce({ name: 'Admin', email: 'admin@ex.com' });
+      prisma.orgInviteToken.findFirst.mockResolvedValueOnce(null);
+      prisma.organization.findFirst.mockResolvedValueOnce({ name: 'Acme' });
+      prisma.orgInviteToken.create.mockResolvedValue({});
 
-      const result = await service.inviteMember(orgId, adminId, { email: 'new@ex.com', role: Role.USER });
-      expect(result).toEqual(membership);
+      await service.inviteMember(orgId, adminId, { email: 'new@ex.com', role: Role.USER });
+
+      expect(prisma.orgInviteToken.create).toHaveBeenCalled();
+      expect(mockEmailService.sendTeamInvite).toHaveBeenCalledWith(
+        'new@ex.com', 'Admin', 'Acme', Role.USER,
+        expect.stringContaining('/accept-invite?token='), true,
+      );
+    });
+
+    it('creates invite token and sends email for existing user', async () => {
+      prisma.userOrganization.findFirst
+        .mockResolvedValueOnce({ role: Role.ADMIN })
+        .mockResolvedValueOnce(null);
+      prisma.user.findFirst
+        .mockResolvedValueOnce({ id: 'user-other', email: 'existing@ex.com' })
+        .mockResolvedValueOnce({ name: 'Admin', email: 'admin@ex.com' });
+      prisma.orgInviteToken.findFirst.mockResolvedValueOnce(null);
+      prisma.organization.findFirst.mockResolvedValueOnce({ name: 'Acme' });
+      prisma.orgInviteToken.create.mockResolvedValue({});
+
+      await service.inviteMember(orgId, adminId, { email: 'existing@ex.com', role: Role.ADMIN });
+
+      expect(mockEmailService.sendTeamInvite).toHaveBeenCalledWith(
+        'existing@ex.com', 'Admin', 'Acme', Role.ADMIN,
+        expect.stringContaining('/accept-invite?token='), false,
+      );
+    });
+
+    it('replaces existing pending invite (upsert)', async () => {
+      prisma.userOrganization.findFirst.mockResolvedValueOnce({ role: Role.ADMIN });
+      prisma.user.findFirst
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce({ name: 'Admin', email: 'admin@ex.com' });
+      prisma.orgInviteToken.findFirst.mockResolvedValueOnce({ id: 'inv-1' });
+      prisma.organization.findFirst.mockResolvedValueOnce({ name: 'Acme' });
+      prisma.orgInviteToken.update.mockResolvedValue({});
+
+      await service.inviteMember(orgId, adminId, { email: 'new@ex.com', role: Role.USER });
+
+      expect(prisma.orgInviteToken.update).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { id: 'inv-1' } }),
+      );
+      expect(prisma.orgInviteToken.create).not.toHaveBeenCalled();
     });
 
     it('throws BadRequestException when assigning OWNER role', async () => {
@@ -128,27 +171,11 @@ describe('SettingsService', () => {
       ).rejects.toThrow(BadRequestException);
     });
 
-    it('throws NotFoundException when user account does not exist', async () => {
-      prisma.userOrganization.findFirst.mockResolvedValue({ role: Role.ADMIN });
-      prisma.user.findFirst.mockResolvedValue(null);
-      await expect(
-        service.inviteMember(orgId, adminId, { email: 'ghost@ex.com', role: Role.USER }),
-      ).rejects.toThrow(NotFoundException);
-    });
-
-    it('throws BadRequestException when inviting yourself', async () => {
-      prisma.userOrganization.findFirst.mockResolvedValue({ role: Role.ADMIN });
-      prisma.user.findFirst.mockResolvedValue({ id: adminId, email: 'admin@ex.com', name: 'Admin' });
-      await expect(
-        service.inviteMember(orgId, adminId, { email: 'admin@ex.com', role: Role.USER }),
-      ).rejects.toThrow(BadRequestException);
-    });
-
     it('throws BadRequestException when already a member', async () => {
       prisma.userOrganization.findFirst
-        .mockResolvedValueOnce({ role: Role.ADMIN })    // requireRole
-        .mockResolvedValueOnce({ id: 'existing-m' });   // duplicate check
-      prisma.user.findFirst.mockResolvedValue({ id: 'user-other', email: 'other@ex.com', name: 'Other' });
+        .mockResolvedValueOnce({ role: Role.ADMIN })
+        .mockResolvedValueOnce({ id: 'existing-m' });
+      prisma.user.findFirst.mockResolvedValueOnce({ id: 'user-other', email: 'other@ex.com' });
       await expect(
         service.inviteMember(orgId, adminId, { email: 'other@ex.com', role: Role.USER }),
       ).rejects.toThrow(BadRequestException);
@@ -162,6 +189,94 @@ describe('SettingsService', () => {
     });
   });
 
+  // ── listPendingInvites ────────────────────────────────────────────
+
+  describe('listPendingInvites', () => {
+    it('returns all unused tokens for the org including expired', async () => {
+      const invites = [
+        { id: 'inv-1', email: 'a@ex.com', role: Role.USER, expiresAt: new Date(), createdAt: new Date(), invitedBy: { name: 'Admin', email: 'admin@ex.com' } },
+      ];
+      prisma.orgInviteToken.findMany.mockResolvedValue(invites);
+
+      const result = await service.listPendingInvites(orgId);
+      expect(result).toEqual(invites);
+      expect(prisma.orgInviteToken.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { orgId, usedAt: null } }),
+      );
+    });
+
+    it('returns empty array when no pending invites', async () => {
+      prisma.orgInviteToken.findMany.mockResolvedValue([]);
+      const result = await service.listPendingInvites(orgId);
+      expect(result).toEqual([]);
+    });
+  });
+
+  // ── cancelInvite ─────────────────────────────────────────────────
+
+  describe('cancelInvite', () => {
+    const inviteId = 'inv-1';
+
+    it('deletes the invite token', async () => {
+      prisma.userOrganization.findFirst.mockResolvedValueOnce({ role: Role.ADMIN });
+      prisma.orgInviteToken.findFirst.mockResolvedValueOnce({ id: inviteId, orgId });
+      prisma.orgInviteToken.delete.mockResolvedValue({});
+
+      const result = await service.cancelInvite(orgId, adminId, inviteId);
+      expect(result).toEqual({ success: true });
+      expect(prisma.orgInviteToken.delete).toHaveBeenCalledWith({ where: { id: inviteId } });
+    });
+
+    it('throws NotFoundException when invite not found in org', async () => {
+      prisma.userOrganization.findFirst.mockResolvedValueOnce({ role: Role.ADMIN });
+      prisma.orgInviteToken.findFirst.mockResolvedValueOnce(null);
+      await expect(service.cancelInvite(orgId, adminId, inviteId)).rejects.toThrow(NotFoundException);
+    });
+
+    it('throws ForbiddenException when actor is not ADMIN+', async () => {
+      mockAsUser();
+      await expect(service.cancelInvite(orgId, memberId, inviteId)).rejects.toThrow(ForbiddenException);
+    });
+  });
+
+  // ── resendInvite ──────────────────────────────────────────────────
+
+  describe('resendInvite', () => {
+    const inviteId = 'inv-1';
+
+    it('regenerates token, resets expiry, and resends email', async () => {
+      prisma.userOrganization.findFirst.mockResolvedValueOnce({ role: Role.ADMIN });
+      prisma.orgInviteToken.findFirst.mockResolvedValueOnce({
+        id: inviteId, orgId, email: 'a@ex.com', role: Role.USER,
+        invitedBy: { name: 'Admin', email: 'admin@ex.com' },
+        org: { name: 'Acme' },
+      });
+      prisma.orgInviteToken.update.mockResolvedValue({});
+      prisma.user.findFirst.mockResolvedValueOnce(null);
+
+      await service.resendInvite(orgId, adminId, inviteId);
+
+      expect(prisma.orgInviteToken.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: inviteId },
+          data: expect.objectContaining({ tokenHash: expect.any(String), expiresAt: expect.any(Date) }),
+        }),
+      );
+      expect(mockEmailService.sendTeamInvite).toHaveBeenCalled();
+    });
+
+    it('throws NotFoundException when invite not found', async () => {
+      prisma.userOrganization.findFirst.mockResolvedValueOnce({ role: Role.ADMIN });
+      prisma.orgInviteToken.findFirst.mockResolvedValueOnce(null);
+      await expect(service.resendInvite(orgId, adminId, inviteId)).rejects.toThrow(NotFoundException);
+    });
+
+    it('throws ForbiddenException when actor is not ADMIN+', async () => {
+      mockAsUser();
+      await expect(service.resendInvite(orgId, memberId, inviteId)).rejects.toThrow(ForbiddenException);
+    });
+  });
+
   // ── updateMemberRole ─────────────────────────────────────────────
 
   describe('updateMemberRole', () => {
@@ -169,8 +284,8 @@ describe('SettingsService', () => {
 
     it('updates the role for a different member', async () => {
       prisma.userOrganization.findFirst
-        .mockResolvedValueOnce({ role: Role.OWNER })                            // requireRole
-        .mockResolvedValueOnce({ id: membershipId, userId: memberId, role: Role.USER }); // target
+        .mockResolvedValueOnce({ role: Role.OWNER })
+        .mockResolvedValueOnce({ id: membershipId, userId: memberId, role: Role.USER });
       const updated = { id: membershipId, role: Role.ADMIN, createdAt: new Date(), user: {} };
       prisma.userOrganization.update.mockResolvedValue(updated);
 
@@ -200,7 +315,6 @@ describe('SettingsService', () => {
       prisma.userOrganization.findFirst
         .mockResolvedValueOnce({ role: Role.ADMIN })
         .mockResolvedValueOnce({ id: membershipId, userId: memberId, role: Role.USER });
-      // Second requireRole call for OWNER-only check
       prisma.userOrganization.findFirst.mockResolvedValueOnce({ role: Role.ADMIN });
       await expect(
         service.updateMemberRole(orgId, adminId, membershipId, { role: Role.OWNER }),
