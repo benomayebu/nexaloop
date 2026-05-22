@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { DM_Sans, DM_Mono, Sora } from 'next/font/google';
+import { DM_Sans, DM_Mono } from 'next/font/google';
 import './globals.css';
 import { Providers } from './providers';
 
@@ -13,12 +13,6 @@ const dmMono = DM_Mono({
   subsets: ['latin'],
   weight: ['400', '500'],
   variable: '--font-dm-mono',
-  display: 'swap',
-});
-
-const sora = Sora({
-  subsets: ['latin'],
-  variable: '--font-sora',
   display: 'swap',
 });
 
@@ -37,7 +31,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${dmSans.variable} ${dmMono.variable} ${sora.variable} font-sans antialiased`}
+        className={`${dmSans.variable} ${dmMono.variable} font-sans antialiased text-body`}
+        style={{ fontFeatureSettings: "'ss01' on, 'ss02' on" }}
       >
         <Providers>{children}</Providers>
       </body>
