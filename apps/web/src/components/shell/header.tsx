@@ -3,10 +3,11 @@
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { useBreadcrumbEntities } from './breadcrumb-context';
-import { IconChevronRight, IconChevronDown, IconSearch } from './nav-icons';
+import { IconChevronRight, IconChevronDown } from './nav-icons';
 import { initials } from '@/lib/format';
 import { useState, useRef, useEffect } from 'react';
 import { NotificationBell } from '@/app/components/notification-bell';
+import { SearchCommand } from './search-command';
 
 interface HeaderProps {
   org: { id: string; name: string };
@@ -78,17 +79,7 @@ export function Header({ org, user }: HeaderProps) {
 
       {/* Right side */}
       <div className="flex items-center gap-3">
-        {/* Search placeholder — replaced by SearchCommand in Task 14 */}
-        <button
-          className="flex items-center gap-2 h-8 pl-3 pr-2 rounded-md bg-slate-100 text-slate-400 hover:bg-slate-200 transition-colors text-sm"
-          style={{ width: 280 }}
-        >
-          <IconSearch className="w-3.5 h-3.5" />
-          <span className="flex-1 text-left truncate">Search suppliers, products, docum…</span>
-          <kbd className="text-[10px] font-mono text-slate-400 bg-white px-1.5 py-0.5 rounded border border-slate-200">
-            ⌘K
-          </kbd>
-        </button>
+        <SearchCommand />
 
         {/* Notifications */}
         <NotificationBell />
