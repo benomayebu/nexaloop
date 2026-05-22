@@ -30,7 +30,7 @@ const SEGMENT_LABELS: Record<string, string> = {
   'document-types': 'Document types',
 };
 
-export function Header({ org, user }: HeaderProps) {
+export function Header({ org, user: _user }: HeaderProps) {
   const pathname = usePathname();
   const entities = useBreadcrumbEntities();
   const [dropdownOpen, setDropdownOpen] = useState(false);

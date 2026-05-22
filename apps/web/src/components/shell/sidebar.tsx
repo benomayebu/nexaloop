@@ -25,7 +25,7 @@ interface NavItem {
   exact?: boolean;
 }
 
-export function Sidebar({ user, org, role, badgeCounts }: SidebarProps) {
+export function Sidebar({ user, org: _org, role, badgeCounts }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
 
