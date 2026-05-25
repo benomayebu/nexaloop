@@ -21,6 +21,7 @@ export class DashboardService {
       suppliersByRisk,
       // For compliance score: count active suppliers that have ≥1 APPROVED doc
       suppliersWithApprovedDoc,
+      totalDocuments,
     ] = await Promise.all([
       this.prisma.supplier.count({ where: { orgId, status: 'ACTIVE' } }),
 
@@ -75,6 +76,8 @@ export class DashboardService {
           documents: { some: { orgId, status: 'APPROVED' } },
         },
       }),
+
+      this.prisma.document.count({ where: { orgId } }),
     ]);
 
     const statusBreakdown = documentsByStatus.reduce(
@@ -107,6 +110,7 @@ export class DashboardService {
         pendingReview,
         expiringSoon,
         totalProducts,
+        totalDocuments,
         complianceScore,
       },
       expiringDocuments,

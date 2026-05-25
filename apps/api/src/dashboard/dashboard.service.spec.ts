@@ -47,6 +47,25 @@ describe('DashboardService', () => {
       expect(result.expiringDocuments).toEqual([]);
     });
 
+    it('should return totalDocuments count', async () => {
+      prisma.supplier.count
+        .mockResolvedValueOnce(5)   // activeSuppliers
+        .mockResolvedValueOnce(4);  // suppliersWithApprovedDoc
+      prisma.document.count
+        .mockResolvedValueOnce(12)  // approvedDocs
+        .mockResolvedValueOnce(3)   // pendingReview
+        .mockResolvedValueOnce(2)   // expiringSoon
+        .mockResolvedValueOnce(37); // totalDocuments
+      prisma.document.findMany.mockResolvedValue([]);
+      prisma.document.groupBy.mockResolvedValue([]);
+      prisma.product.count.mockResolvedValue(8);
+      prisma.supplier.groupBy.mockResolvedValue([]);
+
+      const result = await service.getStats('org-1');
+
+      expect(result.stats.totalDocuments).toBe(37);
+    });
+
     it('should scope all queries by orgId', async () => {
       prisma.supplier.count.mockResolvedValue(0);
       prisma.document.count.mockResolvedValue(0);

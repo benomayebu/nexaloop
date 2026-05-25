@@ -15,6 +15,7 @@ import { NotificationsModule } from './notifications/notifications.module';
 import { DppModule } from './dpp/dpp.module';
 import { EprModule } from './epr/epr.module';
 import { SettingsModule } from './settings/settings.module';
+import { SearchModule } from './search/search.module';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { SettingsModule } from './settings/settings.module';
     DppModule,
     EprModule,
     SettingsModule,
+    SearchModule,
   ],
   controllers: [AppController],
   providers: [

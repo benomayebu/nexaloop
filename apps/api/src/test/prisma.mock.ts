@@ -76,14 +76,22 @@ export function createMockPrisma() {
       update: jest.fn(),
       updateMany: jest.fn(),
     },
+    orgInviteToken: {
+      findFirst: jest.fn(),
+      findMany: jest.fn(),
+      create: jest.fn(),
+      update: jest.fn(),
+      delete: jest.fn(),
+    },
     $transaction: jest.fn((cb: (tx: unknown) => Promise<unknown>) => {
-      // By default, pass the mock prisma itself as the transaction client
-      // Tests can override this behavior
-      return cb({
-        organization: { create: jest.fn() },
-        user: { create: jest.fn() },
-        userOrganization: { create: jest.fn() },
-      });
+      return typeof cb === 'function'
+        ? cb({
+            organization: { create: jest.fn() },
+            user: { create: jest.fn() },
+            userOrganization: { create: jest.fn() },
+            orgInviteToken: { update: jest.fn() },
+          })
+        : Promise.resolve(cb);
     }),
   };
 }

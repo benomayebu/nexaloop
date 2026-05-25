@@ -47,12 +47,39 @@ export class SettingsController {
 
   /** POST /settings/team/invite */
   @Post('team/invite')
-  inviteMember(
+  async inviteMember(
     @CurrentOrg() orgId: string,
     @CurrentUser() userId: string,
     @Body() dto: InviteMemberDto,
   ) {
-    return this.settingsService.inviteMember(orgId, userId, dto);
+    await this.settingsService.inviteMember(orgId, userId, dto);
+    return { message: 'Invitation sent' };
+  }
+
+  /** GET /settings/team/pending-invites */
+  @Get('team/pending-invites')
+  listPendingInvites(@CurrentOrg() orgId: string) {
+    return this.settingsService.listPendingInvites(orgId);
+  }
+
+  /** DELETE /settings/team/invites/:inviteId */
+  @Delete('team/invites/:inviteId')
+  cancelInvite(
+    @CurrentOrg() orgId: string,
+    @CurrentUser() userId: string,
+    @Param('inviteId') inviteId: string,
+  ) {
+    return this.settingsService.cancelInvite(orgId, userId, inviteId);
+  }
+
+  /** POST /settings/team/invites/:inviteId/resend */
+  @Post('team/invites/:inviteId/resend')
+  resendInvite(
+    @CurrentOrg() orgId: string,
+    @CurrentUser() userId: string,
+    @Param('inviteId') inviteId: string,
+  ) {
+    return this.settingsService.resendInvite(orgId, userId, inviteId);
   }
 
   /** PATCH /settings/team/:memberId/role */

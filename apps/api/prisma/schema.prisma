@@ -56,6 +56,7 @@ model User {
   reviewedDocuments    Document[]           @relation("ReviewedDocuments")
   notifications        Notification[]
   passwordResetTokens  PasswordResetToken[]
+  sentInvites          OrgInviteToken[]     @relation("SentInvites")
 }
 
 // ─── Phase 10: Password Reset ─────────────────────────────────────
@@ -73,6 +74,25 @@ model PasswordResetToken {
   @@index([userId])
 }
 
+// ─── Phase 12: Team Invitations ──────────────────────────────────
+
+model OrgInviteToken {
+  id              String       @id @default(cuid())
+  orgId           String
+  org             Organization @relation(fields: [orgId], references: [id])
+  invitedByUserId String
+  invitedBy       User         @relation("SentInvites", fields: [invitedByUserId], references: [id])
+  email           String
+  role            Role
+  tokenHash       String       @unique
+  expiresAt       DateTime
+  usedAt          DateTime?
+  createdAt       DateTime     @default(now())
+
+  @@index([tokenHash])
+  @@index([orgId, email])
+}
+
 model Organization {
   id                 String             @id @default(cuid())
   name               String
@@ -88,6 +108,7 @@ model Organization {
   documents          Document[]
   products           Product[]
   notifications      Notification[]
+  inviteTokens         OrgInviteToken[]
 }
 
 model UserOrganization {

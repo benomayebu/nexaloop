@@ -50,3 +50,15 @@
 .scroll-fade:nth-child(2) { transition-delay: 0.1s; }
 .scroll-fade:nth-child(3) { transition-delay: 0.2s; }
 .scroll-fade:nth-child(4) { transition-delay: 0.3s; }
+
+/* ── Shell layout tokens ─────────────────────────────── */
+:root {
+  --sidebar-w: 240px;
+  --header-h: 56px;
+  --page-max-w: 1400px;
+  --page-px: 32px;
+  --page-py: 28px;
+  --row-h: 48px;
+  --radius-card: 8px;
+  --radius-input: 6px;
+}
