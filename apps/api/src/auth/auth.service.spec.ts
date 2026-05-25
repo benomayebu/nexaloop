@@ -58,7 +58,7 @@ describe('AuthService', () => {
         return cb(tx);
       });
 
-      const result = await service.register('test@test.com', 'password123', 'Test Org', 'Test');
+      const result = await service.register('test@test.com', 'password123', 'Test Org', { name: 'Test' });
 
       expect(result.token).toBe('mock-jwt-token');
       expect(result.user).not.toHaveProperty('passwordHash');

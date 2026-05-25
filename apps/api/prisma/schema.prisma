@@ -98,6 +98,8 @@ model Organization {
   name               String
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
+  country            String?
+  vat                String?
   industry           String?
   supplierCount      String?
   primaryConcern     String?

@@ -5,7 +5,7 @@ export class RegisterDto {
   email: string;
 
   @IsString()
-  @MinLength(8)
+  @MinLength(10)
   password: string;
 
   @IsString()
@@ -16,6 +16,15 @@ export class RegisterDto {
   @IsOptional()
   name?: string;
 
+  @IsString()
+  @IsOptional()
+  country?: string;
+
+  @IsString()
+  @IsOptional()
+  vat?: string;
+
+  // Legacy fields — still accepted for backwards compatibility
   @IsString()
   @IsOptional()
   industry?: string;
