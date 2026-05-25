@@ -5,18 +5,21 @@ import { useForm } from 'react-hook-form';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
+/* ── Types ── */
+
 type Step1Data = {
+  orgName: string;
+  country: string;
+  vat: string;
+};
+
+type Step2Data = {
   name: string;
   email: string;
   password: string;
 };
 
-type Step2Data = {
-  orgName: string;
-  industry: string;
-  supplierCount: string;
-  primaryConcern: string;
-};
+/* ── Shared bits ── */
 
 function Spinner() {
   return (
@@ -28,60 +31,46 @@ function Spinner() {
       aria-hidden="true"
     >
       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-      <path
-        className="opacity-75"
-        fill="currentColor"
-        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-      />
+      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
     </svg>
   );
 }
 
-function StepIndicator({ step }: { step: 1 | 2 }) {
+function ArrowUpRight() {
   return (
-    <div className="flex items-center gap-2 mb-7">
-      {/* Step 1 */}
-      <div className="flex items-center gap-1.5">
-        <span
-          className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${
-            step === 1
-              ? 'bg-indigo-600 text-white'
-              : 'bg-emerald-100 text-emerald-700'
-          }`}
-        >
-          {step === 1 ? '1' : '✓'}
-        </span>
-        <span className={`text-xs ${step === 1 ? 'text-slate-700 font-medium' : 'text-slate-400'}`}>
-          Your account
-        </span>
-      </div>
-      {/* Connector */}
-      <div className={`h-px flex-1 ${step === 2 ? 'bg-indigo-600' : 'bg-slate-200'}`} />
-      {/* Step 2 */}
-      <div className="flex items-center gap-1.5">
-        <span
-          className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 border ${
-            step === 2
-              ? 'bg-indigo-600 text-white border-indigo-600'
-              : 'bg-slate-100 text-slate-400 border-slate-200'
-          }`}
-        >
-          2
-        </span>
-        <span className={`text-xs ${step === 2 ? 'text-slate-700 font-medium' : 'text-slate-400'}`}>
-          Your company
-        </span>
-      </div>
-    </div>
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M7 17L17 7M17 7H7M17 7v10" />
+    </svg>
   );
 }
+
+const COUNTRIES = [
+  'Portugal',
+  'Spain',
+  'Italy',
+  'France',
+  'Germany',
+  'Netherlands',
+  'Denmark',
+  'Sweden',
+  'United Kingdom',
+  'Other EU',
+];
+
+const inputClass =
+  'block w-full bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-shadow';
+
+const selectClass =
+  'block w-full bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2.5 text-sm text-slate-700 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-shadow appearance-none cursor-pointer';
+
+/* ── Component ── */
 
 export function RegisterForm() {
   const router = useRouter();
   const [step, setStep] = useState<1 | 2>(1);
   const [step1Data, setStep1Data] = useState<Step1Data | null>(null);
 
-  const step1Form = useForm<Step1Data>();
+  const step1Form = useForm<Step1Data>({ defaultValues: { country: 'Portugal' } });
   const step2Form = useForm<Step2Data>();
 
   const handleStep1 = step1Form.handleSubmit((data) => {
@@ -96,13 +85,12 @@ export function RegisterForm() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          name: step1Data.name || undefined,
-          email: step1Data.email,
-          password: step1Data.password,
-          orgName: data.orgName,
-          industry: data.industry || undefined,
-          supplierCount: data.supplierCount || undefined,
-          primaryConcern: data.primaryConcern || undefined,
+          name: data.name || undefined,
+          email: data.email,
+          password: data.password,
+          orgName: step1Data.orgName,
+          country: step1Data.country || undefined,
+          vat: step1Data.vat || undefined,
         }),
       });
       if (!res.ok) {
@@ -116,34 +104,100 @@ export function RegisterForm() {
     }
   });
 
-  const inputClass =
-    'block w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-shadow';
-
-  const selectClass =
-    'block w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2.5 text-sm text-slate-700 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-shadow appearance-none cursor-pointer';
-
   return (
     <div className="w-full max-w-sm">
-      <StepIndicator step={step} />
+      <form onSubmit={step === 1 ? handleStep1 : handleStep2} noValidate className="space-y-5">
+        {/* Header */}
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900">Create your workspace</h1>
+          <p className="text-sm text-slate-500 mt-1.5">
+            Step {step} of 2 &mdash;{' '}
+            {step === 1 ? 'about your brand' : 'your account'}
+          </p>
+        </div>
 
-      {/* ── STEP 1 ── */}
-      {step === 1 && (
-        <>
-          <div className="mb-7">
-            <h1 className="text-2xl font-bold text-slate-900">Create your account</h1>
-            <p className="text-sm text-slate-500 mt-1">Get started with N.E.X.A Loop</p>
+        {/* Root error (step 2 only) */}
+        {step === 2 && step2Form.formState.errors.root && (
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm" role="alert">
+            {step2Form.formState.errors.root.message}
           </div>
+        )}
 
-          <form onSubmit={handleStep1} noValidate className="space-y-4">
-            {/* Full name */}
+        {/* ── STEP 1 — Brand details ── */}
+        {step === 1 && (
+          <div className="space-y-4">
+            {/* Brand name */}
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                Full name
+                Brand name
+              </label>
+              <input
+                type="text"
+                autoComplete="organization"
+                autoFocus
+                {...step1Form.register('orgName', { required: 'Brand name is required' })}
+                className={inputClass}
+                placeholder="e.g. Lumen Atelier"
+              />
+              {step1Form.formState.errors.orgName && (
+                <p className="text-red-600 text-xs mt-1">
+                  {step1Form.formState.errors.orgName.message}
+                </p>
+              )}
+            </div>
+
+            {/* Country + VAT row */}
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                  Country
+                </label>
+                <select
+                  {...step1Form.register('country')}
+                  className={selectClass}
+                >
+                  {COUNTRIES.map((c) => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                  VAT / Tax ID
+                </label>
+                <input
+                  type="text"
+                  {...step1Form.register('vat')}
+                  className={inputClass}
+                  placeholder="PT123456789"
+                />
+              </div>
+            </div>
+
+            {/* Continue */}
+            <button
+              type="submit"
+              className="w-full h-10 flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-semibold focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors"
+            >
+              Continue
+              <ArrowUpRight />
+            </button>
+          </div>
+        )}
+
+        {/* ── STEP 2 — Account details ── */}
+        {step === 2 && (
+          <div className="space-y-4">
+            {/* Name */}
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                Your name
               </label>
               <input
                 type="text"
                 autoComplete="name"
-                {...step1Form.register('name')}
+                autoFocus
+                {...step2Form.register('name')}
                 className={inputClass}
                 placeholder="Jane Doe"
               />
@@ -157,13 +211,13 @@ export function RegisterForm() {
               <input
                 type="email"
                 autoComplete="email"
-                {...step1Form.register('email', { required: 'Email is required' })}
+                {...step2Form.register('email', { required: 'Email is required' })}
                 className={inputClass}
-                placeholder="jane@brand.com"
+                placeholder="you@brand.com"
               />
-              {step1Form.formState.errors.email && (
+              {step2Form.formState.errors.email && (
                 <p className="text-red-600 text-xs mt-1">
-                  {step1Form.formState.errors.email.message}
+                  {step2Form.formState.errors.email.message}
                 </p>
               )}
             </div>
@@ -171,155 +225,64 @@ export function RegisterForm() {
             {/* Password */}
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                Password{' '}
-                <span className="text-slate-400 font-normal">(min. 8 characters)</span>
+                Password
               </label>
               <input
                 type="password"
                 autoComplete="new-password"
-                {...step1Form.register('password', {
+                {...step2Form.register('password', {
                   required: 'Password is required',
-                  minLength: { value: 8, message: 'Minimum 8 characters' },
+                  minLength: { value: 10, message: 'Minimum 10 characters' },
                 })}
                 className={inputClass}
+                placeholder="10+ characters"
               />
-              {step1Form.formState.errors.password && (
+              {step2Form.formState.errors.password ? (
                 <p className="text-red-600 text-xs mt-1">
-                  {step1Form.formState.errors.password.message}
+                  {step2Form.formState.errors.password.message}
+                </p>
+              ) : (
+                <p className="text-slate-400 text-xs mt-1">
+                  Minimum 10 characters, mix of letters and numbers.
                 </p>
               )}
             </div>
 
-            <button
-              type="submit"
-              className="w-full flex items-center justify-center bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors"
-            >
-              Continue →
-            </button>
-          </form>
-
-          <p className="text-center text-sm text-slate-500 mt-6">
-            Already have an account?{' '}
-            <Link href="/login" className="text-indigo-600 hover:text-indigo-700 font-medium">
-              Sign in
-            </Link>
-          </p>
-        </>
-      )}
-
-      {/* ── STEP 2 ── */}
-      {step === 2 && (
-        <>
-          <div className="mb-6">
-            <h1 className="text-2xl font-bold text-slate-900">Tell us about your company</h1>
-            <p className="text-sm text-slate-500 mt-1">
-              Helps us tailor your compliance setup{' '}
-              <span className="text-slate-400">· Optional</span>
-            </p>
-          </div>
-
-          <form onSubmit={handleStep2} noValidate className="space-y-4">
-            {/* Root error */}
-            {step2Form.formState.errors.root && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm" role="alert">
-                {step2Form.formState.errors.root.message}
-              </div>
-            )}
-
-            {/* Org name */}
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                Organisation name{' '}
-                <span className="text-red-500 text-xs">required</span>
-              </label>
-              <input
-                type="text"
-                autoComplete="organization"
-                {...step2Form.register('orgName', { required: 'Organisation name is required' })}
-                className={inputClass}
-                placeholder="Acme Fashion Co."
-              />
-              {step2Form.formState.errors.orgName && (
-                <p className="text-red-600 text-xs mt-1">
-                  {step2Form.formState.errors.orgName.message}
-                </p>
-              )}
-            </div>
-
-            {/* Industry */}
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                Industry
-              </label>
-              <select {...step2Form.register('industry')} className={selectClass}>
-                <option value="">Select industry</option>
-                <option value="Fashion">Fashion</option>
-                <option value="Apparel">Apparel</option>
-                <option value="Footwear">Footwear</option>
-                <option value="Accessories">Accessories</option>
-                <option value="Other">Other</option>
-              </select>
-            </div>
-
-            {/* Supplier count */}
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                Supplier count
-              </label>
-              <select {...step2Form.register('supplierCount')} className={selectClass}>
-                <option value="">Select range</option>
-                <option value="1-10">1–10</option>
-                <option value="11-50">11–50</option>
-                <option value="51-200">51–200</option>
-                <option value="200+">200+</option>
-              </select>
-            </div>
-
-            {/* Primary concern */}
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                Primary compliance concern
-              </label>
-              <select {...step2Form.register('primaryConcern')} className={selectClass}>
-                <option value="">Select concern</option>
-                <option value="ESPR / DPP">ESPR / DPP</option>
-                <option value="Textile EPR">Textile EPR</option>
-                <option value="CSRD">CSRD</option>
-                <option value="All of the above">All of the above</option>
-              </select>
-            </div>
-
-            {/* Buttons */}
-            <div className="flex gap-2 pt-1">
+            {/* Back + Create */}
+            <div className="flex gap-2">
               <button
                 type="button"
                 onClick={() => setStep(1)}
-                className="px-4 py-2.5 text-sm font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors"
+                className="h-10 px-4 text-sm font-medium text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors"
               >
-                ← Back
+                Back
               </button>
               <button
                 type="submit"
                 disabled={step2Form.formState.isSubmitting}
-                className="flex-1 flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+                className="flex-1 h-10 flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-semibold focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
               >
                 {step2Form.formState.isSubmitting ? (
                   <>
                     <Spinner />
-                    Creating…
+                    Creating&hellip;
                   </>
                 ) : (
-                  'Create Account'
+                  'Create workspace'
                 )}
               </button>
             </div>
-          </form>
+          </div>
+        )}
 
-          <p className="text-center text-xs text-slate-400 mt-4">
-            You can update these in Settings at any time
-          </p>
-        </>
-      )}
+        {/* Sign-in link */}
+        <p className="text-center text-sm text-slate-500">
+          Already have an account?{' '}
+          <Link href="/login" className="text-indigo-600 hover:text-indigo-700 font-medium">
+            Sign in
+          </Link>
+        </p>
+      </form>
     </div>
   );
 }

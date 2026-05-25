@@ -1,93 +1,68 @@
-// Server component — no 'use client' needed
+'use client';
 
-const VALUE_PROPS = [
-  {
-    title: 'Supplier Intelligence',
-    desc: 'Track compliance scores across your entire supply chain in real time',
-  },
-  {
-    title: 'DPP-Ready Architecture',
-    desc: 'Digital Product Passport generation built directly into the platform',
-  },
-  {
-    title: 'EU Regulatory Output',
-    desc: 'ESPR, Textile EPR, CSRD reports generated on demand',
-  },
-  {
-    title: 'Document Control',
-    desc: 'Certifications, audits, expiry alerts — never miss a deadline again',
-  },
-];
+// Dark left panel for the auth shell.
+// Renders the brand mark, orbital supply-chain SVG, context-aware
+// tagline + description, and trust/trial footer badges.
 
-const PILLS = ['ESPR', 'DPP', 'Textile EPR', 'CSRD'];
+import { usePathname } from 'next/navigation';
+import { LoopMark } from '@/components/shell/loop-mark';
+import { AuthVisual } from './auth-visual';
+
+const COPY = {
+  login: {
+    headline: 'The compliance backbone for EU-facing fashion brands.',
+    highlightFrom: 'EU-facing fashion brands.',
+    body: 'Centralise supplier data. Track every certificate. Ship ESPR Digital Product Passports in one click.',
+    footer: 'ESPR / EPR / REACH ready  ·  SOC 2 Type II  ·  EU-hosted',
+  },
+  register: {
+    headline: 'Set up your workspace in under 2 minutes.',
+    highlightFrom: 'in under 2 minutes.',
+    body: 'Invite your supply chain team, import suppliers from a CSV, and start tracking compliance documents today.',
+    footer: '14-day trial  ·  No credit card  ·  Cancel anytime',
+  },
+};
 
 export function AuthLeftPanel() {
+  const pathname = usePathname();
+  const variant = pathname.startsWith('/register') ? 'register' : 'login';
+  const copy = COPY[variant];
+
+  // Split headline at the highlight portion
+  const idx = copy.headline.indexOf(copy.highlightFrom);
+  const before = copy.headline.slice(0, idx);
+  const highlight = copy.highlightFrom;
+
   return (
-    <div
-      className="hidden md:flex md:w-[42%] flex-col justify-between px-10 py-10 relative overflow-hidden"
-      style={{
-        background: 'linear-gradient(160deg, #1e1b4b 0%, #312e81 55%, #1e1b4b 100%)',
-      }}
-    >
-      {/* Mesh orb A */}
-      <div
-        className="pointer-events-none absolute -top-16 -right-16 w-72 h-72 rounded-full"
-        style={{
-          background: 'radial-gradient(circle, rgba(99,102,241,0.20) 0%, transparent 70%)',
-        }}
-      />
-      {/* Mesh orb B */}
-      <div
-        className="pointer-events-none absolute -bottom-12 -left-12 w-56 h-56 rounded-full"
-        style={{
-          background: 'radial-gradient(circle, rgba(129,140,248,0.12) 0%, transparent 70%)',
-        }}
-      />
-
-      {/* Logo */}
-      <div className="relative flex items-center gap-2.5 z-10">
-        <div className="w-8 h-8 bg-indigo-500 rounded-lg flex items-center justify-center flex-shrink-0">
-          <span className="text-white font-bold text-sm">N</span>
-        </div>
-        <span className="text-white font-bold text-base tracking-tight">N.E.X.A Loop</span>
+    <div className="hidden md:flex md:w-[44%] flex-col justify-between bg-slate-900 px-10 py-10 relative overflow-hidden">
+      {/* Brand */}
+      <div className="relative z-10 flex items-center gap-2.5">
+        <LoopMark size={28} />
+        <span className="text-[15px] font-bold text-white tracking-tight">
+          N.E.X.A Loop
+        </span>
       </div>
 
-      {/* Value props */}
-      <div className="relative z-10">
-        <h2 className="font-display font-black text-2xl text-white leading-tight mb-7">
-          EU compliance,{' '}
-          <span className="text-indigo-300">without the chaos.</span>
-        </h2>
-
-        <ul className="space-y-5">
-          {VALUE_PROPS.map((vp) => (
-            <li key={vp.title} className="flex items-start gap-3">
-              <span className="mt-0.5 flex-shrink-0 w-5 h-5 rounded-full bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center text-indigo-300 text-xs">
-                ✓
-              </span>
-              <div>
-                <p className="text-slate-200 text-sm font-semibold">{vp.title}</p>
-                <p className="text-slate-500 text-xs leading-relaxed mt-0.5">{vp.desc}</p>
-              </div>
-            </li>
-          ))}
-        </ul>
+      {/* Orbital visualisation */}
+      <div className="relative z-10 flex-1 flex items-center justify-center py-8">
+        <AuthVisual />
       </div>
 
-      {/* Footer pills */}
-      <div className="relative z-10">
-        <div className="flex flex-wrap gap-1.5 mb-2">
-          {PILLS.map((pill) => (
-            <span
-              key={pill}
-              className="bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs rounded-full px-2.5 py-0.5"
-            >
-              {pill}
-            </span>
-          ))}
-        </div>
-        <p className="text-slate-600 text-xs">Launching Q3 2026 · Built for EU fashion brands</p>
+      {/* Tagline + description */}
+      <div className="relative z-10 space-y-3">
+        <p className="text-lg font-semibold text-white leading-snug">
+          {before}
+          <span className="text-indigo-300">{highlight}</span>
+        </p>
+        <p className="text-sm text-slate-400 leading-relaxed">
+          {copy.body}
+        </p>
       </div>
+
+      {/* Footer trust badges */}
+      <p className="relative z-10 text-xs text-slate-500 mt-6 font-mono tracking-wide">
+        {copy.footer}
+      </p>
     </div>
   );
 }
