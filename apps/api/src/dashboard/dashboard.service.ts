@@ -9,6 +9,8 @@ export class DashboardService {
     const now = new Date();
     const thirtyDaysFromNow = new Date(now);
     thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
+    const sixtyDaysFromNow = new Date(now);
+    sixtyDaysFromNow.setDate(sixtyDaysFromNow.getDate() + 60);
 
     const [
       activeSuppliers,
@@ -19,9 +21,12 @@ export class DashboardService {
       documentsByStatus,
       totalProducts,
       suppliersByRisk,
-      // For compliance score: count active suppliers that have ≥1 APPROVED doc
       suppliersWithApprovedDoc,
       totalDocuments,
+      pendingDocuments,
+      riskySuppliers,
+      suppliersByCountry,
+      dppReadyCount,
     ] = await Promise.all([
       this.prisma.supplier.count({ where: { orgId, status: 'ACTIVE' } }),
 
@@ -37,22 +42,20 @@ export class DashboardService {
         },
       }),
 
-      // Expiring documents list for the dashboard table (soonest first)
       this.prisma.document.findMany({
         where: {
           orgId,
           status: 'APPROVED',
-          expiryDate: { gte: now, lte: thirtyDaysFromNow },
+          expiryDate: { gte: now, lte: sixtyDaysFromNow },
         },
         include: {
           supplier: { select: { id: true, name: true } },
           documentType: { select: { id: true, name: true } },
         },
         orderBy: { expiryDate: 'asc' },
-        take: 10,
+        take: 8,
       }),
 
-      // Document status breakdown for the bar chart
       this.prisma.document.groupBy({
         by: ['status'],
         where: { orgId },
@@ -61,14 +64,12 @@ export class DashboardService {
 
       this.prisma.product.count({ where: { orgId, status: 'ACTIVE' } }),
 
-      // Supplier count by risk level — for the risk breakdown widget
       this.prisma.supplier.groupBy({
         by: ['riskLevel'],
         where: { orgId, status: 'ACTIVE' },
         _count: { id: true },
       }),
 
-      // Compliance score: distinct active suppliers that have ≥1 APPROVED document
       this.prisma.supplier.count({
         where: {
           orgId,
@@ -78,6 +79,45 @@ export class DashboardService {
       }),
 
       this.prisma.document.count({ where: { orgId } }),
+
+      this.prisma.document.findMany({
+        where: { orgId, status: 'PENDING_REVIEW' },
+        include: {
+          supplier: { select: { id: true, name: true } },
+          documentType: { select: { id: true, name: true } },
+        },
+        orderBy: { createdAt: 'desc' },
+        take: 4,
+      }),
+
+      this.prisma.supplier.findMany({
+        where: { orgId, status: 'ACTIVE' },
+        select: {
+          id: true,
+          name: true,
+          type: true,
+          country: true,
+          city: true,
+          riskLevel: true,
+          _count: { select: { documents: true } },
+        },
+        orderBy: { riskLevel: 'desc' },
+        take: 5,
+      }),
+
+      this.prisma.supplier.groupBy({
+        by: ['country'],
+        where: { orgId },
+        _count: { id: true },
+      }),
+
+      this.prisma.product.count({
+        where: {
+          orgId,
+          status: 'ACTIVE',
+          suppliers: { some: {} },
+        },
+      }),
     ]);
 
     const statusBreakdown = documentsByStatus.reduce(
@@ -96,8 +136,14 @@ export class DashboardService {
       {} as Record<string, number>,
     );
 
-    // Compliance score = % of active suppliers with ≥1 approved document.
-    // 0 active suppliers → 100% (nothing to be non-compliant about).
+    const countryBreakdown = (suppliersByCountry ?? []).reduce(
+      (acc, item) => {
+        acc[item.country] = item._count.id;
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
+
     const complianceScore =
       activeSuppliers === 0
         ? 100
@@ -112,10 +158,14 @@ export class DashboardService {
         totalProducts,
         totalDocuments,
         complianceScore,
+        dppReadyCount,
       },
       expiringDocuments,
+      pendingDocuments,
+      riskySuppliers,
       documentsByStatus: statusBreakdown,
       riskBreakdown,
+      countryBreakdown,
     };
   }
 }

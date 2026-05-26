@@ -1,17 +1,29 @@
 import Link from 'next/link';
 import { apiFetch } from '../../lib/api';
 import { NexaBadge } from '@/components/ui/nexa-badge';
+import { NexaButton } from '@/components/ui/nexa-button';
 import { ScoreBar } from '@/components/ui/score-bar';
+import { SupAvatar } from '@/components/ui/sup-avatar';
+import { riskBadge } from '@/lib/badges';
 import { fmtDate, daysUntil, relativeDays } from '@/lib/format';
 
-interface DashboardStats {
+// ── Types ─────────────────────────────────────────────────────────
+
+interface MeData {
+  user: { id: string; name: string | null; email: string };
+  org: { id: string; name: string };
+}
+
+interface DashboardData {
   stats: {
     activeSuppliers: number;
     approvedDocs: number;
     pendingReview: number;
     expiringSoon: number;
     totalProducts: number;
+    totalDocuments: number;
     complianceScore: number;
+    dppReadyCount: number;
   };
   expiringDocuments: Array<{
     id: string;
@@ -19,181 +31,289 @@ interface DashboardStats {
     supplier: { id: string; name: string };
     documentType: { id: string; name: string };
   }>;
+  pendingDocuments: Array<{
+    id: string;
+    createdAt: string;
+    supplier: { id: string; name: string };
+    documentType: { id: string; name: string };
+  }>;
+  riskySuppliers: Array<{
+    id: string;
+    name: string;
+    type: string;
+    country: string;
+    city: string;
+    riskLevel: string;
+    _count: { documents: number };
+  }>;
   documentsByStatus: Record<string, number>;
   riskBreakdown: Record<string, number>;
+  countryBreakdown: Record<string, number>;
 }
+
+// ── Greeting helper ───────────────────────────────────────────────
+
+function greeting(): string {
+  const h = new Date().getHours();
+  if (h < 12) return 'Good morning';
+  if (h < 18) return 'Good afternoon';
+  return 'Good evening';
+}
+
+function todayFormatted(): string {
+  return new Date().toLocaleDateString('en-GB', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  });
+}
+
+// ── Stat Card ─────────────────────────────────────────────────────
 
 function StatCard({
   label,
   value,
+  sub,
   icon,
-  color,
-  suffix,
+  tone = 'slate',
 }: {
   label: string;
-  value: number;
+  value: string | number;
+  sub?: { text: string; tone?: 'emerald' | 'amber' | 'red' | 'slate' };
   icon: React.ReactNode;
-  color: 'indigo' | 'emerald' | 'amber' | 'red';
-  suffix?: string;
+  tone?: 'emerald' | 'amber' | 'red' | 'slate';
 }) {
-  const bgMap = {
-    indigo: 'bg-white border-slate-200',
-    emerald: 'bg-white border-slate-200',
-    amber: 'bg-white border-slate-200',
-    red: 'bg-white border-slate-200',
-  };
-  const iconColorMap = {
-    indigo: 'bg-indigo-50 text-indigo-600',
-    emerald: 'bg-emerald-50 text-emerald-600',
-    amber: 'bg-amber-50 text-amber-600',
-    red: 'bg-red-50 text-red-600',
-  };
-  const valueColorMap = {
-    indigo: 'text-slate-900',
+  const subColor = {
     emerald: 'text-emerald-600',
     amber: 'text-amber-600',
     red: 'text-red-600',
+    slate: 'text-slate-500',
   };
 
   return (
-    <div className={`rounded-lg p-5 border shadow-sm ${bgMap[color]}`}>
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">{label}</p>
-          <p className={`text-2xl font-bold mt-1.5 ${valueColorMap[color]}`}>
-            {value}
-            {suffix && <span className="text-base font-semibold ml-0.5">{suffix}</span>}
-          </p>
-        </div>
-        <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${iconColorMap[color]}`}>
-          {icon}
-        </div>
+    <div className="bg-white border border-slate-200 rounded-lg shadow-sm p-5">
+      <div className="flex items-center justify-between mb-3">
+        <span className="text-xs font-medium text-slate-500 uppercase tracking-wide flex items-center gap-1.5">
+          <span className="text-slate-400">{icon}</span>
+          {label}
+        </span>
       </div>
+      <p className="text-2xl font-bold text-slate-900">{value}</p>
+      {sub && (
+        <p className={`text-xs font-medium mt-1 ${subColor[sub.tone ?? tone]}`}>
+          {sub.text}
+        </p>
+      )}
     </div>
   );
 }
 
-function ComplianceRing({ score }: { score: number }) {
-  const radius = 40;
-  const circumference = 2 * Math.PI * radius;
-  const offset = circumference - (score / 100) * circumference;
-  const color =
-    score >= 85 ? '#10b981' : score >= 65 ? '#f59e0b' : '#ef4444';
+// ── Segmented Status Bar ──────────────────────────────────────────
 
+const SEGMENT_COLORS: Record<string, string> = {
+  approved: 'bg-emerald-500',
+  expiring: 'bg-amber-500',
+  pending: 'bg-indigo-500',
+  rejected: 'bg-red-500',
+  expired: 'bg-slate-400',
+};
+
+function SegmentedBar({
+  segments,
+}: {
+  segments: { key: string; label: string; value: number; color: string }[];
+}) {
+  const total = segments.reduce((sum, s) => sum + s.value, 0) || 1;
   return (
-    <div className="flex flex-col items-center gap-3">
-      <div className="relative">
-        <svg width="100" height="100" className="-rotate-90">
-          <circle cx="50" cy="50" r={radius} fill="none" stroke="#f1f5f9" strokeWidth="8" />
-          <circle
-            cx="50" cy="50" r={radius} fill="none"
-            stroke={color} strokeWidth="8"
-            strokeLinecap="round"
-            strokeDasharray={circumference}
-            strokeDashoffset={offset}
-            style={{ transition: 'stroke-dashoffset 0.6s ease' }}
-          />
-        </svg>
-        <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-2xl font-bold text-slate-900">{score}%</span>
-        </div>
+    <div>
+      <div className="flex h-2 rounded-full overflow-hidden bg-slate-100 mb-3">
+        {segments.map(
+          (seg) =>
+            seg.value > 0 && (
+              <div
+                key={seg.key}
+                className={`${seg.color} transition-all`}
+                style={{ width: `${(seg.value / total) * 100}%` }}
+                title={`${seg.label}: ${seg.value}`}
+              />
+            ),
+        )}
       </div>
-      <p className="text-xs text-slate-500 font-medium text-center">
-        Supplier Compliance Score
-      </p>
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-2">
+        {segments.map((seg) => (
+          <div key={seg.key} className="flex items-center gap-2 text-xs">
+            <span className={`w-2 h-2 rounded-full ${seg.color} shrink-0`} />
+            <span className="text-slate-500">{seg.label}</span>
+            <span className="ml-auto font-semibold text-slate-900 tabular-nums">
+              {seg.value}
+            </span>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
 
-import { riskBadge } from '@/lib/badges';
+// ── Country helpers ───────────────────────────────────────────────
 
-const RISK_ORDER = ['HIGH', 'MEDIUM', 'LOW', 'UNKNOWN'] as const;
+const COUNTRY_NAMES: Record<string, string> = {
+  PT: 'Portugal', TR: 'Turkey', CN: 'China', IN: 'India',
+  BD: 'Bangladesh', VN: 'Vietnam', IT: 'Italy', ES: 'Spain',
+  DE: 'Germany', FR: 'France', GB: 'United Kingdom', US: 'United States',
+  PK: 'Pakistan', TH: 'Thailand', KH: 'Cambodia', MM: 'Myanmar',
+  ID: 'Indonesia', TW: 'Taiwan', KR: 'South Korea', JP: 'Japan',
+  MA: 'Morocco', TN: 'Tunisia', ET: 'Ethiopia', EG: 'Egypt',
+};
+
+function countryName(code: string): string {
+  return COUNTRY_NAMES[code] ?? code;
+}
+
+// ── Page ──────────────────────────────────────────────────────────
 
 export default async function DashboardPage() {
-  const data = await apiFetch<DashboardStats>('/dashboard/stats');
+  const [me, data] = await Promise.all([
+    apiFetch<MeData>('/auth/me'),
+    apiFetch<DashboardData>('/dashboard/stats'),
+  ]);
 
+  const userName = me?.user?.name?.split(' ')[0] ?? null;
   const stats = data?.stats ?? {
     activeSuppliers: 0,
     approvedDocs: 0,
     pendingReview: 0,
     expiringSoon: 0,
     totalProducts: 0,
+    totalDocuments: 0,
     complianceScore: 100,
+    dppReadyCount: 0,
   };
   const expiringDocuments = data?.expiringDocuments ?? [];
+  const pendingDocuments = data?.pendingDocuments ?? [];
+  const riskySuppliers = data?.riskySuppliers ?? [];
   const statusBreakdown = data?.documentsByStatus ?? {};
-  const riskBreakdown = data?.riskBreakdown ?? {};
+  const countryBreakdown = data?.countryBreakdown ?? {};
 
-  const totalDocs = Object.values(statusBreakdown).reduce((sum, n) => sum + n, 0);
-  const totalRisk = Object.values(riskBreakdown).reduce((sum, n) => sum + n, 0);
+  const approvedFresh = Math.max(
+    0,
+    (statusBreakdown['APPROVED'] ?? 0) - stats.expiringSoon,
+  );
+  const segments = [
+    { key: 'approved', label: 'Approved', value: approvedFresh, color: SEGMENT_COLORS.approved },
+    { key: 'expiring', label: 'Expiring ≤30d', value: stats.expiringSoon, color: SEGMENT_COLORS.expiring },
+    { key: 'pending', label: 'Pending review', value: statusBreakdown['PENDING_REVIEW'] ?? 0, color: SEGMENT_COLORS.pending },
+    { key: 'rejected', label: 'Rejected', value: statusBreakdown['REJECTED'] ?? 0, color: SEGMENT_COLORS.rejected },
+    { key: 'expired', label: 'Expired', value: statusBreakdown['EXPIRED'] ?? 0, color: SEGMENT_COLORS.expired },
+  ];
+  const totalDocs = segments.reduce((sum, s) => sum + s.value, 0);
+
+  const dppPct =
+    stats.totalProducts > 0
+      ? Math.round((stats.dppReadyCount / stats.totalProducts) * 100)
+      : 0;
+
+  const countryEntries = Object.entries(countryBreakdown)
+    .sort(([, a], [, b]) => b - a)
+    .slice(0, 6);
+  const totalCountries = new Set(Object.keys(countryBreakdown)).size;
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-slate-900">Dashboard</h1>
-        <p className="text-sm text-slate-500 mt-1">Supply chain compliance overview</p>
+      {/* Header */}
+      <div className="flex items-start justify-between mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900">
+            {greeting()}
+            {userName ? `, ${userName}` : ''}
+          </h1>
+          <p className="text-sm text-slate-500 mt-1">
+            Here&rsquo;s your compliance snapshot for {todayFormatted()}.
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Link href="/dashboard/suppliers/new">
+            <NexaButton
+              variant="primary"
+              icon={
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                </svg>
+              }
+            >
+              New supplier
+            </NexaButton>
+          </Link>
+        </div>
       </div>
 
       {/* Stat cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <StatCard
-          label="Active Suppliers"
+          label="Active suppliers"
           value={stats.activeSuppliers}
-          color="indigo"
+          sub={{ text: `${stats.complianceScore}% compliance`, tone: stats.complianceScore >= 80 ? 'emerald' : stats.complianceScore >= 50 ? 'amber' : 'red' }}
           icon={
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 21h19.5M3.75 3v18m4.5-18v18m4.5-18v18m4.5-18v18m4.5-18v18" />
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 00-10.026 0 1.106 1.106 0 00-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12" />
             </svg>
           }
         />
         <StatCard
-          label="Active Products"
-          value={stats.totalProducts}
-          color="indigo"
+          label="Documents on file"
+          value={stats.totalDocuments}
+          sub={{ text: `${stats.approvedDocs} approved`, tone: 'emerald' }}
           icon={
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" />
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
             </svg>
           }
         />
         <StatCard
-          label="Approved Documents"
-          value={stats.approvedDocs}
-          color="emerald"
-          icon={
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          }
-        />
-        <StatCard
-          label="Expiring (30d)"
+          label="Expiring ≤30 days"
           value={stats.expiringSoon}
-          color="amber"
+          sub={{
+            text: stats.expiringSoon > 0 ? 'Action needed' : 'All clear',
+            tone: stats.expiringSoon > 0 ? 'amber' : 'emerald',
+          }}
+          tone={stats.expiringSoon > 0 ? 'amber' : 'emerald'}
           icon={
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           }
         />
         <StatCard
-          label="Pending Review"
-          value={stats.pendingReview}
-          color="red"
+          label="DPP-ready products"
+          value={`${stats.dppReadyCount} / ${stats.totalProducts}`}
+          sub={{ text: `${dppPct}% ready`, tone: dppPct >= 80 ? 'emerald' : dppPct >= 50 ? 'amber' : 'slate' }}
           icon={
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 013.75 9.375v-4.5zM3.75 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 01-1.125-1.125v-4.5zM13.5 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 01-1.125-1.125v-4.5z" />
             </svg>
           }
         />
       </div>
 
+      {/* Row 2: Expiring documents + Document status / Review queue */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-        {/* Expiring documents table */}
+        {/* Expiring documents */}
         <div className="lg:col-span-2 bg-white border border-slate-200 rounded-lg shadow-sm">
-          <div className="px-5 py-4 border-b border-slate-200">
-            <h2 className="text-base font-semibold text-slate-900">Expiring Documents</h2>
-            <p className="text-xs text-slate-500 mt-0.5">Documents expiring within the next 30 days</p>
+          <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
+            <div>
+              <h2 className="text-base font-semibold text-slate-900">Expiring documents</h2>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Next 60 days &middot; {expiringDocuments.length} document{expiringDocuments.length !== 1 ? 's' : ''}
+              </p>
+            </div>
+            <Link href="/dashboard/documents">
+              <NexaButton size="sm" iconRight={
+                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                </svg>
+              }>
+                View all
+              </NexaButton>
+            </Link>
           </div>
           {expiringDocuments.length === 0 ? (
             <div className="p-8 text-center">
@@ -203,7 +323,7 @@ export default async function DashboardPage() {
                 </svg>
               </div>
               <p className="text-sm text-slate-600 font-medium">All clear</p>
-              <p className="text-xs text-slate-400 mt-1">No documents expiring in the next 30 days.</p>
+              <p className="text-xs text-slate-400 mt-1">No documents expiring in the next 60 days.</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -212,8 +332,9 @@ export default async function DashboardPage() {
                   <tr>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Document</th>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Supplier</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Expiry Date</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Days Left</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Expires</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider" style={{ width: 140 }}>Status</th>
+                    <th className="px-4 py-3" style={{ width: 40 }} />
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -223,17 +344,29 @@ export default async function DashboardPage() {
                       <tr key={doc.id} className="hover:bg-slate-50 transition-colors">
                         <td className="px-4 py-3 text-sm font-medium text-slate-900">{doc.documentType.name}</td>
                         <td className="px-4 py-3 text-sm">
-                          <Link href={`/dashboard/suppliers/${doc.supplier.id}`} className="text-indigo-600 hover:text-indigo-800">
+                          <Link href={`/dashboard/suppliers/${doc.supplier.id}?tab=documents`} className="text-indigo-600 hover:text-indigo-800">
                             {doc.supplier.name}
                           </Link>
                         </td>
-                        <td className="px-4 py-3 font-mono text-xs text-slate-600">
-                          {fmtDate(doc.expiryDate)}
+                        <td className="px-4 py-3 text-xs text-slate-600">
+                          <span className="font-mono">{fmtDate(doc.expiryDate)}</span>
+                          <span className="text-slate-400 ml-1.5">&middot; {relativeDays(doc.expiryDate)}</span>
                         </td>
                         <td className="px-4 py-3">
-                          <NexaBadge tone={days <= 7 ? 'red' : 'amber'} dot>
-                            {relativeDays(doc.expiryDate)}
-                          </NexaBadge>
+                          {days <= 14 ? (
+                            <NexaBadge tone="red" dot>Critical</NexaBadge>
+                          ) : days <= 30 ? (
+                            <NexaBadge tone="amber" dot>Expiring</NexaBadge>
+                          ) : (
+                            <NexaBadge tone="slate" dot>Upcoming</NexaBadge>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          <Link href={`/dashboard/suppliers/${doc.supplier.id}?tab=documents`}>
+                            <svg className="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                            </svg>
+                          </Link>
                         </td>
                       </tr>
                     );
@@ -244,81 +377,129 @@ export default async function DashboardPage() {
           )}
         </div>
 
-        {/* Right column: compliance ring + document status */}
-        <div className="space-y-6">
-          {/* Compliance score ring */}
-          <div className="bg-white border border-slate-200 rounded-lg shadow-sm p-5">
-            <h2 className="text-base font-semibold text-slate-900 mb-4">Overall Compliance</h2>
-            <ComplianceRing score={stats.complianceScore} />
-            <p className="text-xs text-slate-400 text-center mt-3">
-              % of active suppliers with at least one approved document
-            </p>
+        {/* Document status + Review queue */}
+        <div className="bg-white border border-slate-200 rounded-lg shadow-sm">
+          <div className="px-5 py-4 border-b border-slate-200">
+            <h2 className="text-base font-semibold text-slate-900">Document status</h2>
+            <p className="text-xs text-slate-500 mt-0.5">{totalDocs} total</p>
           </div>
+          <div className="p-5">
+            {totalDocs === 0 ? (
+              <p className="text-sm text-slate-400 text-center py-4">No documents yet.</p>
+            ) : (
+              <SegmentedBar segments={segments} />
+            )}
 
-          {/* Document status breakdown */}
-          <div className="bg-white border border-slate-200 rounded-lg shadow-sm p-5">
-            <h2 className="text-base font-semibold text-slate-900 mb-4">Document Status</h2>
-            <div className="space-y-3">
-              {totalDocs === 0 ? (
-                <p className="text-sm text-slate-400 text-center py-2">No documents yet.</p>
+            <div className="border-t border-slate-100 mt-5 pt-4">
+              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Review queue</p>
+              {pendingDocuments.length === 0 ? (
+                <p className="text-xs text-slate-400 py-2">Inbox zero.</p>
               ) : (
-                <>
-                  {([
-                    { label: 'Approved',       key: 'APPROVED',       tone: 'emerald' as const },
-                    { label: 'Pending Review', key: 'PENDING_REVIEW', tone: 'amber' as const },
-                    { label: 'Rejected',       key: 'REJECTED',       tone: 'red' as const },
-                    { label: 'Expired',        key: 'EXPIRED',        tone: 'slate' as const },
-                  ]).map(({ label, key, tone }) => {
-                    const count = statusBreakdown[key] ?? 0;
-                    const pct = totalDocs > 0 ? Math.round((count / totalDocs) * 100) : 0;
-                    return (
-                      <div key={key}>
-                        <div className="flex items-center justify-between mb-1.5">
-                          <div className="flex items-center gap-2">
-                            <NexaBadge tone={tone} dot>{label}</NexaBadge>
-                          </div>
-                          <span className="text-xs text-slate-500 tabular-nums">{count}</span>
-                        </div>
-                        <ScoreBar value={pct} showNum={false} />
+                <div className="space-y-0">
+                  {pendingDocuments.map((doc) => (
+                    <Link
+                      key={doc.id}
+                      href={`/dashboard/suppliers/${doc.supplier.id}?tab=documents`}
+                      className="flex items-start gap-2.5 py-2.5 border-b border-slate-100 last:border-0 hover:bg-slate-50 -mx-2 px-2 rounded transition-colors"
+                    >
+                      <svg className="w-3.5 h-3.5 text-indigo-500 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                      </svg>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[13px] font-medium text-slate-900 truncate">{doc.documentType.name}</p>
+                        <p className="text-[11.5px] text-slate-500">{doc.supplier.name} &middot; {fmtDate(doc.createdAt)}</p>
                       </div>
-                    );
-                  })}
-                </>
+                    </Link>
+                  ))}
+                </div>
               )}
             </div>
           </div>
         </div>
       </div>
 
-      {/* Supplier risk breakdown */}
-      <div className="bg-white border border-slate-200 rounded-lg shadow-sm">
-        <div className="px-5 py-4 border-b border-slate-200">
-          <h2 className="text-base font-semibold text-slate-900">Supplier Risk Breakdown</h2>
-          <p className="text-xs text-slate-500 mt-0.5">Active suppliers by assigned risk level</p>
-        </div>
-        {totalRisk === 0 ? (
-          <div className="p-8 text-center text-sm text-slate-400">No active suppliers yet.</div>
-        ) : (
-          <div className="p-5 grid grid-cols-2 sm:grid-cols-4 gap-4">
-            {RISK_ORDER.map((level) => {
-              const count = riskBreakdown[level] ?? 0;
-              const pct = totalRisk > 0 ? Math.round((count / totalRisk) * 100) : 0;
-              const badge = riskBadge(level);
-              return (
-                <div key={level} className="flex flex-col gap-2">
-                  <div className="flex items-center justify-between">
-                    <NexaBadge tone={badge.tone}>{badge.label}</NexaBadge>
-                    <span className="text-sm font-bold text-slate-900 tabular-nums">{count}</span>
-                  </div>
-                  <ScoreBar value={pct} showNum={false} />
-                  <span className="text-xs text-slate-400 tabular-nums">{pct}% of suppliers</span>
-                </div>
-              );
-            })}
+      {/* Row 3: Supplier risk + Global footprint */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Supplier risk */}
+        <div className="bg-white border border-slate-200 rounded-lg shadow-sm">
+          <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
+            <div>
+              <h2 className="text-base font-semibold text-slate-900">Supplier risk</h2>
+              <p className="text-xs text-slate-500 mt-0.5">Highest risk suppliers</p>
+            </div>
+            <Link href="/dashboard/suppliers">
+              <NexaButton size="sm" iconRight={
+                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                </svg>
+              }>
+                All suppliers
+              </NexaButton>
+            </Link>
           </div>
-        )}
+          {riskySuppliers.length === 0 ? (
+            <div className="p-8 text-center text-sm text-slate-400">No active suppliers yet.</div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="min-w-full">
+                <tbody className="divide-y divide-slate-100">
+                  {riskySuppliers.map((sup) => {
+                    const risk = riskBadge(sup.riskLevel);
+                    return (
+                      <tr key={sup.id} className="hover:bg-slate-50 transition-colors">
+                        <td className="px-4 py-3" style={{ width: 44 }}>
+                          <SupAvatar name={sup.name} type={sup.type} size="sm" />
+                        </td>
+                        <td className="px-2 py-3">
+                          <Link href={`/dashboard/suppliers/${sup.id}`} className="text-sm font-medium text-slate-900 hover:text-indigo-600">
+                            {sup.name}
+                          </Link>
+                          <p className="text-[11.5px] text-slate-400">{sup.city ? `${sup.city}, ` : ''}{countryName(sup.country)}</p>
+                        </td>
+                        <td className="px-4 py-3" style={{ width: 140 }}>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-slate-500 tabular-nums">{sup._count.documents} doc{sup._count.documents !== 1 ? 's' : ''}</span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 text-right" style={{ width: 100 }}>
+                          <NexaBadge tone={risk.tone}>{risk.label}</NexaBadge>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+
+        {/* Global footprint */}
+        <div className="bg-white border border-slate-200 rounded-lg shadow-sm">
+          <div className="px-5 py-4 border-b border-slate-200">
+            <h2 className="text-base font-semibold text-slate-900">Global footprint</h2>
+            <p className="text-xs text-slate-500 mt-0.5">
+              {stats.activeSuppliers} supplier{stats.activeSuppliers !== 1 ? 's' : ''} across {totalCountries} {totalCountries === 1 ? 'country' : 'countries'}
+            </p>
+          </div>
+          <div className="p-5">
+            {countryEntries.length === 0 ? (
+              <p className="text-sm text-slate-400 text-center py-4">No suppliers yet.</p>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                {countryEntries.map(([code, count]) => (
+                  <div key={code} className="flex flex-col gap-1">
+                    <span className="text-[11px] font-medium text-slate-400 uppercase tracking-wide">{code}</span>
+                    <div>
+                      <span className="text-base font-bold text-slate-900 tabular-nums">{count}</span>
+                      <span className="text-xs text-slate-500 ml-1.5">{countryName(code)}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );
 }
-
