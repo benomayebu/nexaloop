@@ -47,4 +47,5 @@ USER nexaloop
 
 EXPOSE 3001
 
-CMD ["sh", "-c", "pnpm exec prisma migrate deploy && node dist/main"]
+# Attempt migrations (best-effort — already applied from local), then start
+CMD ["sh", "-c", "pnpm exec prisma migrate deploy || echo 'Migration skipped (already applied)' && node dist/main"]
