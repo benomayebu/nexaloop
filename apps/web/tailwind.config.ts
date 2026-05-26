@@ -36,6 +36,14 @@ const config: Config = {
         'card': '8px',
         'input': '6px',
       },
+      keyframes: {
+        'fade-in': { from: { opacity: '0' }, to: { opacity: '1' } },
+        'slide-in-left': { from: { transform: 'translateX(-100%)' }, to: { transform: 'translateX(0)' } },
+      },
+      animation: {
+        'fade-in': 'fade-in 200ms ease-out',
+        'slide-in-left': 'slide-in-left 200ms ease-out',
+      },
     },
   },
   plugins: [],

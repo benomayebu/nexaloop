@@ -60,7 +60,7 @@ export function Header({ org, user: _user }: HeaderProps) {
   const orgInitials = initials(org.name);
 
   return (
-    <header className="bg-white border-b border-slate-200 px-6 flex items-center justify-between sticky top-0 z-30 h-[var(--header-h)]">
+    <header className="bg-white border-b border-slate-200 px-6 pl-14 md:pl-6 flex items-center justify-between sticky top-0 z-30 h-[var(--header-h)]">
       {/* Breadcrumbs */}
       <nav className="flex items-center gap-1 text-sm min-w-0">
         {crumbs.map((c, i) => (

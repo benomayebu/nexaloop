@@ -1,6 +1,7 @@
 import { apiFetch } from '../../lib/api';
 import { Sidebar } from '@/components/shell/sidebar';
 import { Header } from '@/components/shell/header';
+import { MobileNav } from '@/components/shell/mobile-nav';
 import { BreadcrumbProvider } from '@/components/shell/breadcrumb-context';
 import { ToastProvider } from '@/components/ui/toast-provider';
 
@@ -44,6 +45,12 @@ export default async function DashboardLayout({
       <BreadcrumbProvider>
         <div className="min-h-screen bg-slate-50 flex">
           <Sidebar
+            user={user}
+            org={org}
+            role={role}
+            badgeCounts={badgeCounts}
+          />
+          <MobileNav
             user={user}
             org={org}
             role={role}
