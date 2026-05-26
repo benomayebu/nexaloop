@@ -105,6 +105,10 @@ export class SuppliersService {
       where: { id, orgId },
       include: {
         contacts: { orderBy: { createdAt: 'asc' } },
+        documents: {
+          where: { orgId },
+          select: { id: true, status: true, expiryDate: true },
+        },
         productLinks: {
           include: {
             product: {
@@ -113,12 +117,27 @@ export class SuppliersService {
           },
           orderBy: { createdAt: 'asc' },
         },
+        _count: { select: { documents: true } },
       },
     });
     if (!supplier) {
       throw new NotFoundException('Supplier not found');
     }
-    return supplier;
+
+    const now = new Date();
+    const docs = supplier.documents;
+    const approved = docs.filter((d) => d.status === 'APPROVED').length;
+    const pending = docs.filter((d) => d.status === 'PENDING_REVIEW').length;
+    const total = docs.length;
+    const complianceScore =
+      total > 0 ? Math.round((approved / total) * 100) : null;
+
+    const { documents: _docs, ...rest } = supplier;
+    return {
+      ...rest,
+      complianceScore,
+      _docStats: { total, approved, pending },
+    };
   }
 
   async update(orgId: string, id: string, dto: UpdateSupplierDto) {
