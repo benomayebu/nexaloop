@@ -76,14 +76,21 @@ interface TeamMember {
   role: string;
 }
 
+interface SupplierOption {
+  id: string;
+  name: string;
+  type: string;
+}
+
 export default async function CrmPage() {
-  const [stats, threads, tasks, pipeline, activity, team] = await Promise.all([
+  const [stats, threads, tasks, pipeline, activity, team, suppliers] = await Promise.all([
     apiFetch<CrmStats>('/crm/stats'),
     apiFetchList<Thread>('/crm/threads'),
     apiFetchList<Task>('/crm/tasks'),
     apiFetch<PipelineData>('/crm/pipeline'),
     apiFetchList<ActivityItem>('/crm/activity'),
     apiFetchList<TeamMember>('/crm/team'),
+    apiFetchList<SupplierOption>('/suppliers'),
   ]);
 
   return (
@@ -94,6 +101,7 @@ export default async function CrmPage() {
       pipeline={pipeline ?? { stages: [], cards: [] }}
       activity={activity}
       team={team}
+      suppliers={suppliers.map((s) => ({ id: s.id, name: s.name, type: s.type }))}
     />
   );
 }

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { NexaBadge } from '@/components/ui/nexa-badge';
 import { NexaButton } from '@/components/ui/nexa-button';
@@ -8,6 +9,7 @@ import { SupAvatar } from '@/components/ui/sup-avatar';
 import { ScoreBar } from '@/components/ui/score-bar';
 import { riskBadge, supStatusBadge, typeBadge } from '@/lib/badges';
 import { fmtDate, relativeDays, initials } from '@/lib/format';
+import { useToast } from '@/components/ui/toast-provider';
 
 // ─── Types ──────────────────────────────────────────────────────────
 
@@ -77,6 +79,12 @@ interface TeamMember {
   role: string;
 }
 
+interface SupplierOption {
+  id: string;
+  name: string;
+  type: string;
+}
+
 interface CrmShellProps {
   stats: CrmStats;
   threads: Thread[];
@@ -84,6 +92,7 @@ interface CrmShellProps {
   pipeline: PipelineData;
   activity: ActivityItem[];
   team: TeamMember[];
+  suppliers: SupplierOption[];
 }
 
 // ─── Main Shell ─────────────────────────────────────────────────────
@@ -91,8 +100,10 @@ interface CrmShellProps {
 const TABS = ['inbox', 'pipeline', 'tasks', 'activity'] as const;
 type Tab = (typeof TABS)[number];
 
-export function CrmShell({ stats, threads, tasks, pipeline, activity, team }: CrmShellProps) {
+export function CrmShell({ stats, threads, tasks, pipeline, activity, team, suppliers }: CrmShellProps) {
   const [tab, setTab] = useState<Tab>('inbox');
+  const [showNewThread, setShowNewThread] = useState(false);
+  const [showNewTask, setShowNewTask] = useState(false);
 
   return (
     <div>
@@ -105,10 +116,13 @@ export function CrmShell({ stats, threads, tasks, pipeline, activity, team }: Cr
           </p>
         </div>
         <div className="flex gap-2">
-          <NexaButton variant="secondary" icon={<PlusIcon />}>New thread</NexaButton>
-          <NexaButton variant="primary" icon={<PlusIcon />}>New task</NexaButton>
+          <NexaButton variant="secondary" icon={<PlusIcon />} onClick={() => setShowNewThread(true)}>New thread</NexaButton>
+          <NexaButton variant="primary" icon={<PlusIcon />} onClick={() => setShowNewTask(true)}>New task</NexaButton>
         </div>
       </div>
+
+      {showNewThread && <NewThreadModal suppliers={suppliers} onClose={() => setShowNewThread(false)} />}
+      {showNewTask && <NewTaskModal suppliers={suppliers} team={team} onClose={() => setShowNewTask(false)} />}
 
       {/* Stat cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
@@ -158,7 +172,20 @@ export function CrmShell({ stats, threads, tasks, pipeline, activity, team }: Cr
 // ─── Inbox Tab ──────────────────────────────────────────────────────
 
 function InboxTab({ threads }: { threads: Thread[] }) {
+  const router = useRouter();
+  const toast = useToast();
   const [filter, setFilter] = useState<'all' | 'open' | 'resolved'>('all');
+
+  async function toggleResolve(threadId: string, currentStatus: string) {
+    const endpoint = currentStatus === 'OPEN' ? 'resolve' : 'reopen';
+    try {
+      const res = await fetch(`/api/crm/threads/${threadId}/${endpoint}`, { method: 'PUT' });
+      if (res.ok) {
+        toast(endpoint === 'resolve' ? 'Thread resolved' : 'Thread reopened');
+        router.refresh();
+      }
+    } catch { /* ignore */ }
+  }
 
   const filtered = threads.filter((t) => {
     if (filter === 'open') return t.status === 'OPEN';
@@ -213,6 +240,13 @@ function InboxTab({ threads }: { threads: Thread[] }) {
                   <span className="text-[11px] text-slate-400">{thread._count.messages} message{thread._count.messages !== 1 ? 's' : ''}</span>
                 </div>
               </div>
+              <button
+                onClick={() => toggleResolve(thread.id, thread.status)}
+                className="flex-shrink-0 text-xs font-medium text-slate-500 hover:text-indigo-600 px-2 py-1 rounded hover:bg-indigo-50 transition-colors"
+                title={thread.status === 'OPEN' ? 'Mark as resolved' : 'Reopen'}
+              >
+                {thread.status === 'OPEN' ? 'Resolve' : 'Reopen'}
+              </button>
             </div>
           );
         })}
@@ -293,9 +327,29 @@ function PipelineTab({ pipeline }: { pipeline: PipelineData }) {
 // ─── Tasks Tab ──────────────────────────────────────────────────────
 
 function TasksTab({ tasks, team }: { tasks: Task[]; team: TeamMember[] }) {
+  const router = useRouter();
+  const toast = useToast();
   const [filter, setFilter] = useState<'all' | 'open' | 'overdue' | 'done'>('all');
   const [showDone, setShowDone] = useState(false);
+  const [toggling, setToggling] = useState<string | null>(null);
   const now = new Date();
+
+  async function toggleTask(taskId: string, currentStatus: string) {
+    setToggling(taskId);
+    const newStatus = currentStatus === 'DONE' ? 'OPEN' : 'DONE';
+    try {
+      const res = await fetch(`/api/crm/tasks/${taskId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      if (res.ok) {
+        toast(newStatus === 'DONE' ? 'Task completed' : 'Task reopened');
+        router.refresh();
+      }
+    } catch { /* ignore */ }
+    setToggling(null);
+  }
 
   const filtered = tasks.filter((t) => {
     if (filter === 'open') return t.status === 'OPEN';
@@ -344,10 +398,10 @@ function TasksTab({ tasks, team }: { tasks: Task[]; team: TeamMember[] }) {
         </label>
       </div>
 
-      <TaskSection title="Overdue" tone="red" items={overdue} />
-      <TaskSection title="This week" tone="amber" items={thisWeek} />
-      <TaskSection title="Coming up" tone="indigo" items={later} />
-      {showDone && <TaskSection title="Completed" tone="emerald" items={done} />}
+      <TaskSection title="Overdue" tone="red" items={overdue} onToggle={toggleTask} toggling={toggling} />
+      <TaskSection title="This week" tone="amber" items={thisWeek} onToggle={toggleTask} toggling={toggling} />
+      <TaskSection title="Coming up" tone="indigo" items={later} onToggle={toggleTask} toggling={toggling} />
+      {showDone && <TaskSection title="Completed" tone="emerald" items={done} onToggle={toggleTask} toggling={toggling} />}
 
       {filtered.length === 0 && (
         <EmptyState icon={<CheckIcon />} title="Inbox zero" subtitle="You're all caught up." />
@@ -356,7 +410,7 @@ function TasksTab({ tasks, team }: { tasks: Task[]; team: TeamMember[] }) {
   );
 }
 
-function TaskSection({ title, tone, items }: { title: string; tone: string; items: Task[] }) {
+function TaskSection({ title, tone, items, onToggle, toggling }: { title: string; tone: string; items: Task[]; onToggle: (id: string, status: string) => void; toggling: string | null }) {
   if (items.length === 0) return null;
   return (
     <div className="mb-4">
@@ -376,13 +430,17 @@ function TaskSection({ title, tone, items }: { title: string; tone: string; item
               return (
                 <tr key={task.id} className="hover:bg-slate-50 transition-colors">
                   <td className="pl-4 py-3 w-10">
-                    <div className={`w-4 h-4 rounded border-2 ${task.status === 'DONE' ? 'bg-indigo-600 border-indigo-600' : 'border-slate-300'} flex items-center justify-center`}>
+                    <button
+                      onClick={() => onToggle(task.id, task.status)}
+                      disabled={toggling === task.id}
+                      className={`w-4 h-4 rounded border-2 ${task.status === 'DONE' ? 'bg-indigo-600 border-indigo-600' : 'border-slate-300 hover:border-indigo-400'} flex items-center justify-center transition-colors disabled:opacity-50`}
+                    >
                       {task.status === 'DONE' && (
                         <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
                         </svg>
                       )}
-                    </div>
+                    </button>
                   </td>
                   <td className="px-3 py-3">
                     <span className={`text-sm ${task.status === 'DONE' ? 'line-through text-slate-400' : 'text-slate-900'}`}>
@@ -523,6 +581,226 @@ function EmptyState({ icon, title, subtitle }: { icon: React.ReactNode; title: s
       </div>
       <p className="text-slate-600 font-medium">{title}</p>
       <p className="text-sm text-slate-400 mt-1">{subtitle}</p>
+    </div>
+  );
+}
+
+// ─── New Thread Modal ───────────────────────────────────────────────
+
+function NewThreadModal({ suppliers, onClose }: { suppliers: SupplierOption[]; onClose: () => void }) {
+  const router = useRouter();
+  const toast = useToast();
+  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState({ subject: '', supplierId: '', body: '' });
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      const res = await fetch('/api/crm/threads', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          subject: form.subject,
+          supplierId: form.supplierId || undefined,
+          body: form.body,
+        }),
+      });
+      if (!res.ok) {
+        toast('Failed to create thread', 'err');
+        return;
+      }
+      toast('Thread created');
+      onClose();
+      router.refresh();
+    } catch {
+      toast('Network error', 'err');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <Modal title="New thread" onClose={onClose}>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <Field label="Subject" required>
+          <input
+            required
+            type="text"
+            value={form.subject}
+            onChange={(e) => setForm({ ...form, subject: e.target.value })}
+            className={inputClass}
+            placeholder="e.g. BSCI renewal — facility audit"
+          />
+        </Field>
+        <Field label="Supplier">
+          <select value={form.supplierId} onChange={(e) => setForm({ ...form, supplierId: e.target.value })} className={inputClass}>
+            <option value="">None (general)</option>
+            {suppliers.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+          </select>
+        </Field>
+        <Field label="Message" required>
+          <textarea
+            required
+            rows={4}
+            value={form.body}
+            onChange={(e) => setForm({ ...form, body: e.target.value })}
+            className={inputClass}
+            placeholder="Start the conversation..."
+          />
+        </Field>
+        <div className="flex justify-end gap-2 pt-2">
+          <NexaButton type="button" variant="secondary" onClick={onClose}>Cancel</NexaButton>
+          <NexaButton type="submit" variant="primary" disabled={saving}>
+            {saving ? 'Creating...' : 'Create thread'}
+          </NexaButton>
+        </div>
+      </form>
+    </Modal>
+  );
+}
+
+// ─── New Task Modal ─────────────────────────────────────────────────
+
+function NewTaskModal({ suppliers, team, onClose }: { suppliers: SupplierOption[]; team: TeamMember[]; onClose: () => void }) {
+  const router = useRouter();
+  const toast = useToast();
+  const [saving, setSaving] = useState(false);
+  const defaultDue = new Date();
+  defaultDue.setDate(defaultDue.getDate() + 7);
+  const [form, setForm] = useState({
+    title: '',
+    description: '',
+    supplierId: '',
+    assigneeId: team[0]?.id ?? '',
+    priority: 'MEDIUM',
+    dueDate: defaultDue.toISOString().slice(0, 10),
+  });
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      const res = await fetch('/api/crm/tasks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: form.title,
+          description: form.description || undefined,
+          supplierId: form.supplierId || undefined,
+          assigneeId: form.assigneeId,
+          priority: form.priority,
+          dueDate: new Date(form.dueDate).toISOString(),
+        }),
+      });
+      if (!res.ok) {
+        toast('Failed to create task', 'err');
+        return;
+      }
+      toast('Task created');
+      onClose();
+      router.refresh();
+    } catch {
+      toast('Network error', 'err');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <Modal title="New task" onClose={onClose}>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <Field label="Title" required>
+          <input
+            required
+            type="text"
+            value={form.title}
+            onChange={(e) => setForm({ ...form, title: e.target.value })}
+            className={inputClass}
+            placeholder="e.g. Review BSCI corrective action plan"
+          />
+        </Field>
+        <div className="grid grid-cols-2 gap-4">
+          <Field label="Supplier">
+            <select value={form.supplierId} onChange={(e) => setForm({ ...form, supplierId: e.target.value })} className={inputClass}>
+              <option value="">None</option>
+              {suppliers.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+            </select>
+          </Field>
+          <Field label="Assign to" required>
+            <select required value={form.assigneeId} onChange={(e) => setForm({ ...form, assigneeId: e.target.value })} className={inputClass}>
+              {team.map((m) => <option key={m.id} value={m.id}>{m.name ?? m.email}</option>)}
+            </select>
+          </Field>
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <Field label="Priority">
+            <select value={form.priority} onChange={(e) => setForm({ ...form, priority: e.target.value })} className={inputClass}>
+              <option value="HIGH">High</option>
+              <option value="MEDIUM">Medium</option>
+              <option value="LOW">Low</option>
+            </select>
+          </Field>
+          <Field label="Due date" required>
+            <input
+              required
+              type="date"
+              value={form.dueDate}
+              onChange={(e) => setForm({ ...form, dueDate: e.target.value })}
+              className={inputClass}
+            />
+          </Field>
+        </div>
+        <Field label="Description">
+          <textarea
+            rows={3}
+            value={form.description}
+            onChange={(e) => setForm({ ...form, description: e.target.value })}
+            className={inputClass}
+            placeholder="Additional details..."
+          />
+        </Field>
+        <div className="flex justify-end gap-2 pt-2">
+          <NexaButton type="button" variant="secondary" onClick={onClose}>Cancel</NexaButton>
+          <NexaButton type="submit" variant="primary" disabled={saving}>
+            {saving ? 'Creating...' : 'Create task'}
+          </NexaButton>
+        </div>
+      </form>
+    </Modal>
+  );
+}
+
+// ─── Modal + Field primitives ───────────────────────────────────────
+
+const inputClass = 'w-full border border-slate-200 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white';
+
+function Modal({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      <div className="fixed inset-0 bg-black/40 animate-fade-in" onClick={onClose} />
+      <div className="relative bg-white rounded-xl shadow-xl border border-slate-200 w-full max-w-lg mx-4 p-6 animate-fade-in">
+        <div className="flex items-center justify-between mb-5">
+          <h2 className="text-lg font-semibold text-slate-900">{title}</h2>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 p-1 rounded transition-colors">
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function Field({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) {
+  return (
+    <div>
+      <label className="block text-sm font-medium text-slate-700 mb-1.5">
+        {label}{required && <span className="text-red-500 ml-0.5">*</span>}
+      </label>
+      {children}
     </div>
   );
 }

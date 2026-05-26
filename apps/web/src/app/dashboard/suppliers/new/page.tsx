@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
 const SUPPLIER_TYPES = ['TIER1_FACTORY', 'MILL', 'SPINNER', 'DYEHOUSE', 'TRIM_SUPPLIER', 'AGENT', 'OTHER'] as const;
-const SUPPLIER_STATUSES = ['ACTIVE', 'INACTIVE', 'PROSPECT'] as const;
+const SUPPLIER_STATUSES = ['ACTIVE', 'INACTIVE', 'PROSPECT', 'VETTING', 'ONBOARDING'] as const;
 const RISK_LEVELS = ['LOW', 'MEDIUM', 'HIGH', 'UNKNOWN'] as const;
 
 function formatLabel(v: string) { return v.replace(/_/g, ' '); }
