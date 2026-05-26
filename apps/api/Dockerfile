@@ -2,41 +2,44 @@
 FROM node:20-alpine AS builder
 WORKDIR /app
 
-# Enable corepack so pnpm is available without a global install
-RUN corepack enable && corepack prepare pnpm@9 --activate
+# bcrypt requires native compilation on Alpine
+RUN apk add --no-cache python3 make g++
 
-# Install dependencies
+# Enable corepack for pnpm
+RUN corepack enable && corepack prepare pnpm@9.15.4 --activate
+
+# Install dependencies (copy package.json first for layer caching)
 COPY package.json ./
+COPY prisma ./prisma
 RUN pnpm install --no-frozen-lockfile
 
-# Copy source, generate Prisma client, compile TypeScript
-COPY . .
+# Generate Prisma client and compile TypeScript
 RUN pnpm exec prisma generate
-RUN pnpm build
+COPY . .
+RUN pnpm run build
 
-# ── Production stage ───────────────────────────────────────────────
+# ── Production stage ──────────────────────────────────────────────
 FROM node:20-alpine AS runner
 WORKDIR /app
 
-RUN corepack enable && corepack prepare pnpm@9 --activate
+RUN apk add --no-cache python3 make g++
+RUN corepack enable && corepack prepare pnpm@9.15.4 --activate
 
-# Install prod dependencies only
+# Install prod deps and generate Prisma client in one layer
 COPY package.json ./
-RUN pnpm install --prod --no-frozen-lockfile
+COPY prisma ./prisma
+RUN pnpm install --prod --no-frozen-lockfile \
+    && pnpm exec prisma generate \
+    && apk del python3 make g++
 
-# Copy compiled output and Prisma artefacts from builder
+# Copy compiled output from builder
 COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/prisma ./prisma
-
-# Copy generated Prisma client (avoids re-running prisma generate)
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
-COPY --from=builder /app/node_modules/@prisma/client ./node_modules/@prisma/client
 
 # Run as non-root for security
-RUN addgroup -S nexaloop && adduser -S nexaloop -G nexaloop
+RUN addgroup -S nexaloop && adduser -S nexaloop -G nexaloop \
+    && chown -R nexaloop:nexaloop /app
 USER nexaloop
 
 EXPOSE 3001
 
-# Run pending migrations then start the server
-CMD sh -c "npx prisma migrate deploy && node dist/main"
+CMD ["sh", "-c", "pnpm exec prisma migrate deploy && node dist/main"]

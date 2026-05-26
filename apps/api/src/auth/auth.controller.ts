@@ -21,15 +21,14 @@ export class AuthController {
     @Body() body: RegisterDto,
     @Res({ passthrough: true }) res: Response,
   ) {
-    const result = await this.authService.register(
-      body.email,
-      body.password,
-      body.orgName,
-      body.name,
-      body.industry,
-      body.supplierCount,
-      body.primaryConcern,
-    );
+    const result = await this.authService.register(body.email, body.password, body.orgName, {
+      name: body.name,
+      country: body.country,
+      vat: body.vat,
+      industry: body.industry,
+      supplierCount: body.supplierCount,
+      primaryConcern: body.primaryConcern,
+    });
     const isProduction = process.env.NODE_ENV === 'production';
     res.cookie('auth_token', result.token, {
       httpOnly: true,

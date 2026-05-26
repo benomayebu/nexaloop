@@ -1,0 +1,7 @@
+node_modules
+dist
+*.spec.ts
+*.test.ts
+jest.config.ts
+.env
+.env.*

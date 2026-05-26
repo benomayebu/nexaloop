@@ -36,10 +36,14 @@ export class AuthService {
     email: string,
     password: string,
     orgName: string,
-    name?: string,
-    industry?: string,
-    supplierCount?: string,
-    primaryConcern?: string,
+    opts?: {
+      name?: string;
+      country?: string;
+      vat?: string;
+      industry?: string;
+      supplierCount?: string;
+      primaryConcern?: string;
+    },
   ) {
     const existing = await this.prisma.user.findUnique({ where: { email } });
     if (existing) {
@@ -50,11 +54,18 @@ export class AuthService {
 
     const result = await this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const org = await tx.organization.create({
-        data: { name: orgName, industry, supplierCount, primaryConcern },
+        data: {
+          name: orgName,
+          country: opts?.country,
+          vat: opts?.vat,
+          industry: opts?.industry,
+          supplierCount: opts?.supplierCount,
+          primaryConcern: opts?.primaryConcern,
+        },
       });
 
       const user = await tx.user.create({
-        data: { email, passwordHash, name },
+        data: { email, passwordHash, name: opts?.name },
       });
 
       await tx.userOrganization.create({
