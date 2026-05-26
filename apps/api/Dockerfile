@@ -35,5 +35,5 @@ COPY --from=builder /app/dist ./dist
 
 EXPOSE 3001
 
-# Start the server directly — migrations already applied
-CMD ["node", "dist/main"]
+# Run migrations then start the server
+CMD npx prisma migrate deploy || true && node dist/main
