@@ -23,7 +23,11 @@ export class SuppliersService {
       q?: string;
     },
   ) {
-    return this.prisma.supplier.findMany({
+    const now = new Date();
+    const thirtyDays = new Date(now);
+    thirtyDays.setDate(thirtyDays.getDate() + 30);
+
+    const suppliers = await this.prisma.supplier.findMany({
       where: {
         orgId,
         ...(filters.type ? { type: filters.type } : {}),
@@ -34,11 +38,49 @@ export class SuppliersService {
               OR: [
                 { name: { contains: filters.q, mode: 'insensitive' } },
                 { supplierCode: { contains: filters.q, mode: 'insensitive' } },
+                { city: { contains: filters.q, mode: 'insensitive' } },
               ],
             }
           : {}),
       },
+      include: {
+        documents: {
+          where: { orgId },
+          select: { status: true, expiryDate: true },
+        },
+        _count: { select: { documents: true } },
+      },
       orderBy: { updatedAt: 'desc' },
+    });
+
+    return suppliers.map((sup) => {
+      const docs = sup.documents;
+      const approved = docs.filter((d) => d.status === 'APPROVED').length;
+      const pending = docs.filter((d) => d.status === 'PENDING_REVIEW').length;
+      const expiring = docs.filter(
+        (d) =>
+          d.status === 'APPROVED' &&
+          d.expiryDate &&
+          d.expiryDate >= now &&
+          d.expiryDate <= thirtyDays,
+      ).length;
+      const expired = docs.filter(
+        (d) =>
+          (d.status === 'EXPIRED') ||
+          (d.status === 'APPROVED' && d.expiryDate && d.expiryDate < now),
+      ).length;
+      const total = docs.length;
+      const complianceScore =
+        total > 0 ? Math.round((approved / total) * 100) : null;
+
+      const { documents: _docs, ...rest } = sup;
+      return {
+        ...rest,
+        complianceScore,
+        _pending: pending,
+        _expiring: expiring,
+        _expired: expired,
+      };
     });
   }
 
