@@ -1,5 +1,8 @@
 import Link from 'next/link';
 import { apiFetch } from '../../lib/api';
+import { NexaBadge } from '@/components/ui/nexa-badge';
+import { ScoreBar } from '@/components/ui/score-bar';
+import { fmtDate, daysUntil, relativeDays } from '@/lib/format';
 
 interface DashboardStats {
   stats: {
@@ -33,41 +36,41 @@ function StatCard({
   color: 'indigo' | 'emerald' | 'amber' | 'red';
   suffix?: string;
 }) {
-  const colorMap = {
-    indigo: 'bg-indigo-50 text-indigo-600 border-indigo-200',
-    emerald: 'bg-emerald-50 text-emerald-600 border-emerald-200',
-    amber: 'bg-amber-50 text-amber-600 border-amber-200',
-    red: 'bg-red-50 text-red-600 border-red-200',
+  const bgMap = {
+    indigo: 'bg-white border-slate-200',
+    emerald: 'bg-white border-slate-200',
+    amber: 'bg-white border-slate-200',
+    red: 'bg-white border-slate-200',
   };
   const iconColorMap = {
-    indigo: 'bg-indigo-100 text-indigo-600',
-    emerald: 'bg-emerald-100 text-emerald-600',
-    amber: 'bg-amber-100 text-amber-600',
-    red: 'bg-red-100 text-red-600',
+    indigo: 'bg-indigo-50 text-indigo-600',
+    emerald: 'bg-emerald-50 text-emerald-600',
+    amber: 'bg-amber-50 text-amber-600',
+    red: 'bg-red-50 text-red-600',
+  };
+  const valueColorMap = {
+    indigo: 'text-slate-900',
+    emerald: 'text-emerald-600',
+    amber: 'text-amber-600',
+    red: 'text-red-600',
   };
 
   return (
-    <div className={`rounded-lg p-5 border ${colorMap[color]}`}>
+    <div className={`rounded-lg p-5 border shadow-sm ${bgMap[color]}`}>
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-sm font-medium opacity-75">{label}</p>
-          <p className="text-3xl font-bold mt-1">
+          <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">{label}</p>
+          <p className={`text-2xl font-bold mt-1.5 ${valueColorMap[color]}`}>
             {value}
-            {suffix && <span className="text-lg font-semibold ml-0.5">{suffix}</span>}
+            {suffix && <span className="text-base font-semibold ml-0.5">{suffix}</span>}
           </p>
         </div>
-        <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${iconColorMap[color]}`}>
+        <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${iconColorMap[color]}`}>
           {icon}
         </div>
       </div>
     </div>
   );
-}
-
-function daysUntil(dateStr: string): number {
-  const now = new Date();
-  const expiry = new Date(dateStr);
-  return Math.ceil((expiry.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
 }
 
 function ComplianceRing({ score }: { score: number }) {
@@ -102,13 +105,9 @@ function ComplianceRing({ score }: { score: number }) {
   );
 }
 
+import { riskBadge } from '@/lib/badges';
+
 const RISK_ORDER = ['HIGH', 'MEDIUM', 'LOW', 'UNKNOWN'] as const;
-const RISK_STYLES: Record<string, { bar: string; label: string; badge: string }> = {
-  HIGH:    { bar: 'bg-red-400',     label: 'High Risk',    badge: 'bg-red-50 text-red-700 border-red-200' },
-  MEDIUM:  { bar: 'bg-amber-400',   label: 'Medium Risk',  badge: 'bg-amber-50 text-amber-700 border-amber-200' },
-  LOW:     { bar: 'bg-emerald-500', label: 'Low Risk',     badge: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
-  UNKNOWN: { bar: 'bg-slate-300',   label: 'Unassessed',   badge: 'bg-slate-50 text-slate-600 border-slate-200' },
-};
 
 export default async function DashboardPage() {
   const data = await apiFetch<DashboardStats>('/dashboard/stats');
@@ -219,7 +218,7 @@ export default async function DashboardPage() {
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {expiringDocuments.map((doc) => {
-                    const days = daysUntil(doc.expiryDate);
+                    const days = daysUntil(doc.expiryDate) ?? 0;
                     return (
                       <tr key={doc.id} className="hover:bg-slate-50 transition-colors">
                         <td className="px-4 py-3 text-sm font-medium text-slate-900">{doc.documentType.name}</td>
@@ -228,15 +227,13 @@ export default async function DashboardPage() {
                             {doc.supplier.name}
                           </Link>
                         </td>
-                        <td className="px-4 py-3 text-sm text-slate-600">
-                          {new Date(doc.expiryDate).toLocaleDateString()}
+                        <td className="px-4 py-3 font-mono text-xs text-slate-600">
+                          {fmtDate(doc.expiryDate)}
                         </td>
                         <td className="px-4 py-3">
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                            days <= 7 ? 'bg-red-100 text-red-700' : days <= 14 ? 'bg-amber-100 text-amber-700' : 'bg-amber-50 text-amber-600'
-                          }`}>
-                            {days}d
-                          </span>
+                          <NexaBadge tone={days <= 7 ? 'red' : 'amber'} dot>
+                            {relativeDays(doc.expiryDate)}
+                          </NexaBadge>
                         </td>
                       </tr>
                     );
@@ -266,10 +263,26 @@ export default async function DashboardPage() {
                 <p className="text-sm text-slate-400 text-center py-2">No documents yet.</p>
               ) : (
                 <>
-                  <StatusBar label="Approved"       count={statusBreakdown.APPROVED ?? 0}       total={totalDocs} color="bg-emerald-500" />
-                  <StatusBar label="Pending Review" count={statusBreakdown.PENDING_REVIEW ?? 0} total={totalDocs} color="bg-amber-400" />
-                  <StatusBar label="Rejected"       count={statusBreakdown.REJECTED ?? 0}       total={totalDocs} color="bg-red-400" />
-                  <StatusBar label="Expired"        count={statusBreakdown.EXPIRED ?? 0}        total={totalDocs} color="bg-slate-300" />
+                  {([
+                    { label: 'Approved',       key: 'APPROVED',       tone: 'emerald' as const },
+                    { label: 'Pending Review', key: 'PENDING_REVIEW', tone: 'amber' as const },
+                    { label: 'Rejected',       key: 'REJECTED',       tone: 'red' as const },
+                    { label: 'Expired',        key: 'EXPIRED',        tone: 'slate' as const },
+                  ]).map(({ label, key, tone }) => {
+                    const count = statusBreakdown[key] ?? 0;
+                    const pct = totalDocs > 0 ? Math.round((count / totalDocs) * 100) : 0;
+                    return (
+                      <div key={key}>
+                        <div className="flex items-center justify-between mb-1.5">
+                          <div className="flex items-center gap-2">
+                            <NexaBadge tone={tone} dot>{label}</NexaBadge>
+                          </div>
+                          <span className="text-xs text-slate-500 tabular-nums">{count}</span>
+                        </div>
+                        <ScoreBar value={pct} showNum={false} />
+                      </div>
+                    );
+                  })}
                 </>
               )}
             </div>
@@ -290,19 +303,15 @@ export default async function DashboardPage() {
             {RISK_ORDER.map((level) => {
               const count = riskBreakdown[level] ?? 0;
               const pct = totalRisk > 0 ? Math.round((count / totalRisk) * 100) : 0;
-              const style = RISK_STYLES[level];
+              const badge = riskBadge(level);
               return (
                 <div key={level} className="flex flex-col gap-2">
                   <div className="flex items-center justify-between">
-                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${style.badge}`}>
-                      {style.label}
-                    </span>
-                    <span className="text-sm font-semibold text-slate-900">{count}</span>
+                    <NexaBadge tone={badge.tone}>{badge.label}</NexaBadge>
+                    <span className="text-sm font-bold text-slate-900 tabular-nums">{count}</span>
                   </div>
-                  <div className="w-full bg-slate-100 rounded-full h-2">
-                    <div className={`${style.bar} h-2 rounded-full transition-all`} style={{ width: `${pct}%` }} />
-                  </div>
-                  <span className="text-xs text-slate-400">{pct}% of suppliers</span>
+                  <ScoreBar value={pct} showNum={false} />
+                  <span className="text-xs text-slate-400 tabular-nums">{pct}% of suppliers</span>
                 </div>
               );
             })}
@@ -313,17 +322,3 @@ export default async function DashboardPage() {
   );
 }
 
-function StatusBar({ label, count, total, color }: { label: string; count: number; total: number; color: string }) {
-  const pct = total > 0 ? Math.round((count / total) * 100) : 0;
-  return (
-    <div>
-      <div className="flex items-center justify-between mb-1.5">
-        <span className="text-sm font-medium text-slate-700">{label}</span>
-        <span className="text-sm text-slate-500">{count} ({pct}%)</span>
-      </div>
-      <div className="w-full bg-slate-100 rounded-full h-2">
-        <div className={`${color} h-2 rounded-full transition-all`} style={{ width: `${pct}%` }} />
-      </div>
-    </div>
-  );
-}

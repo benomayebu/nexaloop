@@ -1,5 +1,8 @@
 import Link from 'next/link';
 import { apiFetch, apiFetchList } from '../../../lib/api';
+import { NexaBadge } from '@/components/ui/nexa-badge';
+import { docStatusBadge } from '@/lib/badges';
+import { fmtDate } from '@/lib/format';
 
 // ── Types ────────────────────────────────────────────────────────
 
@@ -27,12 +30,12 @@ interface CoverageData {
 
 // ── Helpers ───────────────────────────────────────────────────────
 
-const STATUS_STYLE: Record<string, { badge: string; label: string; cell: string }> = {
-  APPROVED:       { badge: 'bg-emerald-50 text-emerald-700 border-emerald-200', label: 'Approved',       cell: 'bg-emerald-50 text-emerald-600' },
-  PENDING_REVIEW: { badge: 'bg-amber-50 text-amber-700 border-amber-200',       label: 'Pending Review', cell: 'bg-amber-50 text-amber-600' },
-  REJECTED:       { badge: 'bg-red-50 text-red-700 border-red-200',             label: 'Rejected',       cell: 'bg-red-50 text-red-600' },
-  EXPIRED:        { badge: 'bg-slate-100 text-slate-600 border-slate-200',      label: 'Expired',        cell: 'bg-slate-100 text-slate-500' },
-  MISSING:        { badge: 'bg-rose-50 text-rose-600 border-rose-200',          label: 'Missing',        cell: 'bg-rose-50 text-rose-500' },
+const CELL_STYLE: Record<string, string> = {
+  APPROVED:       'bg-emerald-50 text-emerald-600',
+  PENDING_REVIEW: 'bg-amber-50 text-amber-600',
+  REJECTED:       'bg-red-50 text-red-600',
+  EXPIRED:        'bg-slate-100 text-slate-500',
+  MISSING:        'bg-rose-50 text-rose-500',
 };
 
 const STATUS_ICON: Record<string, string> = {
@@ -42,15 +45,6 @@ const STATUS_ICON: Record<string, string> = {
   EXPIRED:        '!',
   MISSING:        '–',
 };
-
-function StatusBadge({ status }: { status: string }) {
-  const s = STATUS_STYLE[status] ?? STATUS_STYLE.MISSING;
-  return (
-    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${s.badge}`}>
-      {s.label}
-    </span>
-  );
-}
 
 // ── Review Queue Tab ─────────────────────────────────────────────
 
@@ -72,7 +66,7 @@ async function ReviewQueueTab({ statusFilter }: { statusFilter: string }) {
                 : 'bg-white text-slate-600 border-slate-200 hover:border-indigo-300'
             }`}
           >
-            {s === 'ALL' ? 'All' : STATUS_STYLE[s]?.label ?? s}
+            {s === 'ALL' ? 'All' : docStatusBadge(s).label}
           </Link>
         ))}
       </div>
@@ -110,9 +104,11 @@ async function ReviewQueueTab({ statusFilter }: { statusFilter: string }) {
                         {doc.supplier.name}
                       </Link>
                     </td>
-                    <td className="px-4 py-3"><StatusBadge status={doc.status} /></td>
-                    <td className="px-4 py-3 text-sm text-slate-600">
-                      {doc.expiryDate ? new Date(doc.expiryDate).toLocaleDateString('en-GB') : '—'}
+                    <td className="px-4 py-3">
+                      {(() => { const b = docStatusBadge(doc.status); return <NexaBadge tone={b.tone} dot={b.dot}>{b.label}</NexaBadge>; })()}
+                    </td>
+                    <td className="px-4 py-3 font-mono text-xs text-slate-600">
+                      {fmtDate(doc.expiryDate)}
                     </td>
                     <td className="px-4 py-3 text-sm text-slate-500">{doc.uploadedBy?.name ?? '—'}</td>
                     <td className="px-4 py-3 text-right">
@@ -189,14 +185,17 @@ async function CoverageMatrixTab() {
     <div>
       {/* Legend */}
       <div className="flex items-center gap-4 mb-4 flex-wrap">
-        {(['APPROVED', 'PENDING_REVIEW', 'EXPIRED', 'REJECTED', 'MISSING'] as const).map((s) => (
-          <div key={s} className="flex items-center gap-1.5 text-xs text-slate-600">
-            <span className={`w-5 h-5 rounded flex items-center justify-center text-xs font-bold ${STATUS_STYLE[s].cell}`}>
-              {STATUS_ICON[s]}
-            </span>
-            {STATUS_STYLE[s].label}
-          </div>
-        ))}
+        {(['APPROVED', 'PENDING_REVIEW', 'EXPIRED', 'REJECTED', 'MISSING'] as const).map((s) => {
+          const b = docStatusBadge(s);
+          return (
+            <div key={s} className="flex items-center gap-1.5 text-xs text-slate-600">
+              <span className={`w-5 h-5 rounded flex items-center justify-center text-xs font-bold ${CELL_STYLE[s]}`}>
+                {STATUS_ICON[s]}
+              </span>
+              {b.label}
+            </div>
+          );
+        })}
         <span className="text-xs text-slate-400 ml-2">N/A = not required for supplier type</span>
       </div>
 
@@ -253,13 +252,13 @@ async function CoverageMatrixTab() {
 
                       const cell = cellMap.get(`${supplier.id}:${dt.id}`);
                       const status = cell?.status ?? 'MISSING';
-                      const style = STATUS_STYLE[status];
                       const icon = STATUS_ICON[status];
+                      const b = docStatusBadge(status);
 
                       const cellContent = (
                         <span
-                          className={`inline-flex items-center justify-center w-7 h-7 rounded text-xs font-bold ${style.cell}`}
-                          title={style.label}
+                          className={`inline-flex items-center justify-center w-7 h-7 rounded text-xs font-bold ${CELL_STYLE[status]}`}
+                          title={b.label}
                         >
                           {icon}
                         </span>
@@ -279,13 +278,9 @@ async function CoverageMatrixTab() {
                     })}
                     <td className="px-3 py-3 text-center">
                       {gaps === 0 ? (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
-                          ✓ Full
-                        </span>
+                        <NexaBadge tone="emerald">✓ Full</NexaBadge>
                       ) : (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-rose-50 text-rose-700 border border-rose-200">
-                          {gaps} gap{gaps > 1 ? 's' : ''}
-                        </span>
+                        <NexaBadge tone="red">{gaps} gap{gaps > 1 ? 's' : ''}</NexaBadge>
                       )}
                     </td>
                   </tr>

@@ -2,6 +2,9 @@ import Link from 'next/link';
 import { Suspense } from 'react';
 import { apiFetchList } from '../../../lib/api';
 import { ProductFilters } from '../../components/product-filters';
+import { NexaBadge } from '@/components/ui/nexa-badge';
+import { NexaButton } from '@/components/ui/nexa-button';
+import { ScoreBar } from '@/components/ui/score-bar';
 
 interface Product {
   id: string;
@@ -13,16 +16,6 @@ interface Product {
   updatedAt: string;
   _count: { suppliers: number };
   complianceScore: number | null;
-}
-
-function Badge({ children, variant }: { children: React.ReactNode; variant: 'emerald' | 'amber' | 'red' | 'slate' }) {
-  const styles = {
-    emerald: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-    amber: 'bg-amber-50 text-amber-700 border-amber-200',
-    red: 'bg-red-50 text-red-700 border-red-200',
-    slate: 'bg-slate-50 text-slate-600 border-slate-200',
-  };
-  return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${styles[variant]}`}>{children}</span>;
 }
 
 export default async function ProductsPage({
@@ -45,11 +38,17 @@ export default async function ProductsPage({
           <h1 className="text-2xl font-bold text-slate-900">Products</h1>
           <p className="text-sm text-slate-500 mt-1">{products.length} product{products.length !== 1 ? 's' : ''}</p>
         </div>
-        <Link href="/dashboard/products/new" className="inline-flex items-center gap-1.5 bg-indigo-600 text-white rounded-md px-3 py-2 text-sm font-medium hover:bg-indigo-700 transition-colors">
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-          </svg>
-          Add Product
+        <Link href="/dashboard/products/new">
+          <NexaButton
+            variant="primary"
+            icon={
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+              </svg>
+            }
+          >
+            Add Product
+          </NexaButton>
         </Link>
       </div>
 
@@ -78,7 +77,7 @@ export default async function ProductsPage({
                   <h3 className="text-sm font-semibold text-slate-900 group-hover:text-indigo-600 transition-colors truncate">{product.name}</h3>
                   <p className="text-xs text-slate-500 font-mono mt-0.5">{product.sku}</p>
                 </div>
-                <Badge variant={product.status === 'ACTIVE' ? 'emerald' : 'slate'}>{product.status}</Badge>
+                <NexaBadge tone={product.status === 'ACTIVE' ? 'emerald' : 'slate'} dot>{product.status === 'ACTIVE' ? 'Active' : 'Archived'}</NexaBadge>
               </div>
 
               <div className="flex items-center gap-4 text-xs text-slate-500 mb-3">
@@ -95,41 +94,20 @@ export default async function ProductsPage({
                   <span className="text-sm text-slate-600">{product._count.suppliers} supplier{product._count.suppliers !== 1 ? 's' : ''}</span>
                 </div>
                 {product._count.suppliers === 0 && (
-                  <Badge variant="amber">No suppliers</Badge>
+                  <NexaBadge tone="amber">No suppliers</NexaBadge>
                 )}
               </div>
 
               {/* Live compliance score */}
               <div className="mt-3 pt-3 border-t border-slate-100">
-                <div className="flex items-center justify-between text-xs mb-1.5">
-                  <span className="text-slate-500">Compliance</span>
-                  <span className={`font-medium ${
-                    product.complianceScore === null
-                      ? 'text-slate-400'
-                      : product.complianceScore >= 80
-                        ? 'text-emerald-700'
-                        : product.complianceScore >= 50
-                          ? 'text-amber-700'
-                          : 'text-red-700'
-                  }`}>
-                    {product.complianceScore === null ? '—' : `${product.complianceScore}%`}
-                  </span>
-                </div>
+                <p className="text-xs text-slate-500 mb-1.5">Compliance</p>
                 {product.complianceScore !== null ? (
-                  <div className="w-full bg-slate-100 rounded-full h-1.5">
-                    <div
-                      className={`h-1.5 rounded-full transition-all ${
-                        product.complianceScore >= 80
-                          ? 'bg-emerald-500'
-                          : product.complianceScore >= 50
-                            ? 'bg-amber-400'
-                            : 'bg-red-400'
-                      }`}
-                      style={{ width: `${product.complianceScore}%` }}
-                    />
-                  </div>
+                  <ScoreBar value={product.complianceScore} />
                 ) : (
-                  <div className="w-full bg-slate-100 rounded-full h-1.5" />
+                  <div className="flex items-center gap-2">
+                    <div className="h-1.5 flex-1 rounded-full bg-slate-100" />
+                    <span className="text-xs text-slate-400">—</span>
+                  </div>
                 )}
               </div>
             </Link>

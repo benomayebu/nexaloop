@@ -2,6 +2,11 @@ import Link from 'next/link';
 import { Suspense } from 'react';
 import { apiFetchList } from '../../../lib/api';
 import { SupplierFilters } from '../../components/supplier-filters';
+import { NexaBadge } from '@/components/ui/nexa-badge';
+import { SupAvatar } from '@/components/ui/sup-avatar';
+import { NexaButton } from '@/components/ui/nexa-button';
+import { supStatusBadge, riskBadge, typeBadge } from '@/lib/badges';
+import { fmtDate } from '@/lib/format';
 
 interface Supplier {
   id: string;
@@ -24,45 +29,6 @@ async function getSuppliers(searchParams: Record<string, string>): Promise<Suppl
   return apiFetchList<Supplier>(`/suppliers${qs ? `?${qs}` : ''}`);
 }
 
-function formatLabel(value: string) {
-  return value.replace(/_/g, ' ');
-}
-
-function StatusBadge({ status }: { status: string }) {
-  const styles: Record<string, string> = {
-    ACTIVE: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-    INACTIVE: 'bg-slate-50 text-slate-600 border-slate-200',
-    PROSPECT: 'bg-amber-50 text-amber-700 border-amber-200',
-  };
-  return (
-    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${styles[status] ?? 'bg-slate-50 text-slate-600 border-slate-200'}`} aria-label={`Status: ${formatLabel(status)}`}>
-      {formatLabel(status)}
-    </span>
-  );
-}
-
-function RiskBadge({ risk }: { risk: string }) {
-  const styles: Record<string, string> = {
-    LOW: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-    MEDIUM: 'bg-amber-50 text-amber-700 border-amber-200',
-    HIGH: 'bg-red-50 text-red-700 border-red-200',
-    UNKNOWN: 'bg-slate-50 text-slate-500 border-slate-200',
-  };
-  return (
-    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${styles[risk] ?? 'bg-slate-50 text-slate-500 border-slate-200'}`} aria-label={`Risk: ${formatLabel(risk)}`}>
-      {formatLabel(risk)}
-    </span>
-  );
-}
-
-function TypeBadge({ type }: { type: string }) {
-  return (
-    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-50 text-indigo-700 border border-indigo-200">
-      {formatLabel(type)}
-    </span>
-  );
-}
-
 export default async function SuppliersPage({
   searchParams,
 }: {
@@ -78,14 +44,17 @@ export default async function SuppliersPage({
           <h1 className="text-2xl font-bold text-slate-900">Suppliers</h1>
           <p className="text-sm text-slate-500 mt-1">{suppliers.length} suppliers in your network</p>
         </div>
-        <Link
-          href="/dashboard/suppliers/new"
-          className="inline-flex items-center gap-2 bg-indigo-600 text-white rounded-md px-4 py-2 text-sm font-medium hover:bg-indigo-700 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors"
-        >
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-          </svg>
-          Add Supplier
+        <Link href="/dashboard/suppliers/new">
+          <NexaButton
+            variant="primary"
+            icon={
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+              </svg>
+            }
+          >
+            Add Supplier
+          </NexaButton>
         </Link>
       </div>
 
@@ -117,31 +86,41 @@ export default async function SuppliersPage({
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {suppliers.map((supplier) => (
-                  <tr key={supplier.id} className="hover:bg-slate-50 transition-colors">
-                    <td className="px-4 py-3">
-                      <Link href={`/dashboard/suppliers/${supplier.id}`} className="text-sm font-medium text-indigo-600 hover:text-indigo-800">
-                        {supplier.name}
-                      </Link>
-                      {supplier.supplierCode && (
-                        <p className="text-xs text-slate-400 font-mono mt-0.5">{supplier.supplierCode}</p>
-                      )}
-                    </td>
-                    <td className="px-4 py-3">
-                      <TypeBadge type={supplier.type} />
-                    </td>
-                    <td className="px-4 py-3 text-sm text-slate-700">{supplier.country}</td>
-                    <td className="px-4 py-3">
-                      <StatusBadge status={supplier.status} />
-                    </td>
-                    <td className="px-4 py-3">
-                      <RiskBadge risk={supplier.riskLevel} />
-                    </td>
-                    <td className="px-4 py-3 text-sm text-slate-500">
-                      {new Date(supplier.updatedAt).toLocaleDateString()}
-                    </td>
-                  </tr>
-                ))}
+                {suppliers.map((supplier) => {
+                  const status = supStatusBadge(supplier.status);
+                  const risk = riskBadge(supplier.riskLevel);
+                  const type = typeBadge(supplier.type);
+                  return (
+                    <tr key={supplier.id} className="hover:bg-slate-50 transition-colors">
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-3">
+                          <SupAvatar name={supplier.name} type={supplier.type} size="sm" />
+                          <div>
+                            <Link href={`/dashboard/suppliers/${supplier.id}`} className="text-sm font-medium text-slate-900 hover:text-indigo-600">
+                              {supplier.name}
+                            </Link>
+                            {supplier.supplierCode && (
+                              <p className="text-xs text-slate-400 font-mono mt-0.5">{supplier.supplierCode}</p>
+                            )}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <NexaBadge tone={type.tone}>{type.label}</NexaBadge>
+                      </td>
+                      <td className="px-4 py-3 text-sm text-slate-700">{supplier.country}</td>
+                      <td className="px-4 py-3">
+                        <NexaBadge tone={status.tone} dot>{status.label}</NexaBadge>
+                      </td>
+                      <td className="px-4 py-3">
+                        <NexaBadge tone={risk.tone}>{risk.label}</NexaBadge>
+                      </td>
+                      <td className="px-4 py-3 font-mono text-xs text-slate-500">
+                        {fmtDate(supplier.updatedAt)}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
