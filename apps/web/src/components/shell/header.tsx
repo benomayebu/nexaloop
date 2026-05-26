@@ -21,6 +21,7 @@ const SEGMENT_LABELS: Record<string, string> = {
   documents: 'Document review',
   compliance: 'Digital Product Passports',
   settings: 'Settings',
+  crm: 'CRM',
   notifications: 'Notifications',
   new: 'New',
   edit: 'Edit',

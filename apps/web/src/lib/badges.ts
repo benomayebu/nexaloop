@@ -21,9 +21,11 @@ export function docStatusBadge(status: string): BadgeProps {
 }
 
 const SUP_STATUS_MAP: Record<string, Omit<BadgeProps, 'dot'>> = {
-  ACTIVE:   { tone: 'emerald', label: 'Active' },
-  INACTIVE: { tone: 'slate',   label: 'Inactive' },
-  PROSPECT: { tone: 'indigo',  label: 'Onboarding' },
+  ACTIVE:     { tone: 'emerald', label: 'Active' },
+  INACTIVE:   { tone: 'slate',   label: 'Inactive' },
+  PROSPECT:   { tone: 'indigo',  label: 'Prospect' },
+  VETTING:    { tone: 'indigo',  label: 'Vetting' },
+  ONBOARDING: { tone: 'amber',   label: 'Onboarding' },
 };
 
 export function supStatusBadge(status: string): BadgeProps {

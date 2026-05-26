@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { LoopMark } from './loop-mark';
-import { IconHome, IconTruck, IconPackage, IconFile, IconQr, IconLeaf, IconBook, IconSettings, IconLogout } from './nav-icons';
+import { IconHome, IconTruck, IconPackage, IconFile, IconMail, IconQr, IconLeaf, IconBook, IconSettings, IconLogout } from './nav-icons';
 import { initials } from '@/lib/format';
 
 interface SidebarProps {
@@ -34,6 +34,7 @@ export function Sidebar({ user, org: _org, role, badgeCounts }: SidebarProps) {
     { href: '/dashboard/suppliers', label: 'Suppliers', icon: <IconTruck />, count: badgeCounts.suppliers },
     { href: '/dashboard/products', label: 'Products', icon: <IconPackage />, count: badgeCounts.products },
     { href: '/dashboard/documents', label: 'Document review', icon: <IconFile />, count: badgeCounts.pendingReview || null },
+    { href: '/dashboard/crm', label: 'CRM', icon: <IconMail /> },
   ];
 
   const regulatory: NavItem[] = [

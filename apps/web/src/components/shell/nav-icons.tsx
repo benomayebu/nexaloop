@@ -45,6 +45,10 @@ export function IconLogout({ className }: IconProps) {
   return <svg viewBox="0 0 24 24" className={className ?? 'w-5 h-5'} {...s}><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><path d="M16 17l5-5-5-5M21 12H9" /></svg>;
 }
 
+export function IconMail({ className }: IconProps) {
+  return <svg viewBox="0 0 24 24" className={className ?? 'w-5 h-5'} {...s}><rect x="2" y="4" width="20" height="16" rx="2" /><path d="M22 7l-10 7L2 7" /></svg>;
+}
+
 export function IconSearch({ className }: IconProps) {
   return <svg viewBox="0 0 24 24" className={className ?? 'w-5 h-5'} {...s}><circle cx="11" cy="11" r="7" /><path d="M21 21l-4.3-4.3" /></svg>;
 }

@@ -28,6 +28,8 @@ enum SupplierStatus {
   ACTIVE
   INACTIVE
   PROSPECT
+  VETTING
+  ONBOARDING
 }
 
 enum RiskLevel {
@@ -57,6 +59,9 @@ model User {
   notifications        Notification[]
   passwordResetTokens  PasswordResetToken[]
   sentInvites          OrgInviteToken[]     @relation("SentInvites")
+  createdThreads       CrmThread[]          @relation("CreatedThreads")
+  authoredMessages     CrmMessage[]         @relation("AuthoredMessages")
+  assignedTasks        CrmTask[]            @relation("AssignedTasks")
 }
 
 // ─── Phase 10: Password Reset ─────────────────────────────────────
@@ -111,6 +116,8 @@ model Organization {
   products           Product[]
   notifications      Notification[]
   inviteTokens         OrgInviteToken[]
+  crmThreads           CrmThread[]
+  crmTasks             CrmTask[]
 }
 
 model UserOrganization {
@@ -140,20 +147,23 @@ model Supplier {
   contacts     Contact[]
   documents    Document[]
   productLinks ProductSupplier[]
+  crmThreads   CrmThread[]
+  crmTasks     CrmTask[]
   createdAt    DateTime          @default(now())
   updatedAt    DateTime          @updatedAt
 }
 
 model Contact {
-  id         String   @id @default(cuid())
+  id         String      @id @default(cuid())
   supplierId String
-  supplier   Supplier @relation(fields: [supplierId], references: [id])
+  supplier   Supplier    @relation(fields: [supplierId], references: [id])
   name       String
   email      String?
   phone      String?
   role       String?
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  crmThreads CrmThread[]
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
 }
 
 model DocumentType {
@@ -188,6 +198,7 @@ model Document {
   reviewedByUserId String?
   reviewedBy       User?          @relation("ReviewedDocuments", fields: [reviewedByUserId], references: [id])
   reviewNotes      String?
+  crmTasks         CrmTask[]
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
 }
@@ -271,4 +282,90 @@ model Notification {
 
   @@index([userId, read])
   @@index([orgId, createdAt])
+}
+
+// ─── CRM: Threads & Messages ─────────────────────────────────────
+
+enum CrmThreadStatus {
+  OPEN
+  RESOLVED
+}
+
+model CrmThread {
+  id            String          @id @default(cuid())
+  orgId         String
+  org           Organization    @relation(fields: [orgId], references: [id])
+  supplierId    String?
+  supplier      Supplier?       @relation(fields: [supplierId], references: [id])
+  contactId     String?
+  contact       Contact?        @relation(fields: [contactId], references: [id])
+  subject       String
+  status        CrmThreadStatus @default(OPEN)
+  lastMessageAt DateTime        @default(now())
+  createdByUserId String
+  createdBy     User            @relation("CreatedThreads", fields: [createdByUserId], references: [id])
+  messages      CrmMessage[]
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  @@index([orgId, status])
+  @@index([orgId, lastMessageAt])
+  @@index([supplierId])
+}
+
+enum CrmMessageAuthorType {
+  INTERNAL
+  EXTERNAL
+}
+
+model CrmMessage {
+  id          String                @id @default(cuid())
+  threadId    String
+  thread      CrmThread             @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  authorType  CrmMessageAuthorType
+  authorName  String
+  authorUserId String?
+  author       User?               @relation("AuthoredMessages", fields: [authorUserId], references: [id])
+  body        String
+  createdAt   DateTime             @default(now())
+
+  @@index([threadId, createdAt])
+}
+
+// ─── CRM: Tasks ──────────────────────────────────────────────────
+
+enum CrmTaskPriority {
+  HIGH
+  MEDIUM
+  LOW
+}
+
+enum CrmTaskStatus {
+  OPEN
+  DONE
+}
+
+model CrmTask {
+  id           String          @id @default(cuid())
+  orgId        String
+  org          Organization    @relation(fields: [orgId], references: [id])
+  title        String
+  description  String?
+  supplierId   String?
+  supplier     Supplier?       @relation(fields: [supplierId], references: [id])
+  documentId   String?
+  document     Document?       @relation(fields: [documentId], references: [id])
+  assigneeId   String
+  assignee     User            @relation("AssignedTasks", fields: [assigneeId], references: [id])
+  priority     CrmTaskPriority @default(MEDIUM)
+  status       CrmTaskStatus   @default(OPEN)
+  dueDate      DateTime
+  completedAt  DateTime?
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  @@index([orgId, status])
+  @@index([orgId, dueDate])
+  @@index([assigneeId, status])
+  @@index([supplierId])
 }
