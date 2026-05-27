@@ -5,6 +5,7 @@ import { ProductFilters } from '../../components/product-filters';
 import { NexaBadge } from '@/components/ui/nexa-badge';
 import { NexaButton } from '@/components/ui/nexa-button';
 import { CsvImportButton } from '../../components/csv-import-button';
+import { CsvExportButton } from '../../components/csv-export-button';
 import { ScoreBar } from '@/components/ui/score-bar';
 
 interface Product {
@@ -47,6 +48,7 @@ export default async function ProductsPage({
           </p>
         </div>
         <div className="flex items-center gap-3">
+          <CsvExportButton entity="products" />
           <CsvImportButton entity="products" />
           <Link href="/dashboard/products/new">
             <NexaButton

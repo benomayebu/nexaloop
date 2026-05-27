@@ -331,4 +331,35 @@ export class SuppliersService {
 
     return { totalRows: rows.length, created: created.length, skipped: skipped.length, createdItems: created, skippedItems: skipped };
   }
+
+  async exportCsv(orgId: string): Promise<string> {
+    const suppliers = await this.prisma.supplier.findMany({
+      where: { orgId },
+      include: { _count: { select: { documents: true, contacts: true } } },
+      orderBy: { name: 'asc' },
+    });
+
+    const headers = ['Name', 'Code', 'Type', 'Country', 'City', 'Status', 'Risk Level', 'Documents', 'Contacts', 'Notes', 'Created', 'Updated'];
+    const rows = suppliers.map((s) => [
+      s.name,
+      s.supplierCode ?? '',
+      s.type,
+      s.country,
+      s.city ?? '',
+      s.status,
+      s.riskLevel,
+      String(s._count.documents),
+      String(s._count.contacts),
+      s.notes ?? '',
+      s.createdAt.toISOString().split('T')[0],
+      s.updatedAt.toISOString().split('T')[0],
+    ]);
+
+    return [
+      headers.join(','),
+      ...rows.map((row) =>
+        row.map((v) => (v.includes(',') || v.includes('"') || v.includes('\n') ? `"${v.replace(/"/g, '""')}"` : v)).join(','),
+      ),
+    ].join('\n');
+  }
 }

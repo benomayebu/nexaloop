@@ -6,6 +6,7 @@ import { NexaBadge } from '@/components/ui/nexa-badge';
 import { SupAvatar } from '@/components/ui/sup-avatar';
 import { NexaButton } from '@/components/ui/nexa-button';
 import { CsvImportButton } from '../../components/csv-import-button';
+import { CsvExportButton } from '../../components/csv-export-button';
 import { ScoreBar } from '@/components/ui/score-bar';
 import { supStatusBadge, riskBadge, typeBadge } from '@/lib/badges';
 import { fmtDate } from '@/lib/format';
@@ -61,6 +62,7 @@ export default async function SuppliersPage({
           </p>
         </div>
         <div className="flex items-center gap-3">
+          <CsvExportButton entity="suppliers" />
           <CsvImportButton entity="suppliers" />
           <Link href="/dashboard/suppliers/new">
             <NexaButton

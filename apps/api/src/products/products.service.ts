@@ -443,4 +443,38 @@ export class ProductsService {
 
     return { totalRows: rows.length, created: created.length, skipped: skipped.length, createdItems: created, skippedItems: skipped };
   }
+
+  async exportCsv(orgId: string): Promise<string> {
+    const products = await this.prisma.product.findMany({
+      where: { orgId },
+      include: { _count: { select: { suppliers: true } } },
+      orderBy: { name: 'asc' },
+    });
+
+    const headers = ['Name', 'SKU', 'Category', 'Season', 'Status', 'Material', 'Country of Origin', 'Weight', 'Weight Unit', 'Recycled Content %', 'Suppliers', 'DPP Enabled', 'Notes', 'Created', 'Updated'];
+    const rows = products.map((p) => [
+      p.name,
+      p.sku,
+      p.category ?? '',
+      p.season ?? '',
+      p.status,
+      p.materialComposition ?? '',
+      p.countryOfOrigin ?? '',
+      p.weight != null ? String(p.weight) : '',
+      p.weightUnit ?? 'kg',
+      p.recycledContent != null ? String(p.recycledContent) : '',
+      String(p._count.suppliers),
+      p.dppEnabled ? 'Yes' : 'No',
+      p.notes ?? '',
+      p.createdAt.toISOString().split('T')[0],
+      p.updatedAt.toISOString().split('T')[0],
+    ]);
+
+    return [
+      headers.join(','),
+      ...rows.map((row) =>
+        row.map((v) => (v.includes(',') || v.includes('"') || v.includes('\n') ? `"${v.replace(/"/g, '""')}"` : v)).join(','),
+      ),
+    ].join('\n');
+  }
 }

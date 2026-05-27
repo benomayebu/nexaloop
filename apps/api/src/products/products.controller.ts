@@ -7,6 +7,7 @@ import {
   Body,
   Param,
   Query,
+  Res,
   UseGuards,
   UseInterceptors,
   UploadedFile,
@@ -14,6 +15,7 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
+import { Response } from 'express';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
 import { ProductsService, ProductComplianceResult } from './products.service';
@@ -42,6 +44,18 @@ export class ProductsController {
   @Post('products')
   create(@CurrentOrg() orgId: string, @Body() dto: CreateProductDto) {
     return this.productsService.create(orgId, dto);
+  }
+
+  @Get('products/export-csv')
+  async exportCsv(
+    @CurrentOrg() orgId: string,
+    @Res() res: Response,
+  ) {
+    const csv = await this.productsService.exportCsv(orgId);
+    const timestamp = new Date().toISOString().split('T')[0];
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', `attachment; filename="products-${timestamp}.csv"`);
+    res.send(csv);
   }
 
   @Post('products/import-csv')

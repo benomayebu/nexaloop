@@ -7,12 +7,14 @@ import {
   Body,
   Param,
   Query,
+  Res,
   UseGuards,
   UseInterceptors,
   UploadedFile,
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
+import { Response } from 'express';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
 import { SuppliersService } from './suppliers.service';
@@ -45,6 +47,18 @@ export class SuppliersController {
   @Post('suppliers')
   create(@CurrentOrg() orgId: string, @Body() dto: CreateSupplierDto) {
     return this.suppliersService.create(orgId, dto);
+  }
+
+  @Get('suppliers/export-csv')
+  async exportCsv(
+    @CurrentOrg() orgId: string,
+    @Res() res: Response,
+  ) {
+    const csv = await this.suppliersService.exportCsv(orgId);
+    const timestamp = new Date().toISOString().split('T')[0];
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', `attachment; filename="suppliers-${timestamp}.csv"`);
+    res.send(csv);
   }
 
   @Post('suppliers/import-csv')
