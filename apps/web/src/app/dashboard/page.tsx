@@ -6,6 +6,7 @@ import { ScoreBar } from '@/components/ui/score-bar';
 import { SupAvatar } from '@/components/ui/sup-avatar';
 import { riskBadge } from '@/lib/badges';
 import { fmtDate, daysUntil, relativeDays } from '@/lib/format';
+import { EprDownloadButton } from '../components/epr-download-button';
 
 // ── Types ─────────────────────────────────────────────────────────
 
@@ -231,6 +232,7 @@ export default async function DashboardPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <EprDownloadButton label="Export report" />
           <Link href="/dashboard/suppliers/new">
             <NexaButton
               variant="primary"

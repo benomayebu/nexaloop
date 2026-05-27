@@ -176,7 +176,7 @@ export default async function ProductDetailPage({
             </dl>
           </div>
 
-          {/* Quick actions */}
+          {/* Sidebar */}
           <div className="space-y-4">
             <div className="bg-white border border-slate-200 rounded-lg shadow-sm p-6">
               <h2 className="text-base font-semibold text-slate-900 mb-4">Quick Actions</h2>
@@ -197,6 +197,40 @@ export default async function ProductDetailPage({
                 )}
                 <EprDownloadButton />
               </div>
+            </div>
+
+            {/* Supply chain flow */}
+            <div className="bg-white border border-slate-200 rounded-lg shadow-sm p-6">
+              <h2 className="text-base font-semibold text-slate-900 mb-3">Supply chain flow</h2>
+              {product.suppliers.length === 0 ? (
+                <p className="text-xs text-slate-400">No suppliers linked yet.</p>
+              ) : (
+                <div className="space-y-0">
+                  {product.suppliers.map((link, i) => (
+                    <div key={link.id}>
+                      <div className="flex items-center gap-3 py-2">
+                        <div className="w-7 h-7 rounded-md bg-indigo-50 text-indigo-700 flex items-center justify-center flex-shrink-0">
+                          <span className="text-[10px] font-semibold">{formatLabel(link.role).slice(0, 4).toUpperCase()}</span>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <Link href={`/dashboard/suppliers/${link.supplier.id}`} className="text-sm font-medium text-slate-900 hover:text-indigo-600 truncate block">
+                            {link.supplier.name}
+                          </Link>
+                          <p className="text-xs text-slate-500">{link.supplier.country}</p>
+                        </div>
+                      </div>
+                      {i < product.suppliers.length - 1 && (
+                        <div className="flex items-center ml-3.5">
+                          <div className="w-px h-4 bg-slate-200" />
+                          <svg className="w-3 h-3 text-slate-300 ml-[-1px]" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 13.5L12 21m0 0l-7.5-7.5M12 21V3" />
+                          </svg>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div className="bg-white border border-slate-200 rounded-lg shadow-sm p-6">
