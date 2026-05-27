@@ -183,6 +183,96 @@ export class AuthService {
     ]);
   }
 
+  async acceptInvite(token: string, opts?: { name?: string; password?: string }) {
+    const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+    const now = new Date();
+
+    const invite = await this.prisma.orgInviteToken.findFirst({
+      where: { tokenHash, usedAt: null, expiresAt: { gt: now } },
+      include: { org: { select: { id: true, name: true } } },
+    });
+
+    if (!invite) {
+      throw new BadRequestException('Invalid or expired invitation link');
+    }
+
+    const existingUser = await this.prisma.user.findFirst({
+      where: { email: invite.email },
+    });
+
+    const result = await this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+      let user: { id: string; email: string; name: string | null; passwordHash: string; createdAt: Date; updatedAt: Date };
+
+      if (existingUser) {
+        user = existingUser;
+        const alreadyMember = await tx.userOrganization.findFirst({
+          where: { userId: user.id, organizationId: invite.orgId },
+        });
+        if (alreadyMember) {
+          throw new BadRequestException('You are already a member of this organisation');
+        }
+      } else {
+        if (!opts?.password) {
+          throw new BadRequestException('Password is required for new accounts');
+        }
+        const passwordHash = await bcrypt.hash(opts.password, 12);
+        user = await tx.user.create({
+          data: { email: invite.email, passwordHash, name: opts?.name },
+        });
+      }
+
+      await tx.userOrganization.create({
+        data: { userId: user.id, organizationId: invite.orgId, role: invite.role },
+      });
+
+      await tx.orgInviteToken.update({
+        where: { id: invite.id },
+        data: { usedAt: now },
+      });
+
+      return { user, org: invite.org };
+    });
+
+    const jwtToken = this.jwtService.sign({
+      sub: result.user.id,
+      email: result.user.email,
+      orgId: result.org.id,
+    });
+
+    return { token: jwtToken, user: this.sanitizeUser(result.user), org: result.org };
+  }
+
+  async getInviteInfo(token: string) {
+    const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+    const now = new Date();
+
+    const invite = await this.prisma.orgInviteToken.findFirst({
+      where: { tokenHash, usedAt: null, expiresAt: { gt: now } },
+      include: {
+        org: { select: { name: true } },
+        invitedBy: { select: { name: true, email: true } },
+      },
+    });
+
+    if (!invite) {
+      return null;
+    }
+
+    const existingUser = await this.prisma.user.findFirst({
+      where: { email: invite.email },
+      select: { id: true, name: true },
+    });
+
+    return {
+      email: invite.email,
+      role: invite.role,
+      orgName: invite.org.name,
+      invitedBy: invite.invitedBy.name ?? invite.invitedBy.email,
+      isNewUser: !existingUser,
+      userName: existingUser?.name ?? null,
+    };
+  }
+
   async getMe(userId: string, orgId: string) {
     const membership = await this.prisma.userOrganization.findFirst({
       where: {

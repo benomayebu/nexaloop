@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Body, Res, UseGuards } from '@nestjs/common';
+import { Controller, Post, Get, Body, Query, Res, UseGuards } from '@nestjs/common';
 import { Response } from 'express';
 import { Throttle } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
@@ -9,6 +9,7 @@ import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
+import { AcceptInviteDto } from './dto/accept-invite.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -80,6 +81,34 @@ export class AuthController {
   async resetPassword(@Body() body: ResetPasswordDto) {
     await this.authService.resetPassword(body.token, body.newPassword);
     return { message: 'Password updated successfully.' };
+  }
+
+  @Get('invite-info')
+  async getInviteInfo(@Query('token') token: string) {
+    if (!token) return { valid: false };
+    const info = await this.authService.getInviteInfo(token);
+    if (!info) return { valid: false };
+    return { valid: true, ...info };
+  }
+
+  @Throttle({ default: { ttl: 60_000, limit: 5 } })
+  @Post('accept-invite')
+  async acceptInvite(
+    @Body() body: AcceptInviteDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const result = await this.authService.acceptInvite(body.token, {
+      name: body.name,
+      password: body.password,
+    });
+    const isProduction = process.env.NODE_ENV === 'production';
+    res.cookie('auth_token', result.token, {
+      httpOnly: true,
+      sameSite: isProduction ? 'none' : 'lax',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+      secure: isProduction,
+    });
+    return { token: result.token, user: result.user, org: result.org };
   }
 
   @Post('logout')
