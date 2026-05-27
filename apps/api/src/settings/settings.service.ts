@@ -27,23 +27,30 @@ export class SettingsService {
 
   // ── Organisation ─────────────────────────────────────────────────
 
+  private static readonly ORG_SELECT = {
+    id: true, name: true, country: true, vat: true, website: true,
+    address: true, currency: true, industry: true, supplierCount: true,
+    primaryConcern: true, createdAt: true,
+  } as const;
+
   async getOrg(orgId: string) {
     const org = await this.prisma.organization.findFirst({
       where: { id: orgId },
-      select: { id: true, name: true, industry: true, supplierCount: true, primaryConcern: true, createdAt: true },
+      select: SettingsService.ORG_SELECT,
     });
     if (!org) throw new NotFoundException('Organisation not found');
     return org;
   }
 
   async updateOrg(orgId: string, dto: UpdateOrgDto) {
+    const data: Record<string, string> = {};
+    for (const key of ['name', 'industry', 'country', 'vat', 'website', 'address', 'currency'] as const) {
+      if (dto[key] !== undefined) data[key] = dto[key]!;
+    }
     return this.prisma.organization.update({
       where: { id: orgId },
-      data: {
-        ...(dto.name !== undefined ? { name: dto.name } : {}),
-        ...(dto.industry !== undefined ? { industry: dto.industry } : {}),
-      },
-      select: { id: true, name: true, industry: true, supplierCount: true, primaryConcern: true, createdAt: true },
+      data,
+      select: SettingsService.ORG_SELECT,
     });
   }
 

@@ -105,6 +105,9 @@ model Organization {
   updatedAt          DateTime           @updatedAt
   country            String?
   vat                String?
+  website            String?
+  address            String?
+  currency           String?            @default("EUR")
   industry           String?
   supplierCount      String?
   primaryConcern     String?
