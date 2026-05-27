@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { LoopMark } from './loop-mark';
 import { IconHome, IconTruck, IconPackage, IconFile, IconMail, IconQr, IconLeaf, IconBook, IconSettings, IconLogout } from './nav-icons';
 import { initials } from '@/lib/format';
@@ -28,6 +28,7 @@ interface NavItem {
 export function Sidebar({ user, org: _org, role, badgeCounts }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const workspace: NavItem[] = [
     { href: '/dashboard', label: 'Dashboard', icon: <IconHome />, exact: true },
@@ -39,7 +40,7 @@ export function Sidebar({ user, org: _org, role, badgeCounts }: SidebarProps) {
 
   const regulatory: NavItem[] = [
     { href: '/dashboard/compliance', label: 'Digital Product Passports', icon: <IconQr /> },
-    { href: '/dashboard/compliance#epr', label: 'EPR exports', icon: <IconLeaf /> },
+    { href: '/dashboard/compliance?tab=epr', label: 'EPR exports', icon: <IconLeaf /> },
   ];
 
   const system: NavItem[] = [
@@ -65,9 +66,9 @@ export function Sidebar({ user, org: _org, role, badgeCounts }: SidebarProps) {
 
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto px-3 py-3">
-        <NavSection label="Workspace" items={workspace} pathname={pathname} />
-        <NavSection label="Regulatory" items={regulatory} pathname={pathname} />
-        <NavSection label="System" items={system} pathname={pathname} />
+        <NavSection label="Workspace" items={workspace} pathname={pathname} searchParams={searchParams} />
+        <NavSection label="Regulatory" items={regulatory} pathname={pathname} searchParams={searchParams} />
+        <NavSection label="System" items={system} pathname={pathname} searchParams={searchParams} />
       </nav>
 
       {/* User footer */}
@@ -93,16 +94,46 @@ export function Sidebar({ user, org: _org, role, badgeCounts }: SidebarProps) {
   );
 }
 
-function NavSection({ label, items, pathname }: { label: string; items: NavItem[]; pathname: string }) {
+function NavSection({
+  label,
+  items,
+  pathname,
+  searchParams,
+}: {
+  label: string;
+  items: NavItem[];
+  pathname: string;
+  searchParams: ReturnType<typeof useSearchParams>;
+}) {
   return (
     <div className="mb-3">
       <p className="px-3 py-2 text-[10.5px] font-semibold text-slate-500 uppercase tracking-wider">
         {label}
       </p>
       {items.map((item) => {
-        const isActive = item.exact
-          ? pathname === item.href
-          : pathname.startsWith(item.href) && !item.href.includes('#');
+        const [itemPath, itemQuery] = item.href.split('?');
+        let isActive: boolean;
+        if (item.exact) {
+          isActive = pathname === itemPath;
+        } else if (itemQuery) {
+          const qp = new URLSearchParams(itemQuery);
+          isActive =
+            pathname.startsWith(itemPath) &&
+            Array.from(qp.entries()).every(([k, v]) => searchParams.get(k) === v);
+        } else {
+          const hasQuerySibling = items.some((s) => s !== item && s.href.startsWith(itemPath + '?'));
+          if (hasQuerySibling) {
+            const siblingMatch = items.some((s) => {
+              if (s === item || !s.href.includes('?')) return false;
+              const [, sq] = s.href.split('?');
+              const sqp = new URLSearchParams(sq);
+              return Array.from(sqp.entries()).every(([k, v]) => searchParams.get(k) === v);
+            });
+            isActive = pathname.startsWith(itemPath) && !siblingMatch;
+          } else {
+            isActive = pathname.startsWith(itemPath);
+          }
+        }
         return (
           <Link
             key={item.href}

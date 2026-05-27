@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import { apiFetch } from '../../lib/api';
 import { Sidebar } from '@/components/shell/sidebar';
 import { Header } from '@/components/shell/header';
@@ -44,12 +45,14 @@ export default async function DashboardLayout({
     <ToastProvider>
       <BreadcrumbProvider>
         <div className="min-h-screen bg-slate-50 flex">
-          <Sidebar
-            user={user}
-            org={org}
-            role={role}
-            badgeCounts={badgeCounts}
-          />
+          <Suspense>
+            <Sidebar
+              user={user}
+              org={org}
+              role={role}
+              badgeCounts={badgeCounts}
+            />
+          </Suspense>
           <MobileNav
             user={user}
             org={org}
