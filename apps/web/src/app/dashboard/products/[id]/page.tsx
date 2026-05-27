@@ -381,6 +381,13 @@ async function DppTab({ product }: { product: Product }) {
         )}
       </div>
 
+      {/* Coverage check */}
+      <div className="bg-white border border-slate-200 rounded-lg shadow-sm p-6">
+        <h2 className="text-base font-semibold text-slate-900 mb-1">ESPR coverage check</h2>
+        <p className="text-xs text-slate-500 mb-4">Requirements for a compliant Digital Product Passport under ESPR (EU) 2024/1781.</p>
+        <DppCoverageCheck product={product} />
+      </div>
+
       <div className="bg-white border border-slate-200 rounded-lg shadow-sm p-6">
         <h2 className="text-base font-semibold text-slate-900 mb-2">EPR Export</h2>
         <p className="text-sm text-slate-600 mb-4">
@@ -398,6 +405,90 @@ function DetailRow({ label, value }: { label: string; value: React.ReactNode }) 
     <div>
       <dt className="text-sm font-medium text-slate-500">{label}</dt>
       <dd className="mt-1 text-sm text-slate-900">{value ?? '—'}</dd>
+    </div>
+  );
+}
+
+function DppCoverageCheck({ product }: { product: Product }) {
+  const suppliers = product.suppliers;
+  const hasManufacturer = suppliers.some((s) =>
+    ['CMT', 'TIER_1_FACTORY', 'MANUFACTURER'].some((t) =>
+      s.role.toUpperCase().includes(t) || s.supplier.type.toUpperCase().includes(t),
+    ),
+  );
+  const hasMaterialOrigin = suppliers.some((s) =>
+    ['MILL', 'TANNERY', 'SPINNER', 'FIBRE'].some((t) =>
+      s.role.toUpperCase().includes(t) || s.supplier.type.toUpperCase().includes(t),
+    ),
+  );
+
+  const checks = [
+    {
+      label: 'Product identity',
+      pass: !!(product.sku && product.name),
+      detail: product.sku ? `${product.sku}${product.materialComposition ? ` · ${product.materialComposition}` : ''}` : 'Missing SKU',
+    },
+    {
+      label: 'Material composition declared',
+      pass: !!product.materialComposition,
+      detail: product.materialComposition ?? 'Not set — edit product to add',
+    },
+    {
+      label: 'Country of origin declared',
+      pass: !!product.countryOfOrigin,
+      detail: product.countryOfOrigin ?? 'Not set — edit product to add',
+    },
+    {
+      label: 'Tier 1 factory mapped',
+      pass: hasManufacturer,
+      detail: hasManufacturer
+        ? suppliers.filter((s) => ['CMT', 'TIER_1_FACTORY', 'MANUFACTURER'].some((t) => s.role.toUpperCase().includes(t) || s.supplier.type.toUpperCase().includes(t))).map((s) => s.supplier.name).join(', ')
+        : 'Link a CMT / manufacturer supplier',
+    },
+    {
+      label: 'Material origin (mill/tannery) mapped',
+      pass: hasMaterialOrigin,
+      detail: hasMaterialOrigin
+        ? suppliers.filter((s) => ['MILL', 'TANNERY', 'SPINNER', 'FIBRE'].some((t) => s.role.toUpperCase().includes(t) || s.supplier.type.toUpperCase().includes(t))).map((s) => s.supplier.name).join(', ')
+        : 'Link a mill or tannery supplier',
+    },
+    {
+      label: 'At least 2 supply chain stages',
+      pass: suppliers.length >= 2,
+      detail: `${suppliers.length} supplier${suppliers.length !== 1 ? 's' : ''} linked`,
+    },
+  ];
+
+  const passCount = checks.filter((c) => c.pass).length;
+
+  return (
+    <div className="space-y-0">
+      {checks.map((check) => (
+        <div key={check.label} className="flex items-center gap-3 py-2.5 border-b border-slate-100 last:border-0">
+          <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 ${check.pass ? 'bg-emerald-100' : 'bg-amber-100'}`}>
+            {check.pass ? (
+              <svg className="w-3 h-3 text-emerald-700" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+              </svg>
+            ) : (
+              <svg className="w-3 h-3 text-amber-700" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+              </svg>
+            )}
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm text-slate-900">{check.label}</p>
+            <p className="text-xs text-slate-500 truncate">{check.detail}</p>
+          </div>
+          <Badge variant={check.pass ? 'emerald' : 'amber'}>{check.pass ? 'Pass' : 'Review'}</Badge>
+        </div>
+      ))}
+      <div className="pt-3 mt-1">
+        <p className="text-xs text-slate-500">
+          <span className="font-semibold text-slate-700">{passCount}/{checks.length}</span> checks passing
+          {passCount === checks.length && ' — ready to publish'}
+        </p>
+      </div>
     </div>
   );
 }
