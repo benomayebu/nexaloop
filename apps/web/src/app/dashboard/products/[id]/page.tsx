@@ -8,6 +8,7 @@ import { DppToggle } from '../../../components/dpp-toggle';
 import { EprDownloadButton } from '../../../components/epr-download-button';
 import { ArchiveProductButton } from '../../../components/archive-product-button';
 import { CopyUrlButton } from '../../../components/copy-url-button';
+import { ProductImageUpload } from '../../../components/product-image-upload';
 
 interface ProductSupplierLink {
   id: string;
@@ -20,6 +21,7 @@ interface Product {
   dppEnabled: boolean; materialComposition: string | null; countryOfOrigin: string | null;
   manufacturingDate: string | null; weight: number | null; weightUnit: string | null;
   recycledContent: number | null; repairabilityScore: number | null;
+  imageUrl: string | null;
   suppliers: ProductSupplierLink[];
 }
 interface SupplierOption { id: string; name: string; country: string; type: string; }
@@ -178,6 +180,11 @@ export default async function ProductDetailPage({
 
           {/* Sidebar */}
           <div className="space-y-4">
+            {/* Product image */}
+            <div className="bg-white border border-slate-200 rounded-lg shadow-sm p-4">
+              <ProductImageUpload productId={product.id} currentImageUrl={product.imageUrl} />
+            </div>
+
             <div className="bg-white border border-slate-200 rounded-lg shadow-sm p-6">
               <h2 className="text-base font-semibold text-slate-900 mb-4">Quick Actions</h2>
               <div className="space-y-3">

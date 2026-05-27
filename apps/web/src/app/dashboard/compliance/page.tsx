@@ -17,6 +17,7 @@ interface Product {
   category: string | null;
   materialComposition: string | null;
   countryOfOrigin: string | null;
+  imageUrl: string | null;
   suppliers: Array<{ id: string }>;
 }
 

@@ -45,12 +45,13 @@ export class StorageService {
    */
   async saveFile(
     file: Express.Multer.File,
+    prefix = 'documents',
   ): Promise<{ fileUrl: string; filename: string; mimeType: string }> {
     const uniqueName = `${randomUUID()}${extname(file.originalname)}`;
     const mimeType = file.mimetype;
 
     if (this.useS3 && this.s3) {
-      return this.saveToS3(file, uniqueName, mimeType);
+      return this.saveToS3(file, uniqueName, mimeType, prefix);
     }
     return this.saveToLocal(file, uniqueName, mimeType);
   }
@@ -79,8 +80,9 @@ export class StorageService {
     file: Express.Multer.File,
     uniqueName: string,
     mimeType: string,
+    prefix = 'documents',
   ): Promise<{ fileUrl: string; filename: string; mimeType: string }> {
-    const key = `documents/${uniqueName}`;
+    const key = `${prefix}/${uniqueName}`;
 
     await this.s3!.send(
       new PutObjectCommand({

@@ -2,8 +2,10 @@ import {
   Injectable,
   NotFoundException,
   ConflictException,
+  BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { StorageService } from '../documents/storage/storage.service';
 import { Prisma, ProductStatus, DocumentStatus, SupplierType } from '@prisma/client';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
@@ -34,7 +36,10 @@ export interface ProductComplianceResult {
 
 @Injectable()
 export class ProductsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly storage: StorageService,
+  ) {}
 
   async list(
     orgId: string,
@@ -352,5 +357,22 @@ export class ProductsService {
         score: Math.round((compliant / suppliers.length) * 100),
       },
     };
+  }
+
+  async uploadImage(orgId: string, id: string, file: Express.Multer.File) {
+    if (!file) throw new BadRequestException('Image file is required');
+
+    const product = await this.prisma.product.findFirst({
+      where: { id, orgId },
+    });
+    if (!product) throw new NotFoundException('Product not found');
+
+    const { fileUrl } = await this.storage.saveFile(file, 'products');
+
+    return this.prisma.product.update({
+      where: { id },
+      data: { imageUrl: fileUrl },
+      select: { id: true, imageUrl: true },
+    });
   }
 }
