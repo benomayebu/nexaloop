@@ -1,4 +1,3 @@
-import Link from 'next/link';
 import { apiFetch } from '../../../../lib/api';
 import { InviteMemberForm } from '../../../components/invite-member-form';
 import { ChangeMemberRoleButton } from '../../../components/change-member-role-button';
@@ -42,16 +41,10 @@ export default async function TeamSettingsPage() {
 
   return (
     <div>
-      <nav className="mb-4 text-sm text-slate-500">
-        <Link href="/dashboard/settings" className="hover:text-slate-700">Settings</Link>
-        <span className="mx-2">/</span>
-        <span className="text-slate-900 font-medium">Team Members</span>
-      </nav>
-
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-5">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Team Members</h1>
-          <p className="text-sm text-slate-500 mt-1">
+          <h2 className="text-lg font-semibold text-slate-900">Team members</h2>
+          <p className="text-sm text-slate-500 mt-0.5">
             {memberList.length} member{memberList.length !== 1 ? 's' : ''} in your organisation
           </p>
         </div>

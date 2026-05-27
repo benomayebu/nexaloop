@@ -29,6 +29,8 @@ const SEGMENT_LABELS: Record<string, string> = {
   team: 'Team',
   profile: 'Profile',
   'document-types': 'Document types',
+  integrations: 'Integrations',
+  security: 'Security',
 };
 
 export function Header({ org, user: _user }: HeaderProps) {

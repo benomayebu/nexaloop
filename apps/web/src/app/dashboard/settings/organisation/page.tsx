@@ -1,4 +1,3 @@
-import Link from 'next/link';
 import { apiFetch } from '../../../../lib/api';
 import { OrgSettingsForm } from '../../../components/org-settings-form';
 
@@ -16,15 +15,9 @@ export default async function OrganisationSettingsPage() {
 
   return (
     <div>
-      <nav className="mb-4 text-sm text-slate-500">
-        <Link href="/dashboard/settings" className="hover:text-slate-700">Settings</Link>
-        <span className="mx-2">/</span>
-        <span className="text-slate-900 font-medium">Organisation</span>
-      </nav>
-
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-slate-900">Organisation</h1>
-        <p className="text-sm text-slate-500 mt-1">View and update your organisation details.</p>
+      <div className="mb-5">
+        <h2 className="text-lg font-semibold text-slate-900">Workspace</h2>
+        <p className="text-sm text-slate-500 mt-0.5">Information about your brand. Used on Digital Product Passports, EPR exports and outgoing emails.</p>
       </div>
 
       <div className="max-w-xl space-y-6">
