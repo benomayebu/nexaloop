@@ -44,6 +44,20 @@ export class ProductsController {
     return this.productsService.create(orgId, dto);
   }
 
+  @Post('products/import-csv')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: memoryStorage(),
+      limits: { fileSize: 5 * 1024 * 1024 },
+    }),
+  )
+  importCsv(
+    @CurrentOrg() orgId: string,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    return this.productsService.importCsv(orgId, file);
+  }
+
   @Get('products/:id')
   findOne(@CurrentOrg() orgId: string, @Param('id') id: string) {
     return this.productsService.findOne(orgId, id);

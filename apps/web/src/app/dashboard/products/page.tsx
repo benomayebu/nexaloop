@@ -4,6 +4,7 @@ import { apiFetchList } from '../../../lib/api';
 import { ProductFilters } from '../../components/product-filters';
 import { NexaBadge } from '@/components/ui/nexa-badge';
 import { NexaButton } from '@/components/ui/nexa-button';
+import { CsvImportButton } from '../../components/csv-import-button';
 import { ScoreBar } from '@/components/ui/score-bar';
 
 interface Product {
@@ -45,18 +46,21 @@ export default async function ProductsPage({
             )}
           </p>
         </div>
-        <Link href="/dashboard/products/new">
-          <NexaButton
-            variant="primary"
-            icon={
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-              </svg>
-            }
-          >
-            Add Product
-          </NexaButton>
-        </Link>
+        <div className="flex items-center gap-3">
+          <CsvImportButton entity="products" />
+          <Link href="/dashboard/products/new">
+            <NexaButton
+              variant="primary"
+              icon={
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                </svg>
+              }
+            >
+              Add Product
+            </NexaButton>
+          </Link>
+        </div>
       </div>
 
       <div className="mb-6">

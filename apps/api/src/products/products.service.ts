@@ -7,6 +7,7 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { StorageService } from '../documents/storage/storage.service';
 import { Prisma, ProductStatus, DocumentStatus, SupplierType } from '@prisma/client';
+import { parseCsv } from '../common/parse-csv';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { AddProductSupplierDto } from './dto/add-product-supplier.dto';
@@ -374,5 +375,72 @@ export class ProductsService {
       data: { imageUrl: fileUrl },
       select: { id: true, imageUrl: true },
     });
+  }
+
+  async importCsv(orgId: string, file: Express.Multer.File) {
+    if (!file) throw new BadRequestException('CSV file is required');
+
+    const text = file.buffer.toString('utf-8');
+    const rows = parseCsv(text);
+    if (rows.length === 0) throw new BadRequestException('CSV file is empty or has no data rows');
+
+    const VALID_STATUSES = Object.values(ProductStatus);
+
+    const created: { row: number; name: string; id: string }[] = [];
+    const skipped: { row: number; name: string; reason: string }[] = [];
+
+    for (let i = 0; i < rows.length; i++) {
+      const r = rows[i];
+      const rowNum = i + 2;
+      const name = r['name'] ?? r['product name'] ?? r['product'] ?? '';
+      const sku = r['sku'] ?? r['product code'] ?? '';
+      const category = r['category'] ?? '';
+      const season = r['season'] ?? '';
+      const rawStatus = (r['status'] ?? '').toUpperCase().replace(/\s+/g, '_');
+      const materialComposition = r['material'] ?? r['material composition'] ?? r['materialcomposition'] ?? '';
+      const countryOfOrigin = r['origin'] ?? r['country of origin'] ?? r['countryoforigin'] ?? '';
+      const rawWeight = r['weight'] ?? '';
+      const weightUnit = r['weight unit'] ?? r['weightunit'] ?? 'kg';
+      const notes = r['notes'] ?? '';
+
+      if (!name) {
+        skipped.push({ row: rowNum, name: '(empty)', reason: 'Missing name' });
+        continue;
+      }
+      if (!sku) {
+        skipped.push({ row: rowNum, name, reason: 'Missing SKU' });
+        continue;
+      }
+
+      const status = VALID_STATUSES.includes(rawStatus as ProductStatus)
+        ? (rawStatus as ProductStatus)
+        : ProductStatus.ACTIVE;
+
+      const weight = rawWeight ? parseFloat(rawWeight) : undefined;
+
+      try {
+        const product = await this.prisma.product.create({
+          data: {
+            orgId,
+            name,
+            sku,
+            category: category || null,
+            season: season || null,
+            status,
+            materialComposition: materialComposition || null,
+            countryOfOrigin: countryOfOrigin || null,
+            weight: weight && !isNaN(weight) ? weight : null,
+            weightUnit: weightUnit || 'kg',
+            notes: notes || null,
+          },
+        });
+        created.push({ row: rowNum, name, id: product.id });
+      } catch (err: any) {
+        const reason = err?.code === 'P2002' ? 'Duplicate SKU' : (err?.message ?? 'Unknown error');
+        skipped.push({ row: rowNum, name, reason });
+      }
+    }
+
+    return { totalRows: rows.length, created: created.length, skipped: skipped.length, createdItems: created, skippedItems: skipped };
   }
 }

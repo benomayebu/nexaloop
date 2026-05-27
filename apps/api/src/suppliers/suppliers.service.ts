@@ -2,9 +2,11 @@ import {
   Injectable,
   NotFoundException,
   ForbiddenException,
+  BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { SupplierType, SupplierStatus, RiskLevel } from '@prisma/client';
+import { parseCsv } from '../common/parse-csv';
 import { CreateSupplierDto } from './dto/create-supplier.dto';
 import { UpdateSupplierDto } from './dto/update-supplier.dto';
 import { CreateContactDto } from './dto/create-contact.dto';
@@ -243,5 +245,90 @@ export class SuppliersService {
     if (!contact) {
       throw new ForbiddenException('Contact not found or access denied');
     }
+  }
+
+  async importCsv(orgId: string, file: Express.Multer.File) {
+    if (!file) throw new BadRequestException('CSV file is required');
+
+    const text = file.buffer.toString('utf-8');
+    const rows = parseCsv(text);
+    if (rows.length === 0) throw new BadRequestException('CSV file is empty or has no data rows');
+
+    const VALID_TYPES = Object.values(SupplierType);
+    const VALID_STATUSES = Object.values(SupplierStatus);
+    const VALID_RISKS = Object.values(RiskLevel);
+
+    const TYPE_ALIASES: Record<string, SupplierType> = {
+      'tier 1 factory': SupplierType.TIER1_FACTORY,
+      'tier1 factory': SupplierType.TIER1_FACTORY,
+      factory: SupplierType.TIER1_FACTORY,
+      mill: SupplierType.MILL,
+      spinner: SupplierType.SPINNER,
+      dyehouse: SupplierType.DYEHOUSE,
+      dye: SupplierType.DYEHOUSE,
+      trim: SupplierType.TRIM_SUPPLIER,
+      'trim supplier': SupplierType.TRIM_SUPPLIER,
+      agent: SupplierType.AGENT,
+      other: SupplierType.OTHER,
+    };
+
+    const created: { row: number; name: string; id: string }[] = [];
+    const skipped: { row: number; name: string; reason: string }[] = [];
+
+    for (let i = 0; i < rows.length; i++) {
+      const r = rows[i];
+      const rowNum = i + 2;
+      const name = r['name'] ?? r['supplier name'] ?? r['supplier'] ?? '';
+      const country = r['country'] ?? r['country code'] ?? '';
+      const rawType = (r['type'] ?? r['supplier type'] ?? 'OTHER').toUpperCase().replace(/\s+/g, '_');
+      const rawStatus = (r['status'] ?? '').toUpperCase().replace(/\s+/g, '_');
+      const rawRisk = (r['risk'] ?? r['risk level'] ?? r['risklevel'] ?? '').toUpperCase();
+      const code = r['code'] ?? r['supplier code'] ?? r['suppliercode'] ?? '';
+      const city = r['city'] ?? '';
+      const notes = r['notes'] ?? '';
+
+      if (!name) {
+        skipped.push({ row: rowNum, name: '(empty)', reason: 'Missing name' });
+        continue;
+      }
+      if (!country) {
+        skipped.push({ row: rowNum, name, reason: 'Missing country' });
+        continue;
+      }
+
+      const type = VALID_TYPES.includes(rawType as SupplierType)
+        ? (rawType as SupplierType)
+        : TYPE_ALIASES[rawType.toLowerCase().replace(/_/g, ' ')] ?? SupplierType.OTHER;
+
+      const status = VALID_STATUSES.includes(rawStatus as SupplierStatus)
+        ? (rawStatus as SupplierStatus)
+        : SupplierStatus.ACTIVE;
+
+      const riskLevel = VALID_RISKS.includes(rawRisk as RiskLevel)
+        ? (rawRisk as RiskLevel)
+        : RiskLevel.UNKNOWN;
+
+      try {
+        const supplier = await this.prisma.supplier.create({
+          data: {
+            orgId,
+            name,
+            type,
+            country: country.toUpperCase().slice(0, 2),
+            supplierCode: code || null,
+            city: city || null,
+            status,
+            riskLevel,
+            notes: notes || null,
+          },
+        });
+        created.push({ row: rowNum, name, id: supplier.id });
+      } catch (err: any) {
+        const reason = err?.code === 'P2002' ? 'Duplicate entry' : (err?.message ?? 'Unknown error');
+        skipped.push({ row: rowNum, name, reason });
+      }
+    }
+
+    return { totalRows: rows.length, created: created.length, skipped: skipped.length, createdItems: created, skippedItems: skipped };
   }
 }

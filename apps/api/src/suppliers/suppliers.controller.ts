@@ -8,9 +8,13 @@ import {
   Param,
   Query,
   UseGuards,
+  UseInterceptors,
+  UploadedFile,
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { memoryStorage } from 'multer';
 import { SuppliersService } from './suppliers.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CurrentOrg } from '../auth/current-org.decorator';
@@ -41,6 +45,20 @@ export class SuppliersController {
   @Post('suppliers')
   create(@CurrentOrg() orgId: string, @Body() dto: CreateSupplierDto) {
     return this.suppliersService.create(orgId, dto);
+  }
+
+  @Post('suppliers/import-csv')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: memoryStorage(),
+      limits: { fileSize: 5 * 1024 * 1024 },
+    }),
+  )
+  importCsv(
+    @CurrentOrg() orgId: string,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    return this.suppliersService.importCsv(orgId, file);
   }
 
   @Get('suppliers/:id')
