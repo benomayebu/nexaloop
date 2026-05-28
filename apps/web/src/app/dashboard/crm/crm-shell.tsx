@@ -7,7 +7,7 @@ import { NexaBadge } from '@/components/ui/nexa-badge';
 import { NexaButton } from '@/components/ui/nexa-button';
 import { SupAvatar } from '@/components/ui/sup-avatar';
 import { ScoreBar } from '@/components/ui/score-bar';
-import { riskBadge, supStatusBadge, typeBadge } from '@/lib/badges';
+import { riskBadge } from '@/lib/badges';
 import { fmtDate, relativeDays, initials } from '@/lib/format';
 import { useToast } from '@/components/ui/toast-provider';
 
@@ -326,7 +326,7 @@ function PipelineTab({ pipeline }: { pipeline: PipelineData }) {
 
 // ─── Tasks Tab ──────────────────────────────────────────────────────
 
-function TasksTab({ tasks, team }: { tasks: Task[]; team: TeamMember[] }) {
+function TasksTab({ tasks, team: _team }: { tasks: Task[]; team: TeamMember[] }) {
   const router = useRouter();
   const toast = useToast();
   const [filter, setFilter] = useState<'all' | 'open' | 'overdue' | 'done'>('all');

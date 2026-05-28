@@ -88,7 +88,6 @@ export default async function ProductsPage({
               {/* Thumbnail */}
               {product.imageUrl ? (
                 <div className="aspect-[16/9] bg-slate-100 overflow-hidden">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={product.imageUrl.startsWith('/') ? `/api${product.imageUrl}` : product.imageUrl}
                     alt={product.name}

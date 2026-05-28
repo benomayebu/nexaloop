@@ -85,8 +85,8 @@ export function CsvImportModal({
         toast(`Imported ${data.created} ${entity}`);
         router.refresh();
       }
-    } catch (err: any) {
-      toast(err.message || 'Import failed');
+    } catch (err: unknown) {
+      toast(err instanceof Error ? err.message : 'Import failed');
     } finally {
       setUploading(false);
     }

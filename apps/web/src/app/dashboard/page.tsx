@@ -2,7 +2,6 @@ import Link from 'next/link';
 import { apiFetch } from '../../lib/api';
 import { NexaBadge } from '@/components/ui/nexa-badge';
 import { NexaButton } from '@/components/ui/nexa-button';
-import { ScoreBar } from '@/components/ui/score-bar';
 import { SupAvatar } from '@/components/ui/sup-avatar';
 import { riskBadge } from '@/lib/badges';
 import { fmtDate, daysUntil, relativeDays } from '@/lib/format';

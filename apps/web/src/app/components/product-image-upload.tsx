@@ -78,7 +78,6 @@ export function ProductImageUpload({
       />
       {displayUrl ? (
         <div className="relative aspect-[4/3]">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={displayUrl.startsWith('/') ? `/api${displayUrl}` : displayUrl}
             alt="Product"
