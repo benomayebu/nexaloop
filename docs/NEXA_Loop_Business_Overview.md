@@ -239,15 +239,34 @@ The platform is live and functional with:
 
 ---
 
+## Growth Strategy: Free EPR Calculator as Lead Magnet
+
+We have built a standalone **EU EPR Fee Calculator** — a free, no-account-needed tool that lets fashion brands calculate their quarterly Refashion eco-contribution fees in minutes instead of spending hours in spreadsheets.
+
+**Why this matters for the business model:**
+
+This follows the proven **freemium funnel** pattern (LinkedIn, HubSpot, Calendly):
+
+1. **Free tool on the public website** — Compliance managers searching for "EU EPR calculator" or "Refashion fee calculator" find our tool, use it, and see the N.E.X.A Loop brand
+2. **Email capture** — After calculating, users can opt in for quarterly reminders
+3. **Conversion to platform** — A clear CTA leads users from the free calculator to the full compliance platform
+4. **Premium upgrade** — Inside the dashboard, an enhanced EPR module auto-fills from existing product/supplier data, saves calculations over time, and tracks quarterly trends
+
+This creates a virtuous cycle: the free tool builds brand recognition and trust at zero marginal cost, captures the exact right audience, and funnels them toward the paid platform where data gravity creates high switching costs.
+
+---
+
 ## What's Next
 
 ### Near-term (next 3 months)
+- Integrate EPR calculator on the public homepage as a lead generation tool
 - Supplier self-service portal (suppliers upload their own documents)
 - Audit pack generator (one-click ZIP download of all approved documents per supplier)
 - Advanced compliance analytics and trend reporting
 - Email notification delivery for document expiry reminders
 
 ### Medium-term (3–6 months)
+- Enhanced EPR module inside the dashboard (auto-fills from product data, quarterly history)
 - Multi-language support (starting with French, German, Italian)
 - Mobile-responsive optimisation
 - API access for enterprise customers
