@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { DEFAULT_DATA } from '@/app/components/epr/calculate';
 import type { EprFormData } from '@/app/components/epr/calculate';
@@ -9,18 +9,87 @@ import { BrandInfoStep } from '@/app/components/epr/brand-info-step';
 import { ProductsStep } from '@/app/components/epr/products-step';
 import { ResultsStep } from '@/app/components/epr/results-step';
 
+const STORAGE_KEY = 'nexaloop_epr_calculator';
+
+function loadSavedData(): { data: EprFormData; step: number } | null {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (parsed?.data?.brandName && parsed?.step >= 1) {
+      return { data: parsed.data, step: parsed.step };
+    }
+  } catch {
+    // corrupted data — ignore
+  }
+  return null;
+}
+
+function saveData(data: EprFormData, step: number) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ data, step, savedAt: Date.now() }));
+  } catch {
+    // storage full or unavailable — ignore
+  }
+}
+
+function clearSavedData() {
+  try {
+    localStorage.removeItem(STORAGE_KEY);
+  } catch {
+    // ignore
+  }
+}
+
 export function EprCalculatorShell() {
   const [step, setStep] = useState(0); // 0=landing, 1=brand, 2=products, 3=results
   const [data, setData] = useState<EprFormData>({ ...DEFAULT_DATA });
+  const [hasSaved, setHasSaved] = useState(false);
+  const initialised = useRef(false);
+
+  // Check for saved data on mount
+  useEffect(() => {
+    if (initialised.current) return;
+    initialised.current = true;
+    const saved = loadSavedData();
+    if (saved) {
+      setHasSaved(true);
+    }
+  }, []);
+
+  // Persist data to localStorage when it changes (only after user starts)
+  useEffect(() => {
+    if (step >= 1) {
+      saveData(data, step);
+    }
+  }, [data, step]);
 
   const startCalc = useCallback(() => {
+    setHasSaved(false);
     setStep(1);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
 
+  const resumeCalc = useCallback(() => {
+    const saved = loadSavedData();
+    if (saved) {
+      setData(saved.data);
+      setStep(saved.step);
+      setHasSaved(false);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, []);
+
+  const dismissSaved = useCallback(() => {
+    clearSavedData();
+    setHasSaved(false);
+  }, []);
+
   const restart = useCallback(() => {
+    clearSavedData();
     setData({ ...DEFAULT_DATA });
     setStep(0);
+    setHasSaved(false);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
 
@@ -49,6 +118,34 @@ export function EprCalculatorShell() {
           </div>
         </div>
       </header>
+
+      {/* Resume banner */}
+      {hasSaved && step === 0 && (
+        <div className="bg-indigo-600 text-white">
+          <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              <svg className="w-5 h-5 text-indigo-200 flex-shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+              </svg>
+              <span className="text-sm font-medium">You have an unfinished calculation</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                className="px-4 py-1.5 text-sm font-semibold bg-white text-indigo-700 rounded-lg hover:bg-indigo-50 transition-colors"
+                onClick={resumeCalc}
+              >
+                Resume
+              </button>
+              <button
+                className="px-4 py-1.5 text-sm font-medium text-indigo-200 hover:text-white transition-colors"
+                onClick={dismissSaved}
+              >
+                Dismiss
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Content */}
       <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-20">

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import type { EprFormData, CalculationResult } from './calculate';
 import {
@@ -18,10 +18,10 @@ import { ProgressBar } from './progress-bar';
 /* ─── Stat Card ─────────────────────────────────────────── */
 function StatCard({ label, value, sub, accent }: { label: string; value: string; sub?: string; accent?: boolean }) {
   return (
-    <div className={`rounded-xl border p-5 ${accent ? 'bg-indigo-50 border-indigo-100' : 'bg-white border-slate-200'}`}>
-      <div className="text-[11px] font-mono uppercase tracking-wider text-slate-500">{label}</div>
-      <div className="text-3xl font-bold text-slate-900 mt-2 tracking-tight leading-none">{value}</div>
-      {sub && <div className="text-xs font-mono text-slate-500 mt-2">{sub}</div>}
+    <div className={`rounded-xl border p-4 sm:p-5 ${accent ? 'bg-indigo-50 border-indigo-100' : 'bg-white border-slate-200'}`}>
+      <div className="text-[10px] sm:text-[11px] font-mono uppercase tracking-wider text-slate-500">{label}</div>
+      <div className="text-2xl sm:text-3xl font-bold text-slate-900 mt-1.5 sm:mt-2 tracking-tight leading-none">{value}</div>
+      {sub && <div className="text-[11px] sm:text-xs font-mono text-slate-500 mt-1.5 sm:mt-2">{sub}</div>}
     </div>
   );
 }
@@ -92,37 +92,41 @@ function DetailedBreakdownTable({ result }: { result: CalculationResult }) {
       <table className="w-full text-sm border-collapse">
         <thead>
           <tr>
-            <th className="text-left px-5 py-3.5 text-[11px] font-mono uppercase tracking-wider text-slate-500 font-medium bg-slate-50 border-b border-slate-200">Product line</th>
-            <th className="text-left px-3 py-3.5 text-[11px] font-mono uppercase tracking-wider text-slate-500 font-medium bg-slate-50 border-b border-slate-200">Section</th>
-            <th className="text-right px-5 py-3.5 text-[11px] font-mono uppercase tracking-wider text-slate-500 font-medium bg-slate-50 border-b border-slate-200">Items</th>
-            <th className="text-right px-5 py-3.5 text-[11px] font-mono uppercase tracking-wider text-slate-500 font-medium bg-slate-50 border-b border-slate-200">Rate/item</th>
-            <th className="text-right px-5 py-3.5 text-[11px] font-mono uppercase tracking-wider text-slate-500 font-medium bg-slate-50 border-b border-slate-200">Subtotal</th>
+            <th className="text-left px-3 sm:px-5 py-3.5 text-[11px] font-mono uppercase tracking-wider text-slate-500 font-medium bg-slate-50 border-b border-slate-200">Product line</th>
+            <th className="text-left px-3 py-3.5 text-[11px] font-mono uppercase tracking-wider text-slate-500 font-medium bg-slate-50 border-b border-slate-200 hidden md:table-cell">Section</th>
+            <th className="text-right px-3 sm:px-5 py-3.5 text-[11px] font-mono uppercase tracking-wider text-slate-500 font-medium bg-slate-50 border-b border-slate-200">Items</th>
+            <th className="text-right px-3 sm:px-5 py-3.5 text-[11px] font-mono uppercase tracking-wider text-slate-500 font-medium bg-slate-50 border-b border-slate-200 hidden sm:table-cell">Rate/item</th>
+            <th className="text-right px-3 sm:px-5 py-3.5 text-[11px] font-mono uppercase tracking-wider text-slate-500 font-medium bg-slate-50 border-b border-slate-200">Subtotal</th>
           </tr>
         </thead>
         <tbody>
           {result.detailedItems.map((li, i) => (
             <tr key={i} className={i % 2 === 0 ? '' : 'bg-slate-50'}>
-              <td className="px-5 py-3.5 text-slate-700">
-                <span className={`inline-block w-2 h-2 rounded-full mr-2.5 align-middle ${categoryDotClass(li.category)}`} />
-                {li.productName}
+              <td className="px-3 sm:px-5 py-3.5 text-slate-700">
+                <span className={`inline-block w-2 h-2 rounded-full mr-2 align-middle ${categoryDotClass(li.category)}`} />
+                <span className="text-sm">{li.productName}</span>
+                <span className="md:hidden block text-[11px] text-slate-400 font-mono ml-4">{li.section}</span>
               </td>
-              <td className="px-3 py-3.5 text-xs text-slate-500 font-mono">{li.section}</td>
-              <td className="px-5 py-3.5 text-right font-mono text-slate-700">{fmtItems(li.quantity)}</td>
-              <td className="px-5 py-3.5 text-right font-mono text-slate-700">{fmtRate(li.ratePerItem)}</td>
-              <td className="px-5 py-3.5 text-right font-mono font-semibold text-slate-700">{fmtEUR(li.subtotal)}</td>
+              <td className="px-3 py-3.5 text-xs text-slate-500 font-mono hidden md:table-cell">{li.section}</td>
+              <td className="px-3 sm:px-5 py-3.5 text-right font-mono text-slate-700">{fmtItems(li.quantity)}</td>
+              <td className="px-3 sm:px-5 py-3.5 text-right font-mono text-slate-700 hidden sm:table-cell">{fmtRate(li.ratePerItem)}</td>
+              <td className="px-3 sm:px-5 py-3.5 text-right font-mono font-semibold text-slate-700">{fmtEUR(li.subtotal)}</td>
             </tr>
           ))}
         </tbody>
         <tfoot>
           <tr className="border-t border-slate-200">
-            <td className="px-5 pt-3 pb-2 text-slate-500 text-xs" colSpan={4}>Administrative fee</td>
-            <td className="px-5 pt-3 pb-2 text-right font-mono text-slate-500 text-xs">{fmtEUR(ADMIN_FEE)}</td>
+            <td className="px-3 sm:px-5 pt-3 pb-2 text-slate-500 text-xs" colSpan={2}>Administrative fee</td>
+            <td className="hidden md:table-cell" />
+            <td className="hidden sm:table-cell" />
+            <td className="px-3 sm:px-5 pt-3 pb-2 text-right font-mono text-slate-500 text-xs">{fmtEUR(ADMIN_FEE)}</td>
           </tr>
           <tr className="border-t-2 border-slate-900">
-            <td className="px-5 pt-4 pb-3 font-semibold text-slate-900" colSpan={2}>TOTAL</td>
-            <td className="px-5 pt-4 pb-3 text-right font-mono font-semibold text-slate-900">{fmtItems(result.totalItems)}</td>
-            <td />
-            <td className="px-5 pt-4 pb-3 text-right font-mono font-semibold text-slate-900">{fmtEUR(result.totalFee)}</td>
+            <td className="px-3 sm:px-5 pt-4 pb-3 font-semibold text-slate-900">TOTAL</td>
+            <td className="hidden md:table-cell" />
+            <td className="px-3 sm:px-5 pt-4 pb-3 text-right font-mono font-semibold text-slate-900">{fmtItems(result.totalItems)}</td>
+            <td className="hidden sm:table-cell" />
+            <td className="px-3 sm:px-5 pt-4 pb-3 text-right font-mono font-semibold text-slate-900">{fmtEUR(result.totalFee)}</td>
           </tr>
         </tfoot>
       </table>
@@ -222,6 +226,204 @@ function DashboardBreakdown({ result }: { result: CalculationResult }) {
         <span>Total &mdash; {fmtItems(result.totalItems)} items (incl. &euro;{ADMIN_FEE} admin fee)</span>
         <span className="font-mono font-bold">{fmtEUR(result.totalFee)}</span>
       </div>
+    </div>
+  );
+}
+
+/* ─── Growth Projection ─────────────────────────────────── */
+function GrowthProjection({ result }: { result: CalculationResult }) {
+  const [growthPct, setGrowthPct] = useState(20);
+  const baseFee = result.subtotalFees;
+  const projectedItems = Math.round(result.totalItems * (1 + growthPct / 100));
+  const projectedFee = Math.round(baseFee * (1 + growthPct / 100) * 100) / 100;
+  const projectedTotal = projectedFee + ADMIN_FEE;
+  const delta = projectedTotal - result.totalFee;
+
+  return (
+    <div className="bg-white border border-slate-200 rounded-xl p-5 sm:p-6 mt-4">
+      <div className="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-2 mb-4">
+        <h3 className="text-lg font-bold text-slate-900">Growth projection</h3>
+        <span className="text-[11px] font-mono uppercase tracking-wider text-slate-500">What if your volume changes?</span>
+      </div>
+
+      {/* Slider */}
+      <div className="mb-5">
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-sm text-slate-600">Volume change</span>
+          <span className={`text-sm font-mono font-semibold ${growthPct >= 0 ? 'text-slate-900' : 'text-emerald-700'}`}>
+            {growthPct >= 0 ? '+' : ''}{growthPct}%
+          </span>
+        </div>
+        <input
+          type="range"
+          min="-50"
+          max="100"
+          step="5"
+          value={growthPct}
+          onChange={(e) => setGrowthPct(Number(e.target.value))}
+          className="w-full accent-indigo-600 h-2"
+        />
+        <div className="flex justify-between text-[10px] font-mono text-slate-400 mt-1">
+          <span>&minus;50%</span>
+          <span>0%</span>
+          <span>+50%</span>
+          <span>+100%</span>
+        </div>
+      </div>
+
+      {/* Comparison */}
+      <div className="grid grid-cols-2 gap-3">
+        <div className="bg-slate-50 rounded-lg p-3 sm:p-4">
+          <div className="text-[10px] font-mono uppercase tracking-wider text-slate-500">Current</div>
+          <div className="text-xl sm:text-2xl font-bold text-slate-900 mt-1 tabular-nums">{fmtEUR(result.totalFee)}</div>
+          <div className="text-xs text-slate-500 font-mono mt-1">{fmtItems(result.totalItems)} items</div>
+        </div>
+        <div className="bg-indigo-50 rounded-lg p-3 sm:p-4 border border-indigo-100">
+          <div className="text-[10px] font-mono uppercase tracking-wider text-indigo-600">Projected</div>
+          <div className="text-xl sm:text-2xl font-bold text-slate-900 mt-1 tabular-nums">{fmtEUR(projectedTotal)}</div>
+          <div className="text-xs font-mono mt-1">
+            <span className="text-slate-500">{fmtItems(projectedItems)} items</span>
+            <span className={`ml-2 ${delta >= 0 ? 'text-amber-600' : 'text-emerald-600'}`}>
+              ({delta >= 0 ? '+' : ''}{fmtEUR(delta)})
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <p className="text-xs text-slate-500 mt-3 leading-relaxed">
+        Projection assumes the same product mix. Actual fees depend on which product lines grow.
+      </p>
+    </div>
+  );
+}
+
+/* ─── Save Estimate ────────────────────────────────────── */
+const SAVED_ESTIMATES_KEY = 'nexaloop_epr_saved_estimates';
+
+interface SavedEstimate {
+  id: string;
+  brandName: string;
+  declarationYear: string;
+  declarationType: string;
+  totalItems: number;
+  totalFee: number;
+  savedAt: number;
+}
+
+function SaveEstimateButton({ data, result }: { data: EprFormData; result: CalculationResult }) {
+  const [saved, setSaved] = useState(false);
+
+  function save() {
+    try {
+      const raw = localStorage.getItem(SAVED_ESTIMATES_KEY);
+      const existing: SavedEstimate[] = raw ? JSON.parse(raw) : [];
+      const estimate: SavedEstimate = {
+        id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        brandName: data.brandName,
+        declarationYear: data.declarationYear,
+        declarationType: data.declarationType,
+        totalItems: result.totalItems,
+        totalFee: result.totalFee,
+        savedAt: Date.now(),
+      };
+      // Keep max 10 saved estimates
+      const updated = [estimate, ...existing].slice(0, 10);
+      localStorage.setItem(SAVED_ESTIMATES_KEY, JSON.stringify(updated));
+      setSaved(true);
+    } catch {
+      // storage unavailable
+    }
+  }
+
+  if (saved) {
+    return (
+      <div className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-50 text-emerald-700 text-sm font-medium rounded-lg">
+        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+        </svg>
+        Estimate saved
+      </div>
+    );
+  }
+
+  return (
+    <button
+      className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
+      onClick={save}
+    >
+      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0 1 11.186 0Z" />
+      </svg>
+      Save estimate
+    </button>
+  );
+}
+
+/* ─── Saved Estimates Comparison ───────────────────────── */
+function SavedEstimatesComparison({ currentFee, currentItems }: { currentFee: number; currentItems: number }) {
+  const [estimates, setEstimates] = useState<SavedEstimate[]>([]);
+  const [show, setShow] = useState(false);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(SAVED_ESTIMATES_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setEstimates(parsed);
+        }
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  if (estimates.length === 0) return null;
+
+  return (
+    <div className="bg-white border border-slate-200 rounded-xl overflow-hidden mt-4">
+      <button
+        type="button"
+        className="w-full flex items-center gap-3 px-5 py-4 text-left"
+        onClick={() => setShow(!show)}
+      >
+        <span
+          className="text-slate-400 text-lg transition-transform inline-block"
+          style={{ transform: show ? 'rotate(90deg)' : 'rotate(0)' }}
+        >
+          &rsaquo;
+        </span>
+        <span className="flex-1 text-[15px] font-medium text-slate-800">Compare with previous estimates</span>
+        <span className="text-xs font-mono text-slate-500">{estimates.length} saved</span>
+      </button>
+
+      {show && (
+        <div className="px-5 pb-5 border-t border-slate-200">
+          <div className="space-y-2 mt-3">
+            {estimates.map((est) => {
+              const feeDiff = currentFee - est.totalFee;
+              const _itemsDiff = currentItems - est.totalItems;
+              const dateStr = new Date(est.savedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+              return (
+                <div key={est.id} className="flex items-center gap-3 px-4 py-3 bg-slate-50 rounded-lg">
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium text-slate-800 truncate">{est.brandName} &middot; {est.declarationYear}</div>
+                    <div className="text-xs text-slate-500 font-mono">{fmtItems(est.totalItems)} items &middot; {est.declarationType} &middot; {dateStr}</div>
+                  </div>
+                  <div className="text-right flex-shrink-0">
+                    <div className="text-sm font-mono font-semibold text-slate-900">{fmtEUR(est.totalFee)}</div>
+                    {feeDiff !== 0 && (
+                      <div className={`text-xs font-mono ${feeDiff > 0 ? 'text-amber-600' : 'text-emerald-600'}`}>
+                        {feeDiff > 0 ? '+' : ''}{fmtEUR(feeDiff)} vs. current
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -518,7 +720,7 @@ export function ResultsStep({ data, onRestart }: ResultsStepProps) {
           <div className="text-[11px] font-mono uppercase tracking-wider text-slate-500">
             Refashion EPR Estimate &middot; {data.declarationYear} &middot; {isDetailed ? 'Detailed' : 'Simplified'}
           </div>
-          <h2 className="text-3xl sm:text-4xl font-bold text-slate-900 tracking-tight mt-1">{data.brandName}</h2>
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-slate-900 tracking-tight mt-1 break-words">{data.brandName}</h2>
           <div className="text-sm text-slate-500 mt-2">
             Calculated on {dateStr}
             {data.contact && <> &middot; by {data.contact}</>}
@@ -561,6 +763,12 @@ export function ResultsStep({ data, onRestart }: ResultsStepProps) {
       {/* Dashboard breakdown (visual bars) */}
       <DashboardBreakdown result={result} />
 
+      {/* Growth projection */}
+      <GrowthProjection result={result} />
+
+      {/* Compare with saved estimates */}
+      <SavedEstimatesComparison currentFee={result.totalFee} currentItems={result.totalItems} />
+
       {/* Disclaimer */}
       <DisclaimerBox />
 
@@ -575,6 +783,7 @@ export function ResultsStep({ data, onRestart }: ResultsStepProps) {
         >
           Start new calculation
         </button>
+        <SaveEstimateButton data={data} result={result} />
       </div>
 
       {/* Email capture */}
