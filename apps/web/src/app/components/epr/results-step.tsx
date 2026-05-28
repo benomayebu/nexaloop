@@ -2,17 +2,16 @@
 
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
-import type { EprFormData } from './calculate';
+import type { EprFormData, CalculationResult } from './calculate';
 import {
   BONUS_DEFS,
   MALUS_DEFS,
-  calculateModulation,
+  ADMIN_FEE,
   calculateTotal,
   fmtEUR,
-  fmtKg,
-  fmtPct,
-  materialDotClass,
-  nextQuarter,
+  fmtItems,
+  fmtRate,
+  categoryDotClass,
 } from './calculate';
 import { ProgressBar } from './progress-bar';
 
@@ -28,7 +27,7 @@ function StatCard({ label, value, sub, accent }: { label: string; value: string;
 }
 
 /* ─── How Explainer ─────────────────────────────────────── */
-function HowExplainer({ modulationFactor }: { modulationFactor: number }) {
+function HowExplainer({ isDetailed }: { isDetailed: boolean }) {
   const [open, setOpen] = useState(false);
   return (
     <div className="relative">
@@ -48,27 +47,37 @@ function HowExplainer({ modulationFactor }: { modulationFactor: number }) {
             <div className="grid grid-cols-[28px_1fr] gap-3">
               <span className="w-6 h-6 rounded-full bg-slate-900 text-white grid place-items-center text-xs font-mono font-semibold">1</span>
               <div>
-                <strong className="text-slate-900">Base fee per material.</strong> For each row we multiply weight in tonnes (kg / 1,000) by the Refashion 2025 indicative rate for that material category.
-                <div className="mt-1.5 inline-block bg-slate-50 px-2.5 py-1 rounded text-xs font-mono text-slate-700">base = (kg / 1000) x rate/t</div>
+                <strong className="text-slate-900">Fee per product line.</strong>{' '}
+                {isDetailed
+                  ? 'For each product line we multiply the number of items by the official Refashion 2026 rate for that product line.'
+                  : 'For each category we multiply the number of items by the simplified flat rate.'}
+                <div className="mt-1.5 inline-block bg-slate-50 px-2.5 py-1 rounded text-xs font-mono text-slate-700">
+                  subtotal = quantity &times; rate/item
+                </div>
               </div>
             </div>
-            <div className="grid grid-cols-[28px_1fr] gap-3">
-              <span className="w-6 h-6 rounded-full bg-slate-900 text-white grid place-items-center text-xs font-mono font-semibold">2</span>
-              <div>
-                <strong className="text-slate-900">Modulation factor.</strong> We sum the bonuses (negative) and maluses (positive) you selected, then floor at -20% and cap at +30% per Refashion rules.
-                <div className="mt-1.5 inline-block bg-slate-50 px-2.5 py-1 rounded text-xs font-mono text-slate-700">your factor: {fmtPct(modulationFactor)}</div>
+            {isDetailed && (
+              <div className="grid grid-cols-[28px_1fr] gap-3">
+                <span className="w-6 h-6 rounded-full bg-slate-900 text-white grid place-items-center text-xs font-mono font-semibold">2</span>
+                <div>
+                  <strong className="text-slate-900">Eco-modulation.</strong> If you selected any bonus or malus criteria,
+                  these adjust your fees. Actual modulation is calculated per-product by Refashion based on your supporting evidence.
+                </div>
               </div>
-            </div>
+            )}
             <div className="grid grid-cols-[28px_1fr] gap-3">
-              <span className="w-6 h-6 rounded-full bg-slate-900 text-white grid place-items-center text-xs font-mono font-semibold">3</span>
+              <span className="w-6 h-6 rounded-full bg-slate-900 text-white grid place-items-center text-xs font-mono font-semibold">{isDetailed ? '3' : '2'}</span>
               <div>
-                <strong className="text-slate-900">Modulated subtotal.</strong> Each base fee is multiplied by (1 + factor). Subtotals are rounded to two decimals before summing the total.
-                <div className="mt-1.5 inline-block bg-slate-50 px-2.5 py-1 rounded text-xs font-mono text-slate-700">subtotal = base x (1 + factor)</div>
+                <strong className="text-slate-900">Administrative fee.</strong> Refashion charges a flat &euro;{ADMIN_FEE} administrative
+                fee added to every declaration.
+                <div className="mt-1.5 inline-block bg-slate-50 px-2.5 py-1 rounded text-xs font-mono text-slate-700">
+                  total = sum(subtotals) + &euro;{ADMIN_FEE}
+                </div>
               </div>
             </div>
           </div>
           <div className="text-[11px] text-slate-500 font-mono tracking-wide border-t border-slate-200 pt-3 mt-4">
-            Indicative — verify against the official Refashion 2025 annual rate table at refashion.eu.
+            Indicative &mdash; verify against the official Refashion 2026 rate scales at refashion.eu.
           </div>
         </div>
       )}
@@ -76,41 +85,85 @@ function HowExplainer({ modulationFactor }: { modulationFactor: number }) {
   );
 }
 
-/* ─── Breakdown Table ───────────────────────────────────── */
-function BreakdownTable({ result }: { result: ReturnType<typeof calculateTotal> }) {
+/* ─── Detailed Breakdown Table ─────────────────────────── */
+function DetailedBreakdownTable({ result }: { result: CalculationResult }) {
   return (
     <div className="bg-white border border-slate-200 rounded-xl overflow-x-auto mt-4">
       <table className="w-full text-sm border-collapse">
         <thead>
           <tr>
-            <th className="text-left px-5 py-3.5 text-[11px] font-mono uppercase tracking-wider text-slate-500 font-medium bg-slate-50 border-b border-slate-200">Material</th>
-            <th className="text-right px-5 py-3.5 text-[11px] font-mono uppercase tracking-wider text-slate-500 font-medium bg-slate-50 border-b border-slate-200">Weight (kg)</th>
-            <th className="text-right px-5 py-3.5 text-[11px] font-mono uppercase tracking-wider text-slate-500 font-medium bg-slate-50 border-b border-slate-200">Rate (&euro;/tonne)</th>
-            <th className="text-right px-5 py-3.5 text-[11px] font-mono uppercase tracking-wider text-slate-500 font-medium bg-slate-50 border-b border-slate-200">Modulation</th>
-            <th className="text-right px-5 py-3.5 text-[11px] font-mono uppercase tracking-wider text-slate-500 font-medium bg-slate-50 border-b border-slate-200">Subtotal (&euro;)</th>
+            <th className="text-left px-5 py-3.5 text-[11px] font-mono uppercase tracking-wider text-slate-500 font-medium bg-slate-50 border-b border-slate-200">Product line</th>
+            <th className="text-left px-3 py-3.5 text-[11px] font-mono uppercase tracking-wider text-slate-500 font-medium bg-slate-50 border-b border-slate-200">Section</th>
+            <th className="text-right px-5 py-3.5 text-[11px] font-mono uppercase tracking-wider text-slate-500 font-medium bg-slate-50 border-b border-slate-200">Items</th>
+            <th className="text-right px-5 py-3.5 text-[11px] font-mono uppercase tracking-wider text-slate-500 font-medium bg-slate-50 border-b border-slate-200">Rate/item</th>
+            <th className="text-right px-5 py-3.5 text-[11px] font-mono uppercase tracking-wider text-slate-500 font-medium bg-slate-50 border-b border-slate-200">Subtotal</th>
           </tr>
         </thead>
         <tbody>
-          {result.lineItems.map((li, i) => (
+          {result.detailedItems.map((li, i) => (
             <tr key={i} className={i % 2 === 0 ? '' : 'bg-slate-50'}>
               <td className="px-5 py-3.5 text-slate-700">
-                <span className={`inline-block w-2 h-2 rounded-full mr-2.5 align-middle ${materialDotClass(li.material)}`} />
-                {li.material}
+                <span className={`inline-block w-2 h-2 rounded-full mr-2.5 align-middle ${categoryDotClass(li.category)}`} />
+                {li.productName}
               </td>
-              <td className="px-5 py-3.5 text-right font-mono text-slate-700">{fmtKg(li.weightKg)}</td>
-              <td className="px-5 py-3.5 text-right font-mono text-slate-700">&euro;{li.ratePerTonne}</td>
-              <td className={`px-5 py-3.5 text-right font-mono ${li.modulationFactor < 0 ? 'text-emerald-700' : li.modulationFactor > 0 ? 'text-amber-700' : 'text-slate-700'}`}>
-                {fmtPct(li.modulationFactor)}
-              </td>
+              <td className="px-3 py-3.5 text-xs text-slate-500 font-mono">{li.section}</td>
+              <td className="px-5 py-3.5 text-right font-mono text-slate-700">{fmtItems(li.quantity)}</td>
+              <td className="px-5 py-3.5 text-right font-mono text-slate-700">{fmtRate(li.ratePerItem)}</td>
               <td className="px-5 py-3.5 text-right font-mono font-semibold text-slate-700">{fmtEUR(li.subtotal)}</td>
             </tr>
           ))}
         </tbody>
         <tfoot>
+          <tr className="border-t border-slate-200">
+            <td className="px-5 pt-3 pb-2 text-slate-500 text-xs" colSpan={4}>Administrative fee</td>
+            <td className="px-5 pt-3 pb-2 text-right font-mono text-slate-500 text-xs">{fmtEUR(ADMIN_FEE)}</td>
+          </tr>
+          <tr className="border-t-2 border-slate-900">
+            <td className="px-5 pt-4 pb-3 font-semibold text-slate-900" colSpan={2}>TOTAL</td>
+            <td className="px-5 pt-4 pb-3 text-right font-mono font-semibold text-slate-900">{fmtItems(result.totalItems)}</td>
+            <td />
+            <td className="px-5 pt-4 pb-3 text-right font-mono font-semibold text-slate-900">{fmtEUR(result.totalFee)}</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  );
+}
+
+/* ─── Simplified Breakdown Table ──────────────────────── */
+function SimplifiedBreakdownTable({ result }: { result: CalculationResult }) {
+  return (
+    <div className="bg-white border border-slate-200 rounded-xl overflow-x-auto mt-4">
+      <table className="w-full text-sm border-collapse">
+        <thead>
+          <tr>
+            <th className="text-left px-5 py-3.5 text-[11px] font-mono uppercase tracking-wider text-slate-500 font-medium bg-slate-50 border-b border-slate-200">Category</th>
+            <th className="text-right px-5 py-3.5 text-[11px] font-mono uppercase tracking-wider text-slate-500 font-medium bg-slate-50 border-b border-slate-200">Items</th>
+            <th className="text-right px-5 py-3.5 text-[11px] font-mono uppercase tracking-wider text-slate-500 font-medium bg-slate-50 border-b border-slate-200">Rate/item</th>
+            <th className="text-right px-5 py-3.5 text-[11px] font-mono uppercase tracking-wider text-slate-500 font-medium bg-slate-50 border-b border-slate-200">Subtotal</th>
+          </tr>
+        </thead>
+        <tbody>
+          {result.simplifiedItems.map((li, i) => (
+            <tr key={i} className={i % 2 === 0 ? '' : 'bg-slate-50'}>
+              <td className="px-5 py-3.5 text-slate-700">
+                <span className={`inline-block w-2 h-2 rounded-full mr-2.5 align-middle ${categoryDotClass(li.category)}`} />
+                {li.categoryLabel}
+              </td>
+              <td className="px-5 py-3.5 text-right font-mono text-slate-700">{fmtItems(li.quantity)}</td>
+              <td className="px-5 py-3.5 text-right font-mono text-slate-700">{fmtEUR(li.ratePerItem)}</td>
+              <td className="px-5 py-3.5 text-right font-mono font-semibold text-slate-700">{fmtEUR(li.subtotal)}</td>
+            </tr>
+          ))}
+        </tbody>
+        <tfoot>
+          <tr className="border-t border-slate-200">
+            <td className="px-5 pt-3 pb-2 text-slate-500 text-xs" colSpan={3}>Administrative fee</td>
+            <td className="px-5 pt-3 pb-2 text-right font-mono text-slate-500 text-xs">{fmtEUR(ADMIN_FEE)}</td>
+          </tr>
           <tr className="border-t-2 border-slate-900">
             <td className="px-5 pt-4 pb-3 font-semibold text-slate-900">TOTAL</td>
-            <td className="px-5 pt-4 pb-3 text-right font-mono font-semibold text-slate-900">{fmtKg(result.totalWeight)} kg</td>
-            <td />
+            <td className="px-5 pt-4 pb-3 text-right font-mono font-semibold text-slate-900">{fmtItems(result.totalItems)}</td>
             <td />
             <td className="px-5 pt-4 pb-3 text-right font-mono font-semibold text-slate-900">{fmtEUR(result.totalFee)}</td>
           </tr>
@@ -121,38 +174,52 @@ function BreakdownTable({ result }: { result: ReturnType<typeof calculateTotal> 
 }
 
 /* ─── Dashboard Breakdown (bar chart view) ──────────────── */
-function DashboardBreakdown({ result }: { result: ReturnType<typeof calculateTotal> }) {
-  const max = Math.max(...result.lineItems.map((l) => l.subtotal), 1);
+function DashboardBreakdown({ result }: { result: CalculationResult }) {
+  const items = result.type === 'detailed' ? result.detailedItems : result.simplifiedItems;
+  const maxSubtotal = Math.max(...items.map((l) => l.subtotal), 1);
   return (
     <div className="bg-white border border-slate-200 rounded-xl p-6 mt-4">
       <div className="flex justify-between items-baseline mb-5">
-        <h3 className="text-lg font-bold text-slate-900">Contribution by material</h3>
+        <h3 className="text-lg font-bold text-slate-900">
+          Contribution by {result.type === 'detailed' ? 'product line' : 'category'}
+        </h3>
         <span className="text-[11px] font-mono uppercase tracking-wider text-slate-500">Subtotal &middot; &euro;</span>
       </div>
       <div className="space-y-4">
-        {result.lineItems.map((li, i) => (
-          <div key={i} className="grid grid-cols-1 sm:grid-cols-[1.4fr_1fr_1.5fr_auto] gap-4 items-center text-sm">
-            <div className="font-medium text-slate-900">
-              <span className={`inline-block w-2 h-2 rounded-full mr-2.5 align-middle ${materialDotClass(li.material)}`} />
-              {li.material}
-            </div>
-            <div className="text-xs font-mono text-slate-500">
-              {fmtKg(li.weightKg)} kg &middot; &euro;{li.ratePerTonne}/t
-              {li.modulationFactor !== 0 && (
-                <span className={li.modulationFactor < 0 ? 'text-emerald-700' : 'text-amber-700'}>
-                  {' '}&middot; {fmtPct(li.modulationFactor)}
-                </span>
-              )}
-            </div>
-            <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
-              <div className="h-full bg-indigo-600 rounded-full transition-all duration-500" style={{ width: `${(li.subtotal / max) * 100}%` }} />
-            </div>
-            <div className="font-mono font-semibold text-slate-900">{fmtEUR(li.subtotal)}</div>
-          </div>
-        ))}
+        {result.type === 'detailed'
+          ? result.detailedItems.map((li, i) => (
+              <div key={i} className="grid grid-cols-1 sm:grid-cols-[1.4fr_0.8fr_1.5fr_auto] gap-4 items-center text-sm">
+                <div className="font-medium text-slate-900 truncate">
+                  <span className={`inline-block w-2 h-2 rounded-full mr-2.5 align-middle ${categoryDotClass(li.category)}`} />
+                  {li.productName}
+                </div>
+                <div className="text-xs font-mono text-slate-500">
+                  {fmtItems(li.quantity)} items &middot; {fmtRate(li.ratePerItem)}
+                </div>
+                <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+                  <div className="h-full bg-indigo-600 rounded-full transition-all duration-500" style={{ width: `${(li.subtotal / maxSubtotal) * 100}%` }} />
+                </div>
+                <div className="font-mono font-semibold text-slate-900 w-20 text-right">{fmtEUR(li.subtotal)}</div>
+              </div>
+            ))
+          : result.simplifiedItems.map((li, i) => (
+              <div key={i} className="grid grid-cols-1 sm:grid-cols-[1.4fr_0.8fr_1.5fr_auto] gap-4 items-center text-sm">
+                <div className="font-medium text-slate-900">
+                  <span className={`inline-block w-2 h-2 rounded-full mr-2.5 align-middle ${categoryDotClass(li.category)}`} />
+                  {li.categoryLabel}
+                </div>
+                <div className="text-xs font-mono text-slate-500">
+                  {fmtItems(li.quantity)} items &middot; {fmtEUR(li.ratePerItem)}
+                </div>
+                <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+                  <div className="h-full bg-indigo-600 rounded-full transition-all duration-500" style={{ width: `${(li.subtotal / maxSubtotal) * 100}%` }} />
+                </div>
+                <div className="font-mono font-semibold text-slate-900 w-20 text-right">{fmtEUR(li.subtotal)}</div>
+              </div>
+            ))}
       </div>
       <div className="flex justify-between border-t-2 border-slate-900 mt-5 pt-4 text-[15px]">
-        <span>Total &mdash; {result.lineItems.length} material{result.lineItems.length === 1 ? '' : 's'} across {fmtKg(result.totalWeight)} kg</span>
+        <span>Total &mdash; {fmtItems(result.totalItems)} items (incl. &euro;{ADMIN_FEE} admin fee)</span>
         <span className="font-mono font-bold">{fmtEUR(result.totalFee)}</span>
       </div>
     </div>
@@ -167,10 +234,10 @@ function DisclaimerBox() {
       <div>
         <div className="text-amber-800 font-semibold text-[15px] mb-1">Indicative estimate only</div>
         <p className="text-amber-800 text-sm leading-relaxed">
-          These figures are based on simplified Refashion 2025 rate approximations
-          and may differ from your actual contribution. Verify all rates and modulation
-          criteria against the official Refashion annual rate table at refashion.eu
-          before submitting your declaration.
+          These figures are based on the official Refashion 2026 eco-fee scales
+          and may differ from your actual contribution. Eco-modulation adjustments shown here
+          are simplified indicators &mdash; verify all rates, modulation criteria, and eligibility
+          against your Refashion registration before submitting your declaration.
         </p>
         <p className="text-amber-700/80 text-xs mt-1.5">This tool does not constitute legal or compliance advice.</p>
       </div>
@@ -184,7 +251,6 @@ function EmailCapture({ data }: { data: EprFormData }) {
   const [err, setErr] = useState('');
   const [done, setDone] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const next = nextQuarter(data.quarter, data.year);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -201,8 +267,8 @@ function EmailCapture({ data }: { data: EprFormData }) {
         body: JSON.stringify({
           email,
           brand: data.brandName,
-          quarter: data.quarter,
-          year: data.year,
+          declarationYear: data.declarationYear,
+          declarationType: data.declarationType,
           source: 'epr-calculator',
         }),
       });
@@ -222,8 +288,10 @@ function EmailCapture({ data }: { data: EprFormData }) {
           &#10003;
         </div>
         <div>
-          <div className="text-lg font-bold text-emerald-700">You&apos;re confirmed.</div>
-          <p className="text-emerald-700 text-sm mt-1">We&apos;ll reach out before {next.quarter} {next.year} is due. No spam, no marketing.</p>
+          <div className="text-lg font-bold text-emerald-700">You&apos;re on the list.</div>
+          <p className="text-emerald-700 text-sm mt-1">
+            We&apos;ll send you a reminder before the next declaration window opens (Jan 14). No spam.
+          </p>
         </div>
       </div>
     );
@@ -231,10 +299,10 @@ function EmailCapture({ data }: { data: EprFormData }) {
 
   return (
     <form className="bg-white border border-slate-200 rounded-xl p-6 mt-6 space-y-3" onSubmit={submit}>
-      <h3 className="text-lg font-bold text-slate-900">Get {next.quarter} {next.year} done automatically</h3>
+      <h3 className="text-lg font-bold text-slate-900">Get your next declaration reminder</h3>
       <p className="text-slate-500 text-[15px]">
-        We&apos;ll pre-fill your brand data and materials from this quarter and send you a reminder
-        when {next.quarter} {next.year} is due.
+        We&apos;ll remind you when the next Refashion declaration window opens (Jan 14 &ndash; Feb 28)
+        and pre-fill your brand data from this estimate.
       </p>
       <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-2.5 mt-2">
         <input
@@ -251,11 +319,11 @@ function EmailCapture({ data }: { data: EprFormData }) {
           type="submit"
           disabled={submitting}
         >
-          {submitting ? 'Sending...' : 'Yes, remind me →'}
+          {submitting ? 'Sending...' : 'Remind me'}
         </button>
       </div>
       {err && <p className="text-red-600 text-sm">{err}</p>}
-      <p className="text-xs text-slate-500">No spam. No marketing. Just your quarterly reminder.</p>
+      <p className="text-xs text-slate-500">No spam. No marketing. Just your annual deadline reminder.</p>
     </form>
   );
 }
@@ -285,10 +353,10 @@ function PlatformCTA() {
         </p>
         <div className="flex flex-wrap gap-3">
           <Link
-            href="/register"
+            href="/#early-access"
             className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-5 py-2.5 rounded-lg transition-colors text-sm"
           >
-            Try N.E.X.A Loop free
+            Apply for early access
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
             </svg>
@@ -305,6 +373,130 @@ function PlatformCTA() {
   );
 }
 
+/* ─── PDF-style Document Preview ──────────────────────── */
+function DocumentPreview({ data, result, dateStr }: { data: EprFormData; result: CalculationResult; dateStr: string }) {
+  const appliedBonuses = BONUS_DEFS.filter((b) => data.bonuses.includes(b.key));
+  const appliedMaluses = MALUS_DEFS.filter((m) => data.maluses.includes(m.key));
+  const isDetailed = result.type === 'detailed';
+
+  return (
+    <div className="mt-8">
+      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-4">
+        <div>
+          <div className="text-[11px] font-mono uppercase tracking-wider text-slate-500">Document preview</div>
+          <h3 className="text-lg font-bold text-slate-900">Refashion EPR Declaration Summary</h3>
+        </div>
+      </div>
+      <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-lg">
+        <div className="bg-indigo-600 text-white px-8 py-3.5 flex justify-between items-center">
+          <span className="text-sm font-medium tracking-tight">N.E.X.A Loop &mdash; Refashion EPR Declaration Summary</span>
+          <span className="text-[10px] font-mono uppercase tracking-widest bg-white/20 px-2 py-0.5 rounded">indicative</span>
+        </div>
+        <div className="p-8">
+          {/* Meta grid */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pb-5 border-b border-slate-200 mb-6">
+            {[
+              { label: 'Brand', value: data.brandName },
+              { label: 'Declaration Year', value: data.declarationYear },
+              { label: 'Country', value: 'France (Refashion)' },
+              { label: 'Declaration Type', value: isDetailed ? 'Detailed' : 'Simplified' },
+            ].map((item) => (
+              <div key={item.label}>
+                <span className="text-[10px] font-mono uppercase tracking-wider text-slate-500">{item.label}</span>
+                <div className="text-sm font-medium text-slate-900 mt-1">{item.value}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Product breakdown table (compact) */}
+          <h4 className="text-[15px] font-bold text-slate-900 mb-2.5">
+            {isDetailed ? 'Product line breakdown' : 'Category breakdown'}
+          </h4>
+          <table className="w-full text-xs border-collapse">
+            <thead>
+              <tr>
+                <th className="text-left pb-2 text-[10px] font-mono uppercase tracking-wider text-slate-700 font-semibold border-b border-slate-900">
+                  {isDetailed ? 'Product line' : 'Category'}
+                </th>
+                <th className="text-right pb-2 text-[10px] font-mono uppercase tracking-wider text-slate-700 font-semibold border-b border-slate-900">Items</th>
+                <th className="text-right pb-2 text-[10px] font-mono uppercase tracking-wider text-slate-700 font-semibold border-b border-slate-900">Rate/item</th>
+                <th className="text-right pb-2 text-[10px] font-mono uppercase tracking-wider text-slate-700 font-semibold border-b border-slate-900">Subtotal</th>
+              </tr>
+            </thead>
+            <tbody>
+              {isDetailed
+                ? result.detailedItems.map((li, i) => (
+                    <tr key={i} className="border-b border-slate-100">
+                      <td className="py-2 text-slate-700">{li.productName} <span className="text-slate-400">({li.section})</span></td>
+                      <td className="py-2 text-right tabular-nums">{fmtItems(li.quantity)}</td>
+                      <td className="py-2 text-right tabular-nums">{fmtRate(li.ratePerItem)}</td>
+                      <td className="py-2 text-right tabular-nums">{fmtEUR(li.subtotal)}</td>
+                    </tr>
+                  ))
+                : result.simplifiedItems.map((li, i) => (
+                    <tr key={i} className="border-b border-slate-100">
+                      <td className="py-2 text-slate-700">{li.categoryLabel}</td>
+                      <td className="py-2 text-right tabular-nums">{fmtItems(li.quantity)}</td>
+                      <td className="py-2 text-right tabular-nums">{fmtEUR(li.ratePerItem)}</td>
+                      <td className="py-2 text-right tabular-nums">{fmtEUR(li.subtotal)}</td>
+                    </tr>
+                  ))}
+              <tr className="border-b border-slate-200">
+                <td className="py-2 text-slate-500" colSpan={3}>Administrative fee</td>
+                <td className="py-2 text-right tabular-nums text-slate-500">{fmtEUR(ADMIN_FEE)}</td>
+              </tr>
+              <tr className="border-t-2 border-slate-900">
+                <td className="pt-2.5 font-semibold text-slate-900">TOTAL</td>
+                <td className="pt-2.5 text-right font-semibold tabular-nums text-slate-900">{fmtItems(result.totalItems)}</td>
+                <td />
+                <td className="pt-2.5 text-right font-semibold tabular-nums text-slate-900">{fmtEUR(result.totalFee)}</td>
+              </tr>
+            </tbody>
+          </table>
+
+          {/* Modulation summary (detailed only) */}
+          {isDetailed && (
+            <>
+              <h4 className="text-[15px] font-bold text-slate-900 mt-5 mb-2.5">Eco-modulation criteria</h4>
+              <div className="bg-slate-50 rounded-lg p-4">
+                {appliedBonuses.length + appliedMaluses.length === 0 ? (
+                  <span className="text-slate-400 text-sm">No eco-modulation criteria selected</span>
+                ) : (
+                  <ul className="list-disc pl-4 text-xs text-slate-700 space-y-0.5 leading-relaxed">
+                    {appliedBonuses.map((b) => (
+                      <li key={b.key}>{b.label} <span className="text-emerald-700">(bonus)</span></li>
+                    ))}
+                    {appliedMaluses.map((m) => (
+                      <li key={m.key}>{m.label} <span className="text-amber-700">(malus)</span></li>
+                    ))}
+                  </ul>
+                )}
+                <p className="text-[10px] text-slate-500 mt-2">
+                  Eco-modulation adjustments are applied by Refashion based on evidence provided during declaration.
+                  The bonuses/maluses shown above are indicative selections only.
+                </p>
+              </div>
+            </>
+          )}
+
+          {/* Notice */}
+          <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 text-xs text-amber-800 leading-relaxed mt-5">
+            <strong>Important.</strong> These figures are indicative estimates based on the official Refashion 2026
+            eco-fee scales. Verify all figures against your Refashion registration before filing your
+            annual declaration (Jan 14 &ndash; Feb 28). Payment is due by March 31.
+          </div>
+
+          {/* Footer */}
+          <div className="flex flex-col sm:flex-row justify-between text-[10px] text-slate-500 font-mono tracking-wide border-t border-slate-200 pt-3.5 mt-4 gap-1.5">
+            <span>Generated by N.E.X.A Loop EPR Calculator &middot; nexaloop.vercel.app &middot; {dateStr}</span>
+            <span>For questions: hello@nexaloop.com</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ─── Main Results Screen ───────────────────────────────── */
 interface ResultsStepProps {
   data: EprFormData;
@@ -312,17 +504,9 @@ interface ResultsStepProps {
 }
 
 export function ResultsStep({ data, onRestart }: ResultsStepProps) {
-  const modulation = useMemo(
-    () => calculateModulation(data.bonuses, data.maluses),
-    [data.bonuses, data.maluses],
-  );
-  const result = useMemo(
-    () => calculateTotal(data.materials, modulation),
-    [data.materials, modulation],
-  );
+  const result = useMemo(() => calculateTotal(data), [data]);
   const dateStr = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
-  const appliedBonuses = BONUS_DEFS.filter((b) => data.bonuses.includes(b.key));
-  const appliedMaluses = MALUS_DEFS.filter((m) => data.maluses.includes(m.key));
+  const isDetailed = result.type === 'detailed';
 
   return (
     <div className="max-w-[960px] mx-auto">
@@ -332,7 +516,7 @@ export function ResultsStep({ data, onRestart }: ResultsStepProps) {
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mt-8 mb-6">
         <div>
           <div className="text-[11px] font-mono uppercase tracking-wider text-slate-500">
-            Refashion EPR Estimate &middot; {data.quarter} {data.year}
+            Refashion EPR Estimate &middot; {data.declarationYear} &middot; {isDetailed ? 'Detailed' : 'Simplified'}
           </div>
           <h2 className="text-3xl sm:text-4xl font-bold text-slate-900 tracking-tight mt-1">{data.brandName}</h2>
           <div className="text-sm text-slate-500 mt-2">
@@ -340,22 +524,39 @@ export function ResultsStep({ data, onRestart }: ResultsStepProps) {
             {data.contact && <> &middot; by {data.contact}</>}
           </div>
         </div>
-        <HowExplainer modulationFactor={result.modulationFactor} />
+        <HowExplainer isDetailed={isDetailed} />
       </div>
 
       {/* Stat cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <StatCard label="Total weight" value={`${fmtKg(result.totalWeight)} kg`} sub={`${result.lineItems.length} material types`} />
-        <StatCard label="Estimated fee" value={fmtEUR(result.totalFee)} sub="indicative" accent />
         <StatCard
-          label="Net modulation"
-          value={fmtPct(result.modulationFactor)}
-          sub={result.modulationFactor < 0 ? 'savings applied' : result.modulationFactor > 0 ? 'uplift applied' : 'no adjustments'}
+          label="Total items"
+          value={fmtItems(result.totalItems)}
+          sub={`${isDetailed ? result.detailedItems.length : result.simplifiedItems.length} ${isDetailed ? 'product line' : 'categor'}${(isDetailed ? result.detailedItems.length : result.simplifiedItems.length) === 1 ? (isDetailed ? '' : 'y') : (isDetailed ? 's' : 'ies')}`}
+        />
+        <StatCard
+          label="Estimated annual fee"
+          value={fmtEUR(result.totalFee)}
+          sub={`incl. €${ADMIN_FEE} admin fee`}
+          accent
+        />
+        <StatCard
+          label="Eco-modulation"
+          value={
+            isDetailed
+              ? `${result.bonusesApplied.length} bonus${result.bonusesApplied.length !== 1 ? 'es' : ''}, ${result.malusesApplied.length} malus${result.malusesApplied.length !== 1 ? 'es' : ''}`
+              : 'N/A'
+          }
+          sub={isDetailed ? 'criteria selected' : 'not available for simplified'}
         />
       </div>
 
       {/* Table breakdown */}
-      <BreakdownTable result={result} />
+      {isDetailed ? (
+        <DetailedBreakdownTable result={result} />
+      ) : (
+        <SimplifiedBreakdownTable result={result} />
+      )}
 
       {/* Dashboard breakdown (visual bars) */}
       <DashboardBreakdown result={result} />
@@ -363,106 +564,8 @@ export function ResultsStep({ data, onRestart }: ResultsStepProps) {
       {/* Disclaimer */}
       <DisclaimerBox />
 
-      {/* PDF preview panel */}
-      <div className="mt-8">
-        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-4">
-          <div>
-            <div className="text-[11px] font-mono uppercase tracking-wider text-slate-500">Document preview</div>
-            <h3 className="text-lg font-bold text-slate-900">Refashion EPR Declaration Summary</h3>
-          </div>
-        </div>
-        <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-lg">
-          <div className="bg-indigo-600 text-white px-8 py-3.5 flex justify-between items-center">
-            <span className="text-sm font-medium tracking-tight">N.E.X.A Loop &mdash; Refashion EPR Declaration Summary</span>
-            <span className="text-[10px] font-mono uppercase tracking-widest bg-white/20 px-2 py-0.5 rounded">indicative</span>
-          </div>
-          <div className="p-8">
-            {/* Meta grid */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pb-5 border-b border-slate-200 mb-6">
-              {[
-                { label: 'Brand', value: data.brandName },
-                { label: 'Reporting Period', value: `${data.quarter} ${data.year}` },
-                { label: 'Country', value: 'France (Refashion)' },
-                { label: 'Calculated', value: dateStr },
-              ].map((item) => (
-                <div key={item.label}>
-                  <span className="text-[10px] font-mono uppercase tracking-wider text-slate-500">{item.label}</span>
-                  <div className="text-sm font-medium text-slate-900 mt-1">{item.value}</div>
-                </div>
-              ))}
-            </div>
-
-            {/* Material breakdown table (compact) */}
-            <h4 className="text-[15px] font-bold text-slate-900 mb-2.5">Material breakdown</h4>
-            <table className="w-full text-xs border-collapse">
-              <thead>
-                <tr>
-                  <th className="text-left pb-2 text-[10px] font-mono uppercase tracking-wider text-slate-700 font-semibold border-b border-slate-900">Material</th>
-                  <th className="text-right pb-2 text-[10px] font-mono uppercase tracking-wider text-slate-700 font-semibold border-b border-slate-900">Weight (kg)</th>
-                  <th className="text-right pb-2 text-[10px] font-mono uppercase tracking-wider text-slate-700 font-semibold border-b border-slate-900">Rate (&euro;/t)</th>
-                  <th className="text-right pb-2 text-[10px] font-mono uppercase tracking-wider text-slate-700 font-semibold border-b border-slate-900">Adj. factor</th>
-                  <th className="text-right pb-2 text-[10px] font-mono uppercase tracking-wider text-slate-700 font-semibold border-b border-slate-900">Subtotal (&euro;)</th>
-                </tr>
-              </thead>
-              <tbody>
-                {result.lineItems.map((li, i) => (
-                  <tr key={i} className="border-b border-slate-100">
-                    <td className="py-2 text-slate-700">{li.material}</td>
-                    <td className="py-2 text-right tabular-nums">{fmtKg(li.weightKg)}</td>
-                    <td className="py-2 text-right tabular-nums">&euro;{li.ratePerTonne}</td>
-                    <td className="py-2 text-right tabular-nums">{fmtPct(li.modulationFactor)}</td>
-                    <td className="py-2 text-right tabular-nums">{fmtEUR(li.subtotal)}</td>
-                  </tr>
-                ))}
-                <tr className="border-t-2 border-slate-900">
-                  <td className="pt-2.5 font-semibold text-slate-900">TOTAL</td>
-                  <td className="pt-2.5 text-right font-semibold tabular-nums text-slate-900">{fmtKg(result.totalWeight)} kg</td>
-                  <td />
-                  <td />
-                  <td className="pt-2.5 text-right font-semibold tabular-nums text-slate-900">{fmtEUR(result.totalFee)}</td>
-                </tr>
-              </tbody>
-            </table>
-
-            {/* Modulation summary */}
-            <h4 className="text-[15px] font-bold text-slate-900 mt-5 mb-2.5">Modulation summary</h4>
-            <div className="grid grid-cols-1 sm:grid-cols-[1.5fr_1fr] gap-6 bg-slate-50 rounded-lg p-5">
-              <div>
-                <div className="text-[11px] font-mono uppercase tracking-wider text-slate-500 mb-1.5">Applied criteria</div>
-                {appliedBonuses.length + appliedMaluses.length === 0 ? (
-                  <span className="text-slate-400 text-sm">None</span>
-                ) : (
-                  <ul className="list-disc pl-4 text-xs text-slate-700 space-y-0.5 leading-relaxed">
-                    {appliedBonuses.map((b) => (
-                      <li key={b.key}>{b.label} <span className="text-emerald-700">-{Math.abs(b.value * 100)}%</span></li>
-                    ))}
-                    {appliedMaluses.map((m) => (
-                      <li key={m.key}>{m.label} <span className="text-amber-700">+{m.value * 100}%</span></li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-              <div className="text-right">
-                <div className="text-[11px] font-mono uppercase tracking-wider text-slate-500">Net modulation factor</div>
-                <div className="text-3xl font-bold text-slate-900 mt-1 tracking-tight">{fmtPct(result.modulationFactor)}</div>
-              </div>
-            </div>
-
-            {/* Notice */}
-            <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 text-xs text-amber-800 leading-relaxed mt-5">
-              <strong>Important.</strong> These figures are indicative estimates based on simplified
-              Refashion 2025 rate approximations. Verify all figures against the official Refashion
-              annual rate table before filing your declaration.
-            </div>
-
-            {/* Footer */}
-            <div className="flex flex-col sm:flex-row justify-between text-[10px] text-slate-500 font-mono tracking-wide border-t border-slate-200 pt-3.5 mt-4 gap-1.5">
-              <span>Generated by N.E.X.A Loop EPR Calculator &middot; nexaloop.vercel.app &middot; {dateStr}</span>
-              <span>For questions: hello@nexaloop.com</span>
-            </div>
-          </div>
-        </div>
-      </div>
+      {/* PDF-style document preview */}
+      <DocumentPreview data={data} result={result} dateStr={dateStr} />
 
       {/* Action buttons */}
       <div className="flex flex-wrap gap-3 mt-6">

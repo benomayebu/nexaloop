@@ -6,11 +6,11 @@ import { DEFAULT_DATA } from '@/app/components/epr/calculate';
 import type { EprFormData } from '@/app/components/epr/calculate';
 import { EprLanding } from '@/app/components/epr/epr-landing';
 import { BrandInfoStep } from '@/app/components/epr/brand-info-step';
-import { MaterialsStep } from '@/app/components/epr/materials-step';
+import { ProductsStep } from '@/app/components/epr/products-step';
 import { ResultsStep } from '@/app/components/epr/results-step';
 
 export function EprCalculatorShell() {
-  const [step, setStep] = useState(0); // 0=landing, 1=brand, 2=materials, 3=results
+  const [step, setStep] = useState(0); // 0=landing, 1=brand, 2=products, 3=results
   const [data, setData] = useState<EprFormData>({ ...DEFAULT_DATA });
 
   const startCalc = useCallback(() => {
@@ -62,7 +62,7 @@ export function EprCalculatorShell() {
           />
         )}
         {step === 2 && (
-          <MaterialsStep
+          <ProductsStep
             data={data}
             setData={setData}
             onNext={() => { setStep(3); window.scrollTo({ top: 0, behavior: 'smooth' }); }}

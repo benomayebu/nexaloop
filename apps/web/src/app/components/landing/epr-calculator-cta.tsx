@@ -20,14 +20,14 @@ export function EprCalculatorCTA() {
             </div>
 
             <h2 className="text-3xl sm:text-4xl font-bold text-slate-900 tracking-tight leading-tight mb-4">
-              Know your EU EPR fees{' '}
+              Know your Refashion EPR fees{' '}
               <span className="text-indigo-600">before the deadline</span>
             </h2>
 
             <p className="text-slate-500 text-lg leading-relaxed mb-6 max-w-lg">
-              Our free Refashion EPR calculator helps fashion brands estimate quarterly
-              eco-contribution fees in minutes &mdash; covering 15 material categories
-              with eco-modulation adjustments.
+              Our free Refashion EPR calculator helps fashion brands estimate annual
+              eco-contribution fees in minutes &mdash; covering 80+ official product lines
+              across clothing, household linen, and footwear.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-3">
@@ -50,44 +50,44 @@ export function EprCalculatorCTA() {
               {/* Top bar */}
               <div className="bg-slate-900 px-6 py-3 flex items-center justify-between">
                 <span className="text-white text-sm font-medium">Refashion EPR Estimate</span>
-                <span className="text-indigo-300 text-xs font-mono">Q1 2026</span>
+                <span className="text-indigo-300 text-xs font-mono">2025 Annual</span>
               </div>
               {/* Content */}
               <div className="p-6 space-y-4">
                 {/* Stat row */}
                 <div className="grid grid-cols-3 gap-3">
                   <div className="bg-slate-50 rounded-lg p-3">
-                    <div className="text-[10px] font-mono text-slate-500 uppercase tracking-wider">Weight</div>
-                    <div className="text-lg font-bold text-slate-900 mt-0.5">1,840 kg</div>
+                    <div className="text-[10px] font-mono text-slate-500 uppercase tracking-wider">Items</div>
+                    <div className="text-lg font-bold text-slate-900 mt-0.5">12,400</div>
                   </div>
                   <div className="bg-indigo-50 rounded-lg p-3">
                     <div className="text-[10px] font-mono text-slate-500 uppercase tracking-wider">Est. Fee</div>
-                    <div className="text-lg font-bold text-slate-900 mt-0.5">&euro;167.44</div>
+                    <div className="text-lg font-bold text-slate-900 mt-0.5">&euro;587.20</div>
                   </div>
                   <div className="bg-slate-50 rounded-lg p-3">
-                    <div className="text-[10px] font-mono text-slate-500 uppercase tracking-wider">Modulation</div>
-                    <div className="text-lg font-bold text-emerald-700 mt-0.5">&minus;10%</div>
+                    <div className="text-[10px] font-mono text-slate-500 uppercase tracking-wider">Admin</div>
+                    <div className="text-lg font-bold text-slate-900 mt-0.5">&euro;30.00</div>
                   </div>
                 </div>
                 {/* Mini bar chart */}
                 <div className="space-y-2.5">
                   {[
-                    { label: 'Cotton (natural)', pct: 65, amount: '&euro;91.20' },
-                    { label: 'Recycled polyester', pct: 25, amount: '&euro;48.51' },
-                    { label: 'Linen / Hemp', pct: 15, amount: '&euro;27.73' },
+                    { label: 'T-shirt type tops (W)', pct: 65, amount: '&euro;226.10' },
+                    { label: 'Denim trousers (M)', pct: 40, amount: '&euro;164.70' },
+                    { label: 'Flat footwear (W)', pct: 25, amount: '&euro;108.60' },
                   ].map((row) => (
                     <div key={row.label} className="flex items-center gap-3 text-xs">
-                      <span className="w-28 text-slate-600 truncate">{row.label}</span>
+                      <span className="w-32 text-slate-600 truncate">{row.label}</span>
                       <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
                         <div className="h-full bg-indigo-600 rounded-full" style={{ width: `${row.pct}%` }} />
                       </div>
-                      <span className="w-14 text-right font-mono text-slate-700" dangerouslySetInnerHTML={{ __html: row.amount }} />
+                      <span className="w-16 text-right font-mono text-slate-700" dangerouslySetInnerHTML={{ __html: row.amount }} />
                     </div>
                   ))}
                 </div>
                 {/* Footer note */}
                 <div className="text-[10px] font-mono text-slate-400 text-center pt-2 border-t border-slate-100">
-                  Indicative estimate &middot; Verify with Refashion
+                  Indicative estimate &middot; Based on Refashion 2026 scales
                 </div>
               </div>
             </div>

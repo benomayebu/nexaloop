@@ -1,8 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import type { EprFormData } from './calculate';
-import { QUARTERS, QUARTER_LABELS, YEARS } from './calculate';
+import type { EprFormData, DeclarationType } from './calculate';
+import { DECLARATION_YEARS } from './calculate';
 import { ProgressBar } from './progress-bar';
 
 interface BrandInfoStepProps {
@@ -32,6 +32,10 @@ export function BrandInfoStep({ data, setData, onNext, onBack }: BrandInfoStepPr
     });
   }
 
+  function setDeclarationType(type: DeclarationType) {
+    setData({ ...data, declarationType: type });
+  }
+
   const markets = [
     { id: 'france', label: 'France (Refashion)', note: 'Currently supported', enabled: true },
     { id: 'netherlands', label: 'Netherlands (OPEN)', note: 'Coming soon', enabled: false },
@@ -44,10 +48,10 @@ export function BrandInfoStep({ data, setData, onNext, onBack }: BrandInfoStepPr
 
       <div className="mt-8 mb-7">
         <h2 className="font-sans text-2xl font-bold text-slate-900 tracking-tight">
-          Your brand details
+          Declaration setup
         </h2>
         <p className="text-slate-500 mt-1 text-[15px]">
-          Tell us about your organisation and the reporting period.
+          Tell us about your organisation and the declaration year.
         </p>
       </div>
 
@@ -69,30 +73,92 @@ export function BrandInfoStep({ data, setData, onNext, onBack }: BrandInfoStepPr
           {errors.brandName && <p className="text-red-600 text-sm mt-1.5">{errors.brandName}</p>}
         </div>
 
-        {/* Reporting period */}
+        {/* Declaration year */}
         <div>
           <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider font-mono mb-2">
-            Reporting period
+            Declaration year
           </label>
-          <div className="grid grid-cols-[1.25fr_1fr] gap-3">
-            <select
-              className="w-full px-3.5 py-2.5 text-[15px] border border-slate-300 rounded-lg bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-              value={data.quarter}
-              onChange={(e) => setData({ ...data, quarter: e.target.value })}
+          <p className="text-sm text-slate-500 mb-2">
+            The year your products were placed on the French market.
+          </p>
+          <select
+            className="w-full px-3.5 py-2.5 text-[15px] border border-slate-300 rounded-lg bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+            value={data.declarationYear}
+            onChange={(e) => setData({ ...data, declarationYear: e.target.value })}
+          >
+            {DECLARATION_YEARS.map((y) => (
+              <option key={y} value={y}>{y}</option>
+            ))}
+          </select>
+          <p className="text-xs text-slate-500 mt-2 leading-relaxed">
+            Refashion declarations are annual. Declare products placed on market in the previous calendar year (Jan 14 &ndash; Feb 28).
+          </p>
+        </div>
+
+        {/* Declaration type */}
+        <div>
+          <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider font-mono mb-2">
+            Declaration type
+          </label>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <button
+              type="button"
+              className={`text-left px-4 py-4 border rounded-xl transition-colors ${
+                data.declarationType === 'detailed'
+                  ? 'border-indigo-500 bg-indigo-50 ring-1 ring-indigo-500'
+                  : 'border-slate-200 bg-white hover:border-slate-300'
+              }`}
+              onClick={() => setDeclarationType('detailed')}
             >
-              {QUARTERS.map((q) => (
-                <option key={q} value={q}>{QUARTER_LABELS[q]}</option>
-              ))}
-            </select>
-            <select
-              className="w-full px-3.5 py-2.5 text-[15px] border border-slate-300 rounded-lg bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-              value={data.year}
-              onChange={(e) => setData({ ...data, year: e.target.value })}
+              <div className="flex items-center gap-2 mb-1.5">
+                <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
+                  data.declarationType === 'detailed' ? 'border-indigo-600' : 'border-slate-300'
+                }`}>
+                  {data.declarationType === 'detailed' && (
+                    <div className="w-2 h-2 rounded-full bg-indigo-600" />
+                  )}
+                </div>
+                <span className="text-[15px] font-semibold text-slate-900">Detailed</span>
+              </div>
+              <p className="text-xs text-slate-500 leading-relaxed ml-6">
+                Choose specific product lines from the official Refashion scale.
+                Required for eco-modulation eligibility.
+              </p>
+              <div className="ml-6 mt-2">
+                <span className="text-[10px] font-mono uppercase tracking-wider text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded">
+                  Recommended
+                </span>
+              </div>
+            </button>
+            <button
+              type="button"
+              className={`text-left px-4 py-4 border rounded-xl transition-colors ${
+                data.declarationType === 'simplified'
+                  ? 'border-indigo-500 bg-indigo-50 ring-1 ring-indigo-500'
+                  : 'border-slate-200 bg-white hover:border-slate-300'
+              }`}
+              onClick={() => setDeclarationType('simplified')}
             >
-              {YEARS.map((y) => (
-                <option key={y} value={y}>{y}</option>
-              ))}
-            </select>
+              <div className="flex items-center gap-2 mb-1.5">
+                <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
+                  data.declarationType === 'simplified' ? 'border-indigo-600' : 'border-slate-300'
+                }`}>
+                  {data.declarationType === 'simplified' && (
+                    <div className="w-2 h-2 rounded-full bg-indigo-600" />
+                  )}
+                </div>
+                <span className="text-[15px] font-semibold text-slate-900">Simplified</span>
+              </div>
+              <p className="text-xs text-slate-500 leading-relaxed ml-6">
+                Flat rate per category. Available for brands placing fewer than
+                5,000 items/year. No eco-modulation.
+              </p>
+              <div className="ml-6 mt-2">
+                <span className="text-[10px] font-mono uppercase tracking-wider text-slate-500 bg-slate-100 px-2 py-0.5 rounded">
+                  &lt; 5,000 items/yr
+                </span>
+              </div>
+            </button>
           </div>
         </div>
 

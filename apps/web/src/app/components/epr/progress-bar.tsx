@@ -1,6 +1,6 @@
 'use client';
 
-const LABELS = ['Brand details', 'Materials', 'Your results'];
+const LABELS = ['Declaration setup', 'Product lines', 'Your estimate'];
 
 interface ProgressBarProps {
   step: number;

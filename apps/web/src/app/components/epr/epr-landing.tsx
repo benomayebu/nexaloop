@@ -15,14 +15,14 @@ export function EprLanding({ onStart }: { onStart: () => void }) {
         </div>
 
         <h1 className="text-4xl sm:text-5xl font-bold text-slate-900 tracking-tight leading-[1.1] mb-5">
-          Calculate your EU{' '}
-          <span className="text-indigo-600">EPR fees</span>{' '}
+          Calculate your{' '}
+          <span className="text-indigo-600">Refashion EPR fees</span>{' '}
           in minutes
         </h1>
 
         <p className="text-lg text-slate-500 leading-relaxed max-w-xl mx-auto mb-8">
           Find out what your brand owes under France&apos;s Refashion textile EPR scheme.
-          Enter your materials, get your quarterly estimate &mdash; no spreadsheets needed.
+          Enter your product lines and quantities, get your annual estimate &mdash; no spreadsheets needed.
         </p>
 
         <button
@@ -39,10 +39,10 @@ export function EprLanding({ onStart }: { onStart: () => void }) {
       {/* Feature pills */}
       <div className="flex flex-wrap justify-center gap-3 mb-10">
         {[
-          { icon: '15', text: 'Material categories' },
-          { icon: '6', text: 'Eco-modulation criteria' },
-          { icon: '€', text: 'Indicative fee calculation' },
-          { icon: '⬇', text: 'PDF declaration preview' },
+          { icon: '80+', text: 'Product lines' },
+          { icon: '5', text: 'Eco-modulation criteria' },
+          { icon: '3', text: 'Categories (clothing, linen, footwear)' },
+          { icon: '2', text: 'Declaration modes' },
         ].map((f) => (
           <div key={f.text} className="inline-flex items-center gap-2.5 px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-full text-sm text-slate-700">
             <span className="text-indigo-600 font-semibold font-mono text-xs">{f.icon}</span>
@@ -53,8 +53,8 @@ export function EprLanding({ onStart }: { onStart: () => void }) {
 
       {/* Disclaimer */}
       <p className="text-center text-sm text-slate-500 max-w-lg mx-auto leading-relaxed">
-        This calculator provides indicative estimates based on simplified Refashion 2025 rate
-        approximations. Verify all figures against the official rate table before filing.
+        This calculator provides indicative estimates based on the official Refashion 2026
+        eco-fee scales. Verify all figures against your Refashion registration before filing.
         Not legal or compliance advice.
       </p>
 
@@ -67,9 +67,9 @@ export function EprLanding({ onStart }: { onStart: () => void }) {
         <p className="text-slate-500 text-[15px] mb-8">Three steps, five minutes, no account required.</p>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
           {[
-            { num: '1', title: 'Enter brand details', desc: 'Tell us your brand name, reporting quarter, and EU markets.' },
-            { num: '2', title: 'Add your materials', desc: 'Select material types and enter weight in kg placed on the French market.' },
-            { num: '3', title: 'Get your estimate', desc: 'See your quarterly Refashion EPR fee broken down by material with a PDF preview.' },
+            { num: '1', title: 'Declaration setup', desc: 'Enter your brand name, declaration year, and choose detailed or simplified mode.' },
+            { num: '2', title: 'Add product lines', desc: 'Select Refashion product lines and enter the number of items placed on the French market.' },
+            { num: '3', title: 'Get your estimate', desc: 'See your annual Refashion EPR fee broken down by product line with eco-modulation applied.' },
           ].map((step) => (
             <div key={step.num} className="text-left bg-white border border-slate-200 rounded-xl p-5">
               <div className="w-8 h-8 rounded-full bg-slate-900 text-white grid place-items-center text-sm font-mono font-semibold mb-3">
@@ -79,6 +79,25 @@ export function EprLanding({ onStart }: { onStart: () => void }) {
               <p className="text-sm text-slate-500 leading-relaxed">{step.desc}</p>
             </div>
           ))}
+        </div>
+      </div>
+
+      {/* Important info banner */}
+      <div className="bg-slate-50 border border-slate-200 rounded-xl p-6 mb-10">
+        <h3 className="font-semibold text-slate-900 mb-3">Key dates for Refashion declarations</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
+          <div>
+            <div className="text-[11px] font-mono uppercase tracking-wider text-slate-500 mb-1">Declaration window</div>
+            <div className="text-slate-800 font-medium">Jan 14 &ndash; Feb 28</div>
+          </div>
+          <div>
+            <div className="text-[11px] font-mono uppercase tracking-wider text-slate-500 mb-1">Payment deadline</div>
+            <div className="text-slate-800 font-medium">March 31</div>
+          </div>
+          <div>
+            <div className="text-[11px] font-mono uppercase tracking-wider text-slate-500 mb-1">Non-compliance fine</div>
+            <div className="text-slate-800 font-medium">Up to &euro;30,000</div>
+          </div>
         </div>
       </div>
 
