@@ -47,6 +47,12 @@ export function LandingNav() {
             >
               Compliance
             </a>
+            <Link
+              href="/epr-calculator"
+              className="text-slate-400 hover:text-white text-sm font-medium transition-colors"
+            >
+              EPR Calculator
+            </Link>
             <a
               href="#pricing"
               className="text-slate-400 hover:text-white text-sm font-medium transition-colors"

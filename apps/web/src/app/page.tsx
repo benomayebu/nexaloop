@@ -5,6 +5,7 @@ import { ProblemSection } from '@/app/components/landing/problem-section';
 import { SolutionTabs } from '@/app/components/landing/solution-tabs';
 import { HowItWorksSection } from '@/app/components/landing/how-it-works';
 import { RegulatorySection } from '@/app/components/landing/regulatory-section';
+import { EprCalculatorCTA } from '@/app/components/landing/epr-calculator-cta';
 import { EarlyAccessSection } from '@/app/components/landing/early-access-section';
 import { PricingSection } from '@/app/components/landing/pricing-section';
 import { SiteFooter } from '@/app/components/landing/site-footer';
@@ -21,6 +22,7 @@ export default function HomePage() {
         <SolutionTabs />
         <HowItWorksSection />
         <RegulatorySection />
+        <EprCalculatorCTA />
         <EarlyAccessSection />
         <PricingSection />
       </main>
