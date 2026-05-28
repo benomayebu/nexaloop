@@ -18,26 +18,31 @@ export class EmailService {
     html: string;
   }): Promise<void> {
     const provider = process.env.EMAIL_PROVIDER;
+    this.logger.log(
+      `[Email] provider="${provider}", hasApiKey=${!!process.env.RESEND_API_KEY}, to=${options.to}`,
+    );
 
     if (provider === 'resend' && process.env.RESEND_API_KEY) {
       const resend = new Resend(process.env.RESEND_API_KEY);
       const from =
         process.env.EMAIL_FROM || 'N.E.X.A Loop <noreply@nexaloop.io>';
-      const { error } = await resend.emails.send({
+      this.logger.log(`[Email] Sending via Resend from="${from}"`);
+      const { data, error } = await resend.emails.send({
         from,
         to: options.to,
         subject: options.subject,
         html: options.html,
       });
       if (error) {
-        this.logger.error(`Resend error sending to ${options.to}: ${error.message}`);
+        this.logger.error(`Resend error sending to ${options.to}: ${JSON.stringify(error)}`);
       } else {
-        this.logger.log(`[Resend] Email sent to ${options.to}: ${options.subject}`);
+        this.logger.log(`[Resend] Email sent to ${options.to}: ${options.subject} (id=${data?.id})`);
       }
       return;
     }
 
     // Default: log to console (development / no provider configured)
+    this.logger.warn(`[Email] No provider configured (EMAIL_PROVIDER="${provider}") — logging only`);
     this.logger.log(
       `\n╔══════════════════════════════════════════════════════════╗\n` +
       `║  EMAIL (dev mode — no provider configured)              ║\n` +

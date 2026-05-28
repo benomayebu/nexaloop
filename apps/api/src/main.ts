@@ -1,15 +1,10 @@
-// Earliest possible logging — before any module that could throw
-console.log('[startup] main.ts loaded, NODE_ENV=' + process.env.NODE_ENV);
-console.log('[startup] PORT=' + process.env.PORT + ', DATABASE_URL=' + (process.env.DATABASE_URL ? 'SET' : 'MISSING'));
-console.log('[startup] JWT_SECRET=' + (process.env.JWT_SECRET ? 'SET (' + process.env.JWT_SECRET.length + ' chars)' : 'MISSING'));
-
 // Catch anything that crashes before NestJS initialises
 process.on('uncaughtException', (err) => {
-  console.error('[FATAL] Uncaught exception during startup:', err);
+  console.error('[FATAL] Uncaught exception:', err);
   process.exit(1);
 });
 process.on('unhandledRejection', (err) => {
-  console.error('[FATAL] Unhandled rejection during startup:', err);
+  console.error('[FATAL] Unhandled rejection:', err);
   process.exit(1);
 });
 
@@ -36,9 +31,9 @@ function validateEnv() {
     }
   }
   if (missing.length > 0) {
-    console.error(
-      'FATAL: Missing required environment variables:\n' + missing.join('\n') +
-        '\nCopy .env.example to .env and fill in the values.',
+    logger.error(
+      `Missing required environment variables:\n${missing.join('\n')}\n` +
+        'Copy .env.example to .env and fill in the values.',
     );
     process.exit(1);
   }
@@ -48,21 +43,17 @@ function validateEnv() {
     process.env.JWT_SECRET === 'nexaloop-jwt-secret-change-in-production'
   ) {
     if (process.env.NODE_ENV === 'production') {
-      console.error('FATAL: JWT_SECRET is set to a default value. Generate a secure secret: openssl rand -base64 48');
+      logger.error('JWT_SECRET is set to a default value. Generate a secure secret: openssl rand -base64 48');
       process.exit(1);
     }
     logger.warn('JWT_SECRET is using a default value — acceptable for development only.');
   }
-  console.log('[startup] Environment validation passed');
 }
 
 async function bootstrap() {
-  console.log('[startup] bootstrap() called');
   validateEnv();
 
-  console.log('[startup] Creating NestJS application...');
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
-  console.log('[startup] NestJS application created');
   const logger = new Logger('Bootstrap');
 
   app.use(helmet());
@@ -103,7 +94,6 @@ async function bootstrap() {
   logger.log(`API running on port ${port} (${process.env.NODE_ENV ?? 'development'})`);
 }
 
-console.log('[startup] Calling bootstrap()...');
 bootstrap().catch((err) => {
   console.error('[FATAL] Failed to start API:', err);
   process.exit(1);
