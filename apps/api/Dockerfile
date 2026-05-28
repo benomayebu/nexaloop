@@ -30,10 +30,12 @@ COPY prisma ./prisma
 RUN pnpm install --prod --no-frozen-lockfile
 RUN pnpm exec prisma generate
 
-# Copy compiled output from builder
+# Copy compiled output and startup script from builder
 COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/start.sh ./start.sh
+RUN chmod +x start.sh
 
 EXPOSE 3001
 
-# Run migrations then start the server
-CMD npx prisma migrate deploy || true && node dist/main
+# Wait for DB, run migrations, then start the server
+CMD ["./start.sh"]
