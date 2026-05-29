@@ -103,7 +103,7 @@ export function Header({ org, user: _user }: HeaderProps) {
             <IconChevronDown className="w-3.5 h-3.5 text-slate-400" />
           </button>
           {dropdownOpen && (
-            <div className="absolute right-0 top-10 w-48 bg-white border border-slate-200 rounded-lg shadow-lg z-50 py-1">
+            <div className="absolute right-0 top-10 w-48 bg-white border border-slate-200 rounded-lg shadow-lg z-50 py-1 animate-dropdown-enter">
               <Link
                 href="/dashboard/settings/profile"
                 className="block px-3 py-2 text-sm text-slate-700 hover:bg-slate-50"

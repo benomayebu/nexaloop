@@ -63,6 +63,23 @@ const inputClass =
 const selectClass =
   'block w-full bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2.5 text-sm text-slate-700 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-shadow appearance-none cursor-pointer';
 
+/* ── Password strength helper ── */
+
+function passwordStrength(pw: string): { score: number; label: string; color: string } {
+  if (!pw) return { score: 0, label: '', color: 'bg-slate-200' };
+  let s = 0;
+  if (pw.length >= 10) s++;
+  if (pw.length >= 14) s++;
+  if (/[a-z]/.test(pw) && /[A-Z]/.test(pw)) s++;
+  if (/[0-9]/.test(pw)) s++;
+  if (/[^a-zA-Z0-9]/.test(pw)) s++;
+
+  if (s <= 1) return { score: 1, label: 'Weak', color: 'bg-red-500' };
+  if (s <= 2) return { score: 2, label: 'Fair', color: 'bg-amber-500' };
+  if (s <= 3) return { score: 3, label: 'Good', color: 'bg-emerald-400' };
+  return { score: 4, label: 'Strong', color: 'bg-emerald-600' };
+}
+
 /* ── Component ── */
 
 export function RegisterForm() {
@@ -242,9 +259,35 @@ export function RegisterForm() {
                   {step2Form.formState.errors.password.message}
                 </p>
               ) : (
-                <p className="text-slate-400 text-xs mt-1">
-                  Minimum 10 characters, mix of letters and numbers.
-                </p>
+                <>
+                  {(() => {
+                    const pw = step2Form.watch('password') ?? '';
+                    const strength = passwordStrength(pw);
+                    return pw.length > 0 ? (
+                      <div className="mt-2">
+                        <div className="flex gap-1 mb-1">
+                          {[1, 2, 3, 4].map((i) => (
+                            <div
+                              key={i}
+                              className={`h-1 flex-1 rounded-full transition-colors duration-300 ${
+                                i <= strength.score ? strength.color : 'bg-slate-200'
+                              }`}
+                            />
+                          ))}
+                        </div>
+                        <p className={`text-xs ${
+                          strength.score <= 1 ? 'text-red-500' : strength.score <= 2 ? 'text-amber-500' : 'text-emerald-600'
+                        }`}>
+                          {strength.label}
+                        </p>
+                      </div>
+                    ) : (
+                      <p className="text-slate-400 text-xs mt-1">
+                        Minimum 10 characters, mix of letters and numbers.
+                      </p>
+                    );
+                  })()}
+                </>
               )}
             </div>
 

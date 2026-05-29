@@ -175,6 +175,9 @@ function InboxTab({ threads }: { threads: Thread[] }) {
   const router = useRouter();
   const toast = useToast();
   const [filter, setFilter] = useState<'all' | 'open' | 'resolved'>('all');
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [replyBody, setReplyBody] = useState('');
+  const [sending, setSending] = useState(false);
 
   async function toggleResolve(threadId: string, currentStatus: string) {
     const endpoint = currentStatus === 'OPEN' ? 'resolve' : 'reopen';
@@ -185,6 +188,29 @@ function InboxTab({ threads }: { threads: Thread[] }) {
         router.refresh();
       }
     } catch { /* ignore */ }
+  }
+
+  async function sendReply(threadId: string) {
+    if (!replyBody.trim()) return;
+    setSending(true);
+    try {
+      const res = await fetch(`/api/crm/threads/${threadId}/messages`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ body: replyBody }),
+      });
+      if (res.ok) {
+        toast('Reply sent');
+        setReplyBody('');
+        router.refresh();
+      } else {
+        toast('Failed to send reply', 'err');
+      }
+    } catch {
+      toast('Network error', 'err');
+    } finally {
+      setSending(false);
+    }
   }
 
   const filtered = threads.filter((t) => {
@@ -210,43 +236,111 @@ function InboxTab({ threads }: { threads: Thread[] }) {
       <div className="bg-white border border-slate-200 rounded-lg shadow-sm divide-y divide-slate-100">
         {filtered.map((thread) => {
           const lastMsg = thread.messages[0];
+          const isExpanded = expandedId === thread.id;
           return (
-            <div key={thread.id} className="flex items-start gap-3 p-4 hover:bg-slate-50 transition-colors">
-              {thread.supplier && (
-                <SupAvatar name={thread.supplier.name} type={thread.supplier.type} size="sm" />
-              )}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-0.5">
-                  {thread.supplier && (
-                    <Link href={`/dashboard/suppliers/${thread.supplier.id}`} className="text-sm font-medium text-slate-900 hover:text-indigo-600 truncate">
-                      {thread.supplier.name}
-                    </Link>
-                  )}
-                  <span className="text-xs text-slate-400 font-mono flex-shrink-0">{fmtDate(thread.lastMessageAt)}</span>
-                </div>
-                <p className="text-sm text-slate-700 truncate">{thread.subject}</p>
-                {lastMsg && (
-                  <p className="text-xs text-slate-500 truncate mt-0.5">
-                    {lastMsg.authorName}: {lastMsg.body.slice(0, 80)}{lastMsg.body.length > 80 ? '…' : ''}
-                  </p>
+            <div key={thread.id}>
+              <div
+                className={`flex items-start gap-3 p-4 cursor-pointer transition-colors ${isExpanded ? 'bg-indigo-50/40' : 'hover:bg-slate-50'}`}
+                onClick={() => { setExpandedId(isExpanded ? null : thread.id); setReplyBody(''); }}
+              >
+                {thread.supplier && (
+                  <SupAvatar name={thread.supplier.name} type={thread.supplier.type} size="sm" />
                 )}
-                <div className="flex items-center gap-2 mt-1.5">
-                  <NexaBadge tone={thread.status === 'OPEN' ? 'indigo' : 'slate'} dot>
-                    {thread.status === 'OPEN' ? 'Open' : 'Resolved'}
-                  </NexaBadge>
-                  {thread.contact && (
-                    <span className="text-[11px] text-slate-400">{thread.contact.name}</span>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-0.5">
+                    {thread.supplier && (
+                      <Link
+                        href={`/dashboard/suppliers/${thread.supplier.id}`}
+                        className="text-sm font-medium text-slate-900 hover:text-indigo-600 truncate"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {thread.supplier.name}
+                      </Link>
+                    )}
+                    <span className="text-xs text-slate-400 font-mono flex-shrink-0">{fmtDate(thread.lastMessageAt)}</span>
+                  </div>
+                  <p className="text-sm text-slate-700 truncate">{thread.subject}</p>
+                  {!isExpanded && lastMsg && (
+                    <p className="text-xs text-slate-500 truncate mt-0.5">
+                      {lastMsg.authorName}: {lastMsg.body.slice(0, 80)}{lastMsg.body.length > 80 ? '…' : ''}
+                    </p>
                   )}
-                  <span className="text-[11px] text-slate-400">{thread._count.messages} message{thread._count.messages !== 1 ? 's' : ''}</span>
+                  <div className="flex items-center gap-2 mt-1.5">
+                    <NexaBadge tone={thread.status === 'OPEN' ? 'indigo' : 'slate'} dot>
+                      {thread.status === 'OPEN' ? 'Open' : 'Resolved'}
+                    </NexaBadge>
+                    {thread.contact && (
+                      <span className="text-[11px] text-slate-400">{thread.contact.name}</span>
+                    )}
+                    <span className="text-[11px] text-slate-400">{thread._count.messages} message{thread._count.messages !== 1 ? 's' : ''}</span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1 flex-shrink-0">
+                  <button
+                    onClick={(e) => { e.stopPropagation(); toggleResolve(thread.id, thread.status); }}
+                    className="text-xs font-medium text-slate-500 hover:text-indigo-600 px-2 py-1 rounded hover:bg-indigo-50 transition-colors"
+                    title={thread.status === 'OPEN' ? 'Mark as resolved' : 'Reopen'}
+                  >
+                    {thread.status === 'OPEN' ? 'Resolve' : 'Reopen'}
+                  </button>
+                  <svg className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                  </svg>
                 </div>
               </div>
-              <button
-                onClick={() => toggleResolve(thread.id, thread.status)}
-                className="flex-shrink-0 text-xs font-medium text-slate-500 hover:text-indigo-600 px-2 py-1 rounded hover:bg-indigo-50 transition-colors"
-                title={thread.status === 'OPEN' ? 'Mark as resolved' : 'Reopen'}
-              >
-                {thread.status === 'OPEN' ? 'Resolve' : 'Reopen'}
-              </button>
+
+              {/* Expanded thread detail */}
+              {isExpanded && (
+                <div className="border-t border-slate-100 bg-slate-50/50 animate-dropdown-enter">
+                  {/* Message history */}
+                  <div className="px-5 py-3 space-y-3 max-h-64 overflow-y-auto">
+                    {thread.messages.length === 0 ? (
+                      <p className="text-xs text-slate-400 py-2">No messages yet.</p>
+                    ) : (
+                      [...thread.messages].reverse().map((msg, i) => (
+                        <div key={i} className="flex gap-3">
+                          <div className="w-7 h-7 bg-indigo-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                            <span className="text-[10px] font-semibold text-indigo-700">
+                              {initials(msg.authorName)}
+                            </span>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-semibold text-slate-800">{msg.authorName}</span>
+                              <span className="text-[11px] text-slate-400 font-mono">{fmtDate(msg.createdAt)}</span>
+                            </div>
+                            <p className="text-sm text-slate-700 mt-0.5 whitespace-pre-line">{msg.body}</p>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+
+                  {/* Reply composer */}
+                  {thread.status === 'OPEN' && (
+                    <div className="px-5 py-3 border-t border-slate-200 bg-white">
+                      <div className="flex gap-2">
+                        <textarea
+                          value={replyBody}
+                          onChange={(e) => setReplyBody(e.target.value)}
+                          placeholder="Write a reply..."
+                          rows={2}
+                          className="flex-1 border border-slate-200 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none resize-none bg-white"
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                        <NexaButton
+                          variant="primary"
+                          size="sm"
+                          disabled={sending || !replyBody.trim()}
+                          onClick={(e: React.MouseEvent) => { e.stopPropagation(); sendReply(thread.id); }}
+                        >
+                          {sending ? 'Sending...' : 'Send'}
+                        </NexaButton>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           );
         })}
@@ -463,7 +557,14 @@ function TaskSection({ title, tone, items, onToggle, toggling }: { title: string
                     <NexaBadge tone={priorityBadge.tone} dot>{priorityBadge.label}</NexaBadge>
                   </td>
                   <td className="px-3 py-3 w-32">
-                    <span className="text-xs text-slate-500">{relativeDays(task.dueDate)}</span>
+                    <span className={`text-xs font-medium ${
+                      task.status === 'DONE' ? 'text-slate-400'
+                      : new Date(task.dueDate) < new Date() ? 'text-red-600'
+                      : new Date(task.dueDate) < new Date(Date.now() + 3 * 86400000) ? 'text-amber-600'
+                      : 'text-slate-500'
+                    }`}>
+                      {relativeDays(task.dueDate)}
+                    </span>
                   </td>
                   <td className="px-3 py-3 w-16">
                     {task.assignee && (
@@ -545,12 +646,12 @@ function StatCard({ icon, label, value, sub, subTone }: {
   subTone?: 'red' | 'emerald';
 }) {
   return (
-    <div className="bg-white border border-slate-200 rounded-lg shadow-sm p-4">
+    <div className="bg-white border border-slate-200 rounded-lg shadow-sm p-4 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
       <div className="flex items-center gap-2 text-slate-500 mb-2">
         <span className="w-4 h-4">{icon}</span>
         <span className="text-xs font-medium">{label}</span>
       </div>
-      <p className="text-2xl font-bold text-slate-900 tabular-nums">{value}</p>
+      <p className="text-2xl font-bold text-slate-900 tabular-nums animate-count-up">{value}</p>
       <p className={`text-xs mt-1 ${subTone === 'red' ? 'text-red-600' : subTone === 'emerald' ? 'text-emerald-600' : 'text-slate-500'}`}>
         {sub}
       </p>

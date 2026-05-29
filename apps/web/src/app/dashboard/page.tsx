@@ -91,14 +91,14 @@ function StatCard({
   };
 
   return (
-    <div className="bg-white border border-slate-200 rounded-lg shadow-sm p-5">
+    <div className="bg-white border border-slate-200 rounded-lg shadow-sm p-5 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
       <div className="flex items-center justify-between mb-3">
         <span className="text-xs font-medium text-slate-500 uppercase tracking-wide flex items-center gap-1.5">
           <span className="text-slate-400">{icon}</span>
           {label}
         </span>
       </div>
-      <p className="text-2xl font-bold text-slate-900">{value}</p>
+      <p className="text-2xl font-bold text-slate-900 animate-count-up">{value}</p>
       {sub && (
         <p className={`text-xs font-medium mt-1 ${subColor[sub.tone ?? tone]}`}>
           {sub.text}
@@ -298,7 +298,7 @@ export default async function DashboardPage() {
       {/* Row 2: Expiring documents + Document status / Review queue */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
         {/* Expiring documents */}
-        <div className="lg:col-span-2 bg-white border border-slate-200 rounded-lg shadow-sm">
+        <div className="lg:col-span-2 bg-white border border-slate-200 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200">
           <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
             <div>
               <h2 className="text-base font-semibold text-slate-900">Expiring documents</h2>
@@ -379,7 +379,7 @@ export default async function DashboardPage() {
         </div>
 
         {/* Document status + Review queue */}
-        <div className="bg-white border border-slate-200 rounded-lg shadow-sm">
+        <div className="bg-white border border-slate-200 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200">
           <div className="px-5 py-4 border-b border-slate-200">
             <h2 className="text-base font-semibold text-slate-900">Document status</h2>
             <p className="text-xs text-slate-500 mt-0.5">{totalDocs} total</p>
@@ -422,7 +422,7 @@ export default async function DashboardPage() {
       {/* Row 3: Supplier risk + Global footprint */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Supplier risk */}
-        <div className="bg-white border border-slate-200 rounded-lg shadow-sm">
+        <div className="bg-white border border-slate-200 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200">
           <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
             <div>
               <h2 className="text-base font-semibold text-slate-900">Supplier risk</h2>
@@ -475,7 +475,7 @@ export default async function DashboardPage() {
         </div>
 
         {/* Global footprint */}
-        <div className="bg-white border border-slate-200 rounded-lg shadow-sm">
+        <div className="bg-white border border-slate-200 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200">
           <div className="px-5 py-4 border-b border-slate-200">
             <h2 className="text-base font-semibold text-slate-900">Global footprint</h2>
             <p className="text-xs text-slate-500 mt-0.5">

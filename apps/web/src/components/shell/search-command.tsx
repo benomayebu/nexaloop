@@ -119,12 +119,13 @@ export function SearchCommand() {
                     <div>
                       <p className="px-4 py-1 text-[10.5px] font-semibold text-slate-400 uppercase tracking-wider">Suppliers</p>
                       {results.suppliers.map((s, i) => {
-                        const idx = i;
+                        const globalIdx = i;
                         return (
                           <button
                             key={s.id}
                             onClick={() => navigate(`/dashboard/suppliers/${s.id}`)}
-                            className={`w-full text-left px-4 py-2 flex items-center justify-between text-sm ${activeIndex === idx ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-50'}`}
+                            onMouseEnter={() => setActiveIndex(globalIdx)}
+                            className={`w-full text-left px-4 py-2 flex items-center justify-between text-sm transition-colors ${activeIndex === globalIdx ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-50'}`}
                           >
                             <span className="font-medium">{s.name}</span>
                             <span className="text-xs text-slate-400">{s.supplierCode}</span>
@@ -136,16 +137,39 @@ export function SearchCommand() {
                   {results.products.length > 0 && (
                     <div>
                       <p className="px-4 py-1 text-[10.5px] font-semibold text-slate-400 uppercase tracking-wider">Products</p>
-                      {results.products.map((p) => (
-                        <button
-                          key={p.id}
-                          onClick={() => navigate(`/dashboard/products/${p.id}`)}
-                          className="w-full text-left px-4 py-2 flex items-center justify-between text-sm text-slate-700 hover:bg-slate-50"
-                        >
-                          <span className="font-medium">{p.name}</span>
-                          <span className="text-xs text-slate-400">{p.sku}</span>
-                        </button>
-                      ))}
+                      {results.products.map((p, i) => {
+                        const globalIdx = results.suppliers.length + i;
+                        return (
+                          <button
+                            key={p.id}
+                            onClick={() => navigate(`/dashboard/products/${p.id}`)}
+                            onMouseEnter={() => setActiveIndex(globalIdx)}
+                            className={`w-full text-left px-4 py-2 flex items-center justify-between text-sm transition-colors ${activeIndex === globalIdx ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-50'}`}
+                          >
+                            <span className="font-medium">{p.name}</span>
+                            <span className="text-xs text-slate-400">{p.sku}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                  {results.documents.length > 0 && (
+                    <div>
+                      <p className="px-4 py-1 text-[10.5px] font-semibold text-slate-400 uppercase tracking-wider">Documents</p>
+                      {results.documents.map((d, i) => {
+                        const globalIdx = results.suppliers.length + results.products.length + i;
+                        return (
+                          <button
+                            key={d.id}
+                            onClick={() => navigate(`/dashboard/documents`)}
+                            onMouseEnter={() => setActiveIndex(globalIdx)}
+                            className={`w-full text-left px-4 py-2 flex items-center justify-between text-sm transition-colors ${activeIndex === globalIdx ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-50'}`}
+                          >
+                            <span className="font-medium truncate">{d.filename}</span>
+                            <span className="text-xs text-slate-400 flex-shrink-0 ml-2">{d.documentTypeName}</span>
+                          </button>
+                        );
+                      })}
                     </div>
                   )}
                 </div>
@@ -156,7 +180,24 @@ export function SearchCommand() {
               )}
 
               {!results && query.length < 2 && (
-                <div className="py-8 text-center text-sm text-slate-400">Type to search…</div>
+                <div className="py-2">
+                  <p className="px-4 py-1 text-[10.5px] font-semibold text-slate-400 uppercase tracking-wider">Quick links</p>
+                  {[
+                    { label: 'Suppliers', href: '/dashboard/suppliers' },
+                    { label: 'Products', href: '/dashboard/products' },
+                    { label: 'Document review', href: '/dashboard/documents' },
+                    { label: 'CRM', href: '/dashboard/crm' },
+                    { label: 'Settings', href: '/dashboard/settings' },
+                  ].map((link) => (
+                    <button
+                      key={link.href}
+                      onClick={() => navigate(link.href)}
+                      className="w-full text-left px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 transition-colors"
+                    >
+                      {link.label}
+                    </button>
+                  ))}
+                </div>
               )}
             </motion.div>
           </motion.div>

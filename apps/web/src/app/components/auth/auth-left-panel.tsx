@@ -59,10 +59,26 @@ export function AuthLeftPanel() {
         </p>
       </div>
 
-      {/* Footer trust badges */}
-      <p className="relative z-10 text-xs text-slate-500 mt-6 font-mono tracking-wide">
-        {copy.footer}
-      </p>
+      {/* Social proof */}
+      <div className="relative z-10 mt-6 space-y-4">
+        <div className="flex items-center gap-3 bg-white/[0.04] rounded-lg px-4 py-3 border border-white/[0.06]">
+          <div className="flex -space-x-2 flex-shrink-0">
+            {['MA', 'JD', 'SK'].map((ini, i) => (
+              <div key={i} className={`w-7 h-7 rounded-full border-2 border-slate-900 flex items-center justify-center text-[9px] font-bold text-white ${
+                i === 0 ? 'bg-indigo-500' : i === 1 ? 'bg-emerald-500' : 'bg-amber-500'
+              }`}>
+                {ini}
+              </div>
+            ))}
+          </div>
+          <p className="text-xs text-slate-400 leading-relaxed">
+            Trusted by compliance teams across Europe
+          </p>
+        </div>
+        <p className="text-xs text-slate-500 font-mono tracking-wide">
+          {copy.footer}
+        </p>
+      </div>
     </div>
   );
 }

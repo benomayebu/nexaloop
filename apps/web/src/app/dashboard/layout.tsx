@@ -3,6 +3,8 @@ import { apiFetch } from '../../lib/api';
 import { Sidebar } from '@/components/shell/sidebar';
 import { Header } from '@/components/shell/header';
 import { MobileNav } from '@/components/shell/mobile-nav';
+import { MainContent } from '@/components/shell/main-content';
+import { SidebarProvider } from '@/components/shell/sidebar-context';
 import { BreadcrumbProvider } from '@/components/shell/breadcrumb-context';
 import { ToastProvider } from '@/components/ui/toast-provider';
 
@@ -44,29 +46,31 @@ export default async function DashboardLayout({
   return (
     <ToastProvider>
       <BreadcrumbProvider>
-        <div className="min-h-screen bg-slate-50 flex">
-          <Suspense>
-            <Sidebar
+        <SidebarProvider>
+          <div className="min-h-screen bg-slate-50 flex">
+            <Suspense>
+              <Sidebar
+                user={user}
+                org={org}
+                role={role}
+                badgeCounts={badgeCounts}
+              />
+            </Suspense>
+            <MobileNav
               user={user}
               org={org}
               role={role}
               badgeCounts={badgeCounts}
             />
-          </Suspense>
-          <MobileNav
-            user={user}
-            org={org}
-            role={role}
-            badgeCounts={badgeCounts}
-          />
 
-          <div className="flex-1 md:ml-sidebar">
-            <Header org={org} user={user} />
-            <main className="px-[var(--page-px)] py-[var(--page-py)] max-w-page mx-auto">
-              {children}
-            </main>
+            <MainContent>
+              <Header org={org} user={user} />
+              <main className="px-[var(--page-px)] py-[var(--page-py)] max-w-page mx-auto animate-page-enter">
+                {children}
+              </main>
+            </MainContent>
           </div>
-        </div>
+        </SidebarProvider>
       </BreadcrumbProvider>
     </ToastProvider>
   );
