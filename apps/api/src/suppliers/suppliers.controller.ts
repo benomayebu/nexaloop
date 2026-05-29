@@ -44,8 +44,14 @@ export class SuppliersController {
     @Query('status') status?: SupplierStatus,
     @Query('riskLevel') riskLevel?: RiskLevel,
     @Query('q') q?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
   ) {
-    return this.suppliersService.list(orgId, { type, status, riskLevel, q });
+    return this.suppliersService.list(orgId, {
+      type, status, riskLevel, q,
+      page: page ? parseInt(page, 10) : undefined,
+      limit: limit ? parseInt(limit, 10) : undefined,
+    });
   }
 
   @Post('suppliers')

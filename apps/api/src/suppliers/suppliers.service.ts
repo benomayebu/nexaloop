@@ -23,39 +23,52 @@ export class SuppliersService {
       status?: SupplierStatus;
       riskLevel?: RiskLevel;
       q?: string;
+      page?: number;
+      limit?: number;
     },
   ) {
     const now = new Date();
     const thirtyDays = new Date(now);
     thirtyDays.setDate(thirtyDays.getDate() + 30);
 
-    const suppliers = await this.prisma.supplier.findMany({
-      where: {
-        orgId,
-        ...(filters.type ? { type: filters.type } : {}),
-        ...(filters.status ? { status: filters.status } : {}),
-        ...(filters.riskLevel ? { riskLevel: filters.riskLevel } : {}),
-        ...(filters.q
-          ? {
-              OR: [
-                { name: { contains: filters.q, mode: 'insensitive' } },
-                { supplierCode: { contains: filters.q, mode: 'insensitive' } },
-                { city: { contains: filters.q, mode: 'insensitive' } },
-              ],
-            }
-          : {}),
-      },
-      include: {
-        documents: {
-          where: { orgId },
-          select: { status: true, expiryDate: true },
-        },
-        _count: { select: { documents: true } },
-      },
-      orderBy: { updatedAt: 'desc' },
-    });
+    const page = Math.max(1, filters.page ?? 1);
+    const limit = Math.min(100, Math.max(1, filters.limit ?? 50));
+    const skip = (page - 1) * limit;
 
-    return suppliers.map((sup) => {
+    const where = {
+      orgId,
+      ...(filters.type ? { type: filters.type } : {}),
+      ...(filters.status ? { status: filters.status } : {}),
+      ...(filters.riskLevel ? { riskLevel: filters.riskLevel } : {}),
+      ...(filters.q
+        ? {
+            OR: [
+              { name: { contains: filters.q, mode: 'insensitive' as const } },
+              { supplierCode: { contains: filters.q, mode: 'insensitive' as const } },
+              { city: { contains: filters.q, mode: 'insensitive' as const } },
+            ],
+          }
+        : {}),
+    };
+
+    const [suppliers, total] = await Promise.all([
+      this.prisma.supplier.findMany({
+        where,
+        include: {
+          documents: {
+            where: { orgId },
+            select: { status: true, expiryDate: true },
+          },
+          _count: { select: { documents: true } },
+        },
+        orderBy: { updatedAt: 'desc' },
+        skip,
+        take: limit,
+      }),
+      this.prisma.supplier.count({ where }),
+    ]);
+
+    const data = suppliers.map((sup) => {
       const docs = sup.documents;
       const approved = docs.filter((d) => d.status === 'APPROVED').length;
       const pending = docs.filter((d) => d.status === 'PENDING_REVIEW').length;
@@ -71,9 +84,9 @@ export class SuppliersService {
           (d.status === 'EXPIRED') ||
           (d.status === 'APPROVED' && d.expiryDate && d.expiryDate < now),
       ).length;
-      const total = docs.length;
+      const docCount = docs.length;
       const complianceScore =
-        total > 0 ? Math.round((approved / total) * 100) : null;
+        docCount > 0 ? Math.round((approved / docCount) * 100) : null;
 
       const { documents: _docs, ...rest } = sup;
       return {
@@ -84,6 +97,8 @@ export class SuppliersService {
         _expired: expired,
       };
     });
+
+    return { data, total, page, pageSize: limit };
   }
 
   async create(orgId: string, dto: CreateSupplierDto) {

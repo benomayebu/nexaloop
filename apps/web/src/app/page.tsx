@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import { LandingNav } from '@/app/components/landing/landing-nav';
 import { HeroSection } from '@/app/components/landing/hero-section';
 import { TrustBar } from '@/app/components/landing/trust-bar';
@@ -11,6 +12,28 @@ import { EarlyAccessSection } from '@/app/components/landing/early-access-sectio
 import { PricingSection } from '@/app/components/landing/pricing-section';
 import { SiteFooter } from '@/app/components/landing/site-footer';
 import { MobileCTABar } from '@/app/components/landing/mobile-cta-bar';
+
+export const metadata: Metadata = {
+  title: 'N.E.X.A Loop — EU Supply Chain Compliance for Fashion Brands',
+  description:
+    'Centralise supplier data, track compliance documents, and generate ESPR Digital Product Passports. Built for EU-facing fashion brands navigating ESPR, EPR, and REACH regulations.',
+  openGraph: {
+    title: 'N.E.X.A Loop — Know where your products come from. Prove it.',
+    description:
+      'Supply chain compliance platform for EU-facing fashion brands. ESPR, DPP, and EPR ready.',
+    type: 'website',
+    url: 'https://nexaloop.vercel.app',
+    siteName: 'N.E.X.A Loop',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'N.E.X.A Loop — EU Supply Chain Compliance',
+    description: 'Centralise supplier data. Track every certificate. Ship Digital Product Passports in one click.',
+  },
+  alternates: {
+    canonical: 'https://nexaloop.vercel.app',
+  },
+};
 
 export default function HomePage() {
   return (

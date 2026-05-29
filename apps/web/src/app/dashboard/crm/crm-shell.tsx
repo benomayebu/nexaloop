@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { NexaBadge } from '@/components/ui/nexa-badge';
@@ -950,13 +950,38 @@ function NewTaskModal({ suppliers, team, onClose }: { suppliers: SupplierOption[
 const inputClass = 'w-full border border-slate-200 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white';
 
 function Modal({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
+  const panelRef = React.useRef<HTMLDivElement>(null);
+
+  // Focus trap + Escape key
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') { onClose(); return; }
+      if (e.key !== 'Tab' || !panelRef.current) return;
+      const focusable = panelRef.current.querySelectorAll<HTMLElement>(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      );
+      if (focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    // Focus first focusable element on open
+    const timer = setTimeout(() => {
+      const first = panelRef.current?.querySelector<HTMLElement>('input, select, textarea, button');
+      first?.focus();
+    }, 50);
+    return () => { document.removeEventListener('keydown', handleKeyDown); clearTimeout(timer); };
+  }, [onClose]);
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="fixed inset-0 bg-black/40 animate-fade-in" onClick={onClose} />
-      <div className="relative bg-white rounded-xl shadow-xl border border-slate-200 w-full max-w-lg mx-4 p-6 animate-fade-in">
+    <div className="fixed inset-0 z-50 flex items-center justify-center" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <div className="fixed inset-0 bg-black/40 animate-fade-in" onClick={onClose} aria-hidden="true" />
+      <div ref={panelRef} className="relative bg-white rounded-xl shadow-xl border border-slate-200 w-full max-w-lg mx-4 p-6 animate-fade-in">
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-lg font-semibold text-slate-900">{title}</h2>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 p-1 rounded transition-colors">
+          <h2 id="modal-title" className="text-lg font-semibold text-slate-900">{title}</h2>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 p-1 rounded transition-colors" aria-label="Close dialog">
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
             </svg>

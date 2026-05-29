@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { Suspense } from 'react';
-import { apiFetchList } from '../../../lib/api';
+import { apiFetchPaginated } from '../../../lib/api';
 import { SupplierFilters } from '../../components/supplier-filters';
 import { NexaBadge } from '@/components/ui/nexa-badge';
 import { SupAvatar } from '@/components/ui/sup-avatar';
@@ -32,14 +32,16 @@ interface Supplier {
   _expired: number;
 }
 
-async function getSuppliers(searchParams: Record<string, string>): Promise<Supplier[]> {
+async function getSuppliers(searchParams: Record<string, string>) {
   const params = new URLSearchParams();
   if (searchParams.type) params.set('type', searchParams.type);
   if (searchParams.status) params.set('status', searchParams.status);
   if (searchParams.riskLevel) params.set('riskLevel', searchParams.riskLevel);
   if (searchParams.q) params.set('q', searchParams.q);
+  if (searchParams.page) params.set('page', searchParams.page);
+  params.set('limit', String(PAGE_SIZE));
   const qs = params.toString();
-  return apiFetchList<Supplier>(`/suppliers${qs ? `?${qs}` : ''}`);
+  return apiFetchPaginated<Supplier>(`/suppliers?${qs}`);
 }
 
 export default async function SuppliersPage({
@@ -48,15 +50,17 @@ export default async function SuppliersPage({
   searchParams: Promise<Record<string, string>>;
 }) {
   const resolvedParams = await searchParams;
-  const allSuppliers = await getSuppliers(resolvedParams);
+  const result = await getSuppliers(resolvedParams);
+  const suppliers = result.data;
+  const totalItems = result.total;
 
-  const active = allSuppliers.filter((s) => s.status === 'ACTIVE').length;
-  const totalPending = allSuppliers.reduce((sum, s) => sum + s._pending, 0);
+  const active = suppliers.filter((s) => s.status === 'ACTIVE').length;
+  const totalPending = suppliers.reduce((sum, s) => sum + s._pending, 0);
 
-  // Sort
+  // Client-side sort within the current page (server handles pagination)
   const sortField = resolvedParams.sort ?? 'name';
   const sortOrder = resolvedParams.order === 'desc' ? -1 : 1;
-  const sorted = [...allSuppliers].sort((a, b) => {
+  const sorted = [...suppliers].sort((a, b) => {
     let av: string | number | null = null;
     let bv: string | number | null = null;
     switch (sortField) {
@@ -75,18 +79,13 @@ export default async function SuppliersPage({
     return 0;
   });
 
-  // Paginate
-  const page = Math.max(1, parseInt(resolvedParams.page ?? '1', 10));
-  const totalItems = sorted.length;
-  const suppliers = sorted.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
-
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Suppliers</h1>
           <p className="text-sm text-slate-500 mt-1">
-            {allSuppliers.length} total &middot; {active} active
+            {totalItems} total &middot; {active} active
             {totalPending > 0 && (
               <> &middot; <span className="text-amber-600 font-medium">{totalPending} documents awaiting review</span></>
             )}
@@ -117,7 +116,7 @@ export default async function SuppliersPage({
       </div>
 
       <div className="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden">
-        {allSuppliers.length === 0 ? (
+        {suppliers.length === 0 ? (
           <div className="p-12 text-center">
             <svg className="mx-auto w-12 h-12 text-slate-300" fill="none" viewBox="0 0 24 24" strokeWidth={1} stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 21h19.5M3.75 3v18m4.5-18v18m4.5-18v18m4.5-18v18m4.5-18v18" />
@@ -142,7 +141,7 @@ export default async function SuppliersPage({
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {suppliers.map((supplier) => {
+                {sorted.map((supplier) => {
                   const status = supStatusBadge(supplier.status);
                   const risk = riskBadge(supplier.riskLevel);
                   const type = typeBadge(supplier.type);

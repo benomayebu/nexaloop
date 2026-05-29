@@ -12,6 +12,9 @@ import { NestFactory } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { AppModule } from './app.module';
 import { Logger, ValidationPipe } from '@nestjs/common';
+import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { SanitizePipe } from './common/sanitize.pipe';
+import { AllExceptionsFilter } from './common/all-exceptions.filter';
 import * as cookieParser from 'cookie-parser';
 import helmet from 'helmet';
 import { join } from 'path';
@@ -58,16 +61,45 @@ async function bootstrap() {
 
   app.use(helmet());
   app.use(cookieParser());
+  app.useGlobalFilters(new AllExceptionsFilter());
   app.useGlobalPipes(
+    new SanitizePipe(),
     new ValidationPipe({
       whitelist: true,
       forbidNonWhitelisted: true,
       transform: true,
     }),
   );
+  // CORS: allow frontend origins from env, fallback to localhost for dev
+  const allowedOrigins = (process.env.CORS_ORIGINS || process.env.WEB_URL || 'http://localhost:3000')
+    .split(',')
+    .map((o) => o.trim())
+    .filter(Boolean);
   app.enableCors({
-    origin: process.env.WEB_URL || 'http://localhost:3000',
+    origin: (origin, callback) => {
+      // Allow requests with no origin (server-to-server, curl, mobile)
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error(`Origin ${origin} not allowed by CORS`));
+      }
+    },
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
+  });
+
+  // ── Swagger / OpenAPI ──────────────────────────────────────────────
+  const swaggerConfig = new DocumentBuilder()
+    .setTitle('N.E.X.A Loop API')
+    .setDescription('Supply chain compliance & traceability API for EU-facing fashion brands')
+    .setVersion('1.0')
+    .addCookieAuth('auth_token')
+    .addBearerAuth({ type: 'http', scheme: 'bearer', description: 'API key (nxa_...)' }, 'api-key')
+    .build();
+  const document = SwaggerModule.createDocument(app, swaggerConfig);
+  SwaggerModule.setup('api/docs', app, document, {
+    customSiteTitle: 'N.E.X.A Loop API Docs',
   });
 
   // Serve uploaded files at GET /uploads/:filename (dev/local only).

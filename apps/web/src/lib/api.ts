@@ -26,6 +26,22 @@ export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T |
 }
 
 export async function apiFetchList<T>(path: string, init?: RequestInit): Promise<T[]> {
-  const result = await apiFetch<T[]>(path, init);
-  return result ?? [];
+  const result = await apiFetch<T[] | { data: T[] }>(path, init);
+  if (!result) return [];
+  // Handle both array and paginated { data } responses
+  if (Array.isArray(result)) return result;
+  if ('data' in result && Array.isArray(result.data)) return result.data;
+  return [];
+}
+
+export interface PaginatedResponse<T> {
+  data: T[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
+export async function apiFetchPaginated<T>(path: string, init?: RequestInit): Promise<PaginatedResponse<T>> {
+  const result = await apiFetch<PaginatedResponse<T>>(path, init);
+  return result ?? { data: [], total: 0, page: 1, pageSize: 50 };
 }
