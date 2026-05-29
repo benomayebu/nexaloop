@@ -45,12 +45,19 @@ nexaloop/
 8. Hard deletes only for Contact and ProductSupplier
 
 ## Build phases
-- Phase 1: Foundation & Auth (DONE — implement if missing)
-- Phase 2: Supplier & Contact management (DONE — implement if missing)
-- Phase 3: Document Types & Documents (DONE — implement if missing)
-- Phase 4: Products & ProductSupplier (IN PROGRESS — complete this)
-- Phase 5: Dashboard aggregation + expiry notifications (BUILD)
-- Phase 6: DPP/EPR regulatory outputs (BUILD)
+- Phase 1: Foundation & Auth (DONE)
+- Phase 2: Supplier & Contact management (DONE)
+- Phase 3: Document Types & Documents (DONE)
+- Phase 4: Products & ProductSupplier (DONE — CRUD, CSV import/export, image upload, compliance matrix)
+- Phase 5: Dashboard aggregation + expiry notifications (DONE — stat cards, cron job, email alerts)
+- Phase 6: DPP/EPR regulatory outputs (DONE — JSON-LD DPP, public QR endpoint, EPR CSV export)
+- Phase 7: CRM (DONE — threads, messages, tasks, supplier pipeline, activity feed)
+- Phase 8: Landing page + EPR calculator + blog (DONE — marketing site, Refashion 2026 calculator, /blog)
+
+## Deployment
+- API: Railway (nexaloopapi-production.up.railway.app), PORT=3001
+- Web: Vercel (nexaloop.vercel.app)
+- Git: github.com/benomayebu/nexaloop, branch: main
 
 ## What I cannot do — flag these for manual action
 - Creating GitHub repository secrets
