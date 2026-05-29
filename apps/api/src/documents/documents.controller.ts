@@ -17,6 +17,7 @@ import { memoryStorage } from 'multer';
 import * as fs from 'fs';
 import * as path from 'path';
 import { DocumentsService } from './documents.service';
+import { WebhookService } from '../integrations/webhook.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CurrentOrg } from '../auth/current-org.decorator';
 import { CurrentUser } from '../auth/current-user.decorator';
@@ -27,7 +28,10 @@ import { DocumentStatus } from '@prisma/client';
 @Controller()
 @UseGuards(JwtAuthGuard)
 export class DocumentsController {
-  constructor(private readonly documentsService: DocumentsService) {}
+  constructor(
+    private readonly documentsService: DocumentsService,
+    private readonly webhookService: WebhookService,
+  ) {}
 
   // ── These two routes MUST come before documents/:id to avoid :id matching 'coverage'
 
@@ -48,14 +52,16 @@ export class DocumentsController {
 
   @Post('suppliers/:supplierId/documents')
   @UseInterceptors(FileInterceptor('file', { storage: memoryStorage(), limits: { fileSize: 20 * 1024 * 1024 } }))
-  uploadDocument(
+  async uploadDocument(
     @CurrentOrg() orgId: string,
     @CurrentUser() userId: string,
     @Param('supplierId') supplierId: string,
     @UploadedFile() file: Express.Multer.File,
     @Body() dto: UploadDocumentDto,
   ) {
-    return this.documentsService.upload(orgId, userId, supplierId, file, dto);
+    const doc = await this.documentsService.upload(orgId, userId, supplierId, file, dto);
+    this.webhookService.dispatch(orgId, 'document.uploaded', { document: doc });
+    return doc;
   }
 
   @Get('suppliers/:supplierId/documents')
@@ -90,12 +96,16 @@ export class DocumentsController {
   }
 
   @Put('documents/:id')
-  updateDocument(
+  async updateDocument(
     @CurrentOrg() orgId: string,
     @CurrentUser() userId: string,
     @Param('id') id: string,
     @Body() dto: UpdateDocumentDto,
   ) {
-    return this.documentsService.update(orgId, id, userId, dto);
+    const doc = await this.documentsService.update(orgId, id, userId, dto);
+    if (dto.status) {
+      this.webhookService.dispatch(orgId, 'document.reviewed', { document: doc });
+    }
+    return doc;
   }
 }

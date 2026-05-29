@@ -18,6 +18,7 @@ import { Response } from 'express';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
 import { SuppliersService } from './suppliers.service';
+import { WebhookService } from '../integrations/webhook.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CurrentOrg } from '../auth/current-org.decorator';
 import { CreateSupplierDto } from './dto/create-supplier.dto';
@@ -29,7 +30,10 @@ import { SupplierType, SupplierStatus, RiskLevel } from '@prisma/client';
 @Controller()
 @UseGuards(JwtAuthGuard)
 export class SuppliersController {
-  constructor(private readonly suppliersService: SuppliersService) {}
+  constructor(
+    private readonly suppliersService: SuppliersService,
+    private readonly webhookService: WebhookService,
+  ) {}
 
   // --- Supplier endpoints ---
 
@@ -45,8 +49,10 @@ export class SuppliersController {
   }
 
   @Post('suppliers')
-  create(@CurrentOrg() orgId: string, @Body() dto: CreateSupplierDto) {
-    return this.suppliersService.create(orgId, dto);
+  async create(@CurrentOrg() orgId: string, @Body() dto: CreateSupplierDto) {
+    const supplier = await this.suppliersService.create(orgId, dto);
+    this.webhookService.dispatch(orgId, 'supplier.created', { supplier });
+    return supplier;
   }
 
   @Get('suppliers/export-csv')
@@ -81,12 +87,14 @@ export class SuppliersController {
   }
 
   @Put('suppliers/:id')
-  update(
+  async update(
     @CurrentOrg() orgId: string,
     @Param('id') id: string,
     @Body() dto: UpdateSupplierDto,
   ) {
-    return this.suppliersService.update(orgId, id, dto);
+    const supplier = await this.suppliersService.update(orgId, id, dto);
+    this.webhookService.dispatch(orgId, 'supplier.updated', { supplier });
+    return supplier;
   }
 
   @Delete('suppliers/:id')

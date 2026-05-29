@@ -18,6 +18,7 @@ import { SettingsModule } from './settings/settings.module';
 import { SearchModule } from './search/search.module';
 import { CrmModule } from './crm/crm.module';
 import { AiModule } from './ai/ai.module';
+import { IntegrationsModule } from './integrations/integrations.module';
 
 @Module({
   imports: [
@@ -39,6 +40,7 @@ import { AiModule } from './ai/ai.module';
     SearchModule,
     CrmModule,
     AiModule,
+    IntegrationsModule,
   ],
   controllers: [AppController],
   providers: [

@@ -121,6 +121,8 @@ model Organization {
   inviteTokens         OrgInviteToken[]
   crmThreads           CrmThread[]
   crmTasks             CrmTask[]
+  webhooks             Webhook[]
+  apiKeys              ApiKey[]
 }
 
 model UserOrganization {
@@ -372,4 +374,53 @@ model CrmTask {
   @@index([orgId, dueDate])
   @@index([assigneeId, status])
   @@index([supplierId])
+}
+
+// ─── Integrations: Webhooks ─────────────────────────────────────
+
+model Webhook {
+  id        String         @id @default(cuid())
+  orgId     String
+  org       Organization   @relation(fields: [orgId], references: [id])
+  url       String
+  secret    String         // HMAC signing secret
+  events    String[]       // e.g. ["supplier.created", "document.reviewed"]
+  isActive  Boolean        @default(true)
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+  logs      WebhookLog[]
+
+  @@index([orgId, isActive])
+}
+
+model WebhookLog {
+  id         String   @id @default(cuid())
+  webhookId  String
+  webhook    Webhook  @relation(fields: [webhookId], references: [id], onDelete: Cascade)
+  event      String
+  statusCode Int?
+  success    Boolean
+  payload    String   @db.Text
+  error      String?
+  createdAt  DateTime @default(now())
+
+  @@index([webhookId, createdAt])
+}
+
+// ─── Integrations: API Keys ─────────────────────────────────────
+
+model ApiKey {
+  id        String       @id @default(cuid())
+  orgId     String
+  org       Organization @relation(fields: [orgId], references: [id])
+  name      String       // e.g. "Production", "Staging"
+  keyHash   String       @unique // SHA-256 of the raw key
+  prefix    String       // first 8 chars for identification (e.g. "nxa_abc1")
+  lastUsedAt DateTime?
+  expiresAt  DateTime?
+  isActive   Boolean     @default(true)
+  createdAt  DateTime    @default(now())
+
+  @@index([keyHash])
+  @@index([orgId, isActive])
 }
