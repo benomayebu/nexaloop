@@ -7,6 +7,9 @@ import { NexaButton } from '@/components/ui/nexa-button';
 import { CsvImportButton } from '../../components/csv-import-button';
 import { CsvExportButton } from '../../components/csv-export-button';
 import { ScoreBar } from '@/components/ui/score-bar';
+import { Pagination } from '@/components/ui/pagination';
+
+const PAGE_SIZE = 18; // 3 columns x 6 rows
 
 interface Product {
   id: string;
@@ -32,8 +35,33 @@ export default async function ProductsPage({
   if (resolvedParams.category) params.set('category', resolvedParams.category);
   if (resolvedParams.q) params.set('q', resolvedParams.q);
 
-  const products = await apiFetchList<Product>(`/products${params.toString() ? `?${params.toString()}` : ''}`);
-  const needMapping = products.filter((p) => p._count.suppliers < 2).length;
+  const allProducts = await apiFetchList<Product>(`/products${params.toString() ? `?${params.toString()}` : ''}`);
+  const needMapping = allProducts.filter((p) => p._count.suppliers < 2).length;
+
+  // Sort
+  const sortField = resolvedParams.sort ?? 'name';
+  const sortOrder = resolvedParams.order === 'desc' ? -1 : 1;
+  const sorted = [...allProducts].sort((a, b) => {
+    let av: string | number | null = null;
+    let bv: string | number | null = null;
+    switch (sortField) {
+      case 'name': av = a.name.toLowerCase(); bv = b.name.toLowerCase(); break;
+      case 'sku': av = a.sku; bv = b.sku; break;
+      case 'status': av = a.status; bv = b.status; break;
+      case 'compliance': av = a.complianceScore ?? -1; bv = b.complianceScore ?? -1; break;
+      case 'suppliers': av = a._count.suppliers; bv = b._count.suppliers; break;
+      default: av = a.name.toLowerCase(); bv = b.name.toLowerCase();
+    }
+    if (av === null || bv === null) return 0;
+    if (av < bv) return -1 * sortOrder;
+    if (av > bv) return 1 * sortOrder;
+    return 0;
+  });
+
+  // Paginate
+  const page = Math.max(1, parseInt(resolvedParams.page ?? '1', 10));
+  const totalItems = sorted.length;
+  const products = sorted.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   return (
     <div>
@@ -41,7 +69,7 @@ export default async function ProductsPage({
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Products</h1>
           <p className="text-sm text-slate-500 mt-1">
-            {products.length} product{products.length !== 1 ? 's' : ''}
+            {allProducts.length} product{allProducts.length !== 1 ? 's' : ''}
             {needMapping > 0 && (
               <> &middot; <span className="text-amber-600 font-medium">{needMapping} need supply-chain mapping</span></>
             )}
@@ -71,7 +99,7 @@ export default async function ProductsPage({
         </Suspense>
       </div>
 
-      {products.length === 0 ? (
+      {allProducts.length === 0 ? (
         <div className="bg-white border border-slate-200 rounded-lg shadow-sm p-12 text-center">
           <div className="w-12 h-12 bg-slate-100 rounded-lg mx-auto mb-4 flex items-center justify-center">
             <svg className="w-6 h-6 text-slate-400" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
@@ -82,6 +110,7 @@ export default async function ProductsPage({
           <p className="text-sm text-slate-400 mt-1">Add your first product to get started.</p>
         </div>
       ) : (
+        <>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {products.map((product) => (
             <Link key={product.id} href={`/dashboard/products/${product.id}`} className="group bg-white border border-slate-200 rounded-lg shadow-sm hover:shadow-md hover:border-slate-300 transition-all overflow-hidden">
@@ -144,6 +173,12 @@ export default async function ProductsPage({
             </Link>
           ))}
         </div>
+        <div className="mt-4 bg-white border border-slate-200 rounded-lg shadow-sm">
+          <Suspense>
+            <Pagination total={totalItems} pageSize={PAGE_SIZE} />
+          </Suspense>
+        </div>
+        </>
       )}
     </div>
   );

@@ -8,8 +8,12 @@ import { NexaButton } from '@/components/ui/nexa-button';
 import { CsvImportButton } from '../../components/csv-import-button';
 import { CsvExportButton } from '../../components/csv-export-button';
 import { ScoreBar } from '@/components/ui/score-bar';
+import { SortHeader } from '@/components/ui/sort-header';
+import { Pagination } from '@/components/ui/pagination';
 import { supStatusBadge, riskBadge, typeBadge } from '@/lib/badges';
 import { fmtDate } from '@/lib/format';
+
+const PAGE_SIZE = 20;
 
 interface Supplier {
   id: string;
@@ -44,10 +48,37 @@ export default async function SuppliersPage({
   searchParams: Promise<Record<string, string>>;
 }) {
   const resolvedParams = await searchParams;
-  const suppliers = await getSuppliers(resolvedParams);
+  const allSuppliers = await getSuppliers(resolvedParams);
 
-  const active = suppliers.filter((s) => s.status === 'ACTIVE').length;
-  const totalPending = suppliers.reduce((sum, s) => sum + s._pending, 0);
+  const active = allSuppliers.filter((s) => s.status === 'ACTIVE').length;
+  const totalPending = allSuppliers.reduce((sum, s) => sum + s._pending, 0);
+
+  // Sort
+  const sortField = resolvedParams.sort ?? 'name';
+  const sortOrder = resolvedParams.order === 'desc' ? -1 : 1;
+  const sorted = [...allSuppliers].sort((a, b) => {
+    let av: string | number | null = null;
+    let bv: string | number | null = null;
+    switch (sortField) {
+      case 'name': av = a.name.toLowerCase(); bv = b.name.toLowerCase(); break;
+      case 'country': av = a.country; bv = b.country; break;
+      case 'status': av = a.status; bv = b.status; break;
+      case 'riskLevel': av = a.riskLevel; bv = b.riskLevel; break;
+      case 'compliance': av = a.complianceScore ?? -1; bv = b.complianceScore ?? -1; break;
+      case 'documents': av = a._count.documents; bv = b._count.documents; break;
+      case 'updatedAt': av = a.updatedAt; bv = b.updatedAt; break;
+      default: av = a.name.toLowerCase(); bv = b.name.toLowerCase();
+    }
+    if (av === null || bv === null) return 0;
+    if (av < bv) return -1 * sortOrder;
+    if (av > bv) return 1 * sortOrder;
+    return 0;
+  });
+
+  // Paginate
+  const page = Math.max(1, parseInt(resolvedParams.page ?? '1', 10));
+  const totalItems = sorted.length;
+  const suppliers = sorted.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   return (
     <div>
@@ -55,7 +86,7 @@ export default async function SuppliersPage({
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Suppliers</h1>
           <p className="text-sm text-slate-500 mt-1">
-            {suppliers.length} total &middot; {active} active
+            {allSuppliers.length} total &middot; {active} active
             {totalPending > 0 && (
               <> &middot; <span className="text-amber-600 font-medium">{totalPending} documents awaiting review</span></>
             )}
@@ -86,7 +117,7 @@ export default async function SuppliersPage({
       </div>
 
       <div className="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden">
-        {suppliers.length === 0 ? (
+        {allSuppliers.length === 0 ? (
           <div className="p-12 text-center">
             <svg className="mx-auto w-12 h-12 text-slate-300" fill="none" viewBox="0 0 24 24" strokeWidth={1} stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 21h19.5M3.75 3v18m4.5-18v18m4.5-18v18m4.5-18v18m4.5-18v18" />
@@ -94,18 +125,19 @@ export default async function SuppliersPage({
             <p className="mt-4 text-sm text-slate-500">No suppliers found. Add your first supplier to get started.</p>
           </div>
         ) : (
+          <>
           <div className="overflow-x-auto">
             <table className="min-w-full">
               <thead className="bg-slate-50 border-b border-slate-200">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Supplier</th>
+                  <Suspense><SortHeader label="Supplier" field="name" className="px-4 py-3 text-left" /></Suspense>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Type</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Location</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Status</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Risk</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider" style={{ minWidth: 160 }}>Compliance</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Documents</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Updated</th>
+                  <Suspense><SortHeader label="Location" field="country" className="px-4 py-3 text-left" /></Suspense>
+                  <Suspense><SortHeader label="Status" field="status" className="px-4 py-3 text-left" /></Suspense>
+                  <Suspense><SortHeader label="Risk" field="riskLevel" className="px-4 py-3 text-left" /></Suspense>
+                  <Suspense><SortHeader label="Compliance" field="compliance" className="px-4 py-3 text-left" /></Suspense>
+                  <Suspense><SortHeader label="Documents" field="documents" className="px-4 py-3 text-left" /></Suspense>
+                  <Suspense><SortHeader label="Updated" field="updatedAt" className="px-4 py-3 text-left" /></Suspense>
                   <th className="px-4 py-3" style={{ width: 40 }} />
                 </tr>
               </thead>
@@ -178,6 +210,10 @@ export default async function SuppliersPage({
               </tbody>
             </table>
           </div>
+          <Suspense>
+            <Pagination total={totalItems} pageSize={PAGE_SIZE} />
+          </Suspense>
+          </>
         )}
       </div>
     </div>

@@ -6,6 +6,7 @@ import { SupAvatar } from '@/components/ui/sup-avatar';
 import { riskBadge } from '@/lib/badges';
 import { fmtDate, daysUntil, relativeDays } from '@/lib/format';
 import { EprDownloadButton } from '../components/epr-download-button';
+import { OnboardingChecklist } from '../components/onboarding-checklist';
 
 // ── Types ─────────────────────────────────────────────────────────
 
@@ -246,6 +247,14 @@ export default async function DashboardPage() {
           </Link>
         </div>
       </div>
+
+      {/* Onboarding checklist — shown until dismissed or all steps complete */}
+      <OnboardingChecklist
+        hasSuppliers={stats.activeSuppliers > 0}
+        hasProducts={stats.totalProducts > 0}
+        hasDocuments={stats.totalDocuments > 0}
+        hasTeam={false}
+      />
 
       {/* Stat cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">

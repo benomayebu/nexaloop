@@ -117,7 +117,7 @@ export function SearchCommand() {
                 <div className="max-h-80 overflow-y-auto py-2">
                   {results.suppliers.length > 0 && (
                     <div>
-                      <p className="px-4 py-1 text-[10.5px] font-semibold text-slate-400 uppercase tracking-wider">Suppliers</p>
+                      <p className="px-4 py-1 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Suppliers</p>
                       {results.suppliers.map((s, i) => {
                         const globalIdx = i;
                         return (
@@ -136,7 +136,7 @@ export function SearchCommand() {
                   )}
                   {results.products.length > 0 && (
                     <div>
-                      <p className="px-4 py-1 text-[10.5px] font-semibold text-slate-400 uppercase tracking-wider">Products</p>
+                      <p className="px-4 py-1 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Products</p>
                       {results.products.map((p, i) => {
                         const globalIdx = results.suppliers.length + i;
                         return (
@@ -155,7 +155,7 @@ export function SearchCommand() {
                   )}
                   {results.documents.length > 0 && (
                     <div>
-                      <p className="px-4 py-1 text-[10.5px] font-semibold text-slate-400 uppercase tracking-wider">Documents</p>
+                      <p className="px-4 py-1 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Documents</p>
                       {results.documents.map((d, i) => {
                         const globalIdx = results.suppliers.length + results.products.length + i;
                         return (
@@ -181,7 +181,7 @@ export function SearchCommand() {
 
               {!results && query.length < 2 && (
                 <div className="py-2">
-                  <p className="px-4 py-1 text-[10.5px] font-semibold text-slate-400 uppercase tracking-wider">Quick links</p>
+                  <p className="px-4 py-1 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Quick links</p>
                   {[
                     { label: 'Suppliers', href: '/dashboard/suppliers' },
                     { label: 'Products', href: '/dashboard/products' },

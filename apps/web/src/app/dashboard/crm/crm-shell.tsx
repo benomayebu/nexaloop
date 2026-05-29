@@ -352,8 +352,26 @@ function InboxTab({ threads }: { threads: Thread[] }) {
 // ─── Pipeline Tab ───────────────────────────────────────────────────
 
 function PipelineTab({ pipeline }: { pipeline: PipelineData }) {
+  const router = useRouter();
+  const toast = useToast();
   const { stages, cards } = pipeline;
+  const [dragOverStage, setDragOverStage] = useState<string | null>(null);
+  const [draggingId, setDraggingId] = useState<string | null>(null);
   const byStage = (stageId: string) => cards.filter((c) => c.stage === stageId);
+
+  async function moveToStage(supplierId: string, newStage: string) {
+    try {
+      const res = await fetch(`/api/suppliers/${supplierId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ stage: newStage }),
+      });
+      if (res.ok) {
+        toast('Supplier moved');
+        router.refresh();
+      }
+    } catch { /* ignore */ }
+  }
 
   if (cards.length === 0) {
     return (
@@ -366,8 +384,23 @@ function PipelineTab({ pipeline }: { pipeline: PipelineData }) {
       <div className="grid gap-3" style={{ gridTemplateColumns: `repeat(${stages.length}, minmax(240px, 1fr))`, minWidth: stages.length * 260 }}>
         {stages.map((stage) => {
           const items = byStage(stage.id);
+          const isOver = dragOverStage === stage.id;
           return (
-            <div key={stage.id} className="bg-slate-50 rounded-lg border border-slate-200">
+            <div
+              key={stage.id}
+              className={`rounded-lg border transition-colors ${
+                isOver ? 'bg-indigo-50 border-indigo-300' : 'bg-slate-50 border-slate-200'
+              }`}
+              onDragOver={(e) => { e.preventDefault(); setDragOverStage(stage.id); }}
+              onDragLeave={() => setDragOverStage(null)}
+              onDrop={(e) => {
+                e.preventDefault();
+                setDragOverStage(null);
+                const id = e.dataTransfer.getData('text/plain');
+                if (id && id !== stage.id) moveToStage(id, stage.id);
+                setDraggingId(null);
+              }}
+            >
               <div className="flex items-center justify-between px-3 py-2.5 border-b border-slate-200">
                 <NexaBadge tone={stage.tone as 'emerald' | 'amber' | 'red' | 'indigo' | 'slate'} dot>{stage.label}</NexaBadge>
                 <span className="text-xs font-mono text-slate-500">{items.length}</span>
@@ -375,39 +408,48 @@ function PipelineTab({ pipeline }: { pipeline: PipelineData }) {
               <div className="p-2 space-y-2 max-h-[60vh] overflow-y-auto">
                 {items.map((card) => {
                   const risk = riskBadge(card.riskLevel);
+                  const isDragging = draggingId === card.id;
                   return (
-                    <Link
+                    <div
                       key={card.id}
-                      href={`/dashboard/suppliers/${card.id}`}
-                      className="block bg-white rounded-md border border-slate-200 p-3 hover:shadow-sm hover:border-slate-300 transition-all"
+                      draggable
+                      onDragStart={(e) => { e.dataTransfer.setData('text/plain', card.id); setDraggingId(card.id); }}
+                      onDragEnd={() => { setDraggingId(null); setDragOverStage(null); }}
+                      className={`bg-white rounded-md border border-slate-200 p-3 transition-all cursor-grab active:cursor-grabbing ${
+                        isDragging ? 'opacity-40 scale-95' : 'hover:shadow-sm hover:border-slate-300'
+                      }`}
                     >
-                      <div className="flex items-center gap-2 mb-2">
-                        <SupAvatar name={card.name} type={card.type} size="sm" />
-                        <div className="min-w-0 flex-1">
-                          <p className="text-[13px] font-semibold text-slate-900 truncate">{card.name}</p>
-                          {card.supplierCode && (
-                            <p className="text-[11px] font-mono text-slate-500">{card.supplierCode}</p>
-                          )}
+                      <Link href={`/dashboard/suppliers/${card.id}`} className="block" onClick={(e) => { if (draggingId) e.preventDefault(); }}>
+                        <div className="flex items-center gap-2 mb-2">
+                          <SupAvatar name={card.name} type={card.type} size="sm" />
+                          <div className="min-w-0 flex-1">
+                            <p className="text-[13px] font-semibold text-slate-900 truncate">{card.name}</p>
+                            {card.supplierCode && (
+                              <p className="text-[11px] font-mono text-slate-500">{card.supplierCode}</p>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                      <div className="flex items-center justify-between text-xs text-slate-500 mb-2">
-                        <span>{card.city ? `${card.city}, ` : ''}{card.country}</span>
-                        <span>{card._count.documents} doc{card._count.documents !== 1 ? 's' : ''}</span>
-                      </div>
-                      {card.complianceScore !== null && (
-                        <div className="mb-2">
-                          <ScoreBar value={card.complianceScore} />
+                        <div className="flex items-center justify-between text-xs text-slate-500 mb-2">
+                          <span>{card.city ? `${card.city}, ` : ''}{card.country}</span>
+                          <span>{card._count.documents} doc{card._count.documents !== 1 ? 's' : ''}</span>
                         </div>
-                      )}
-                      <div className="flex items-center justify-between">
-                        <NexaBadge tone={risk.tone}>{risk.label}</NexaBadge>
-                        <span className="text-[11px] text-slate-400">{card._count.productLinks} product{card._count.productLinks !== 1 ? 's' : ''}</span>
-                      </div>
-                    </Link>
+                        {card.complianceScore !== null && (
+                          <div className="mb-2">
+                            <ScoreBar value={card.complianceScore} />
+                          </div>
+                        )}
+                        <div className="flex items-center justify-between">
+                          <NexaBadge tone={risk.tone}>{risk.label}</NexaBadge>
+                          <span className="text-[11px] text-slate-400">{card._count.productLinks} product{card._count.productLinks !== 1 ? 's' : ''}</span>
+                        </div>
+                      </Link>
+                    </div>
                   );
                 })}
                 {items.length === 0 && (
-                  <p className="text-center text-xs text-slate-400 py-6">No suppliers</p>
+                  <p className={`text-center text-xs py-6 ${isOver ? 'text-indigo-500 font-medium' : 'text-slate-400'}`}>
+                    {isOver ? 'Drop here' : 'No suppliers'}
+                  </p>
                 )}
               </div>
             </div>

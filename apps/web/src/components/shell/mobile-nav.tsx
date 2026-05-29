@@ -146,7 +146,7 @@ export function MobileNav({ user, org: _org, role, badgeCounts }: MobileNavProps
 function MobileNavSection({ label, items, pathname }: { label: string; items: NavItem[]; pathname: string }) {
   return (
     <div className="mb-3">
-      <p className="px-3 py-2 text-[10.5px] font-semibold text-slate-500 uppercase tracking-wider">
+      <p className="px-3 py-2 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
         {label}
       </p>
       {items.map((item) => {
