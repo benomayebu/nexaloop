@@ -4,6 +4,7 @@ const FOOTER_LINKS = [
   { label: 'Product', href: '#how-it-works' },
   { label: 'Compliance', href: '#regulatory' },
   { label: 'EPR Calculator', href: '/epr-calculator' },
+  { label: 'Resources', href: '/blog' },
   { label: 'Pricing', href: '#pricing' },
   { label: 'Privacy', href: '/privacy' },
   { label: 'Terms', href: '/terms' },

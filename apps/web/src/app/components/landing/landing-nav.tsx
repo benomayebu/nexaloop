@@ -53,6 +53,12 @@ export function LandingNav() {
             >
               EPR Calculator
             </Link>
+            <Link
+              href="/blog"
+              className="text-slate-400 hover:text-white text-sm font-medium transition-colors"
+            >
+              Resources
+            </Link>
             <a
               href="#pricing"
               className="text-slate-400 hover:text-white text-sm font-medium transition-colors"
