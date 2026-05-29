@@ -10,6 +10,7 @@ import { ScoreBar } from '@/components/ui/score-bar';
 import { riskBadge } from '@/lib/badges';
 import { fmtDate, relativeDays, initials } from '@/lib/format';
 import { useToast } from '@/components/ui/toast-provider';
+import { AiSummaryButton, AiReplySuggestions, AiTaskSuggestions } from '@/app/components/ai-thread-tools';
 
 // ─── Types ──────────────────────────────────────────────────────────
 
@@ -292,6 +293,36 @@ function InboxTab({ threads }: { threads: Thread[] }) {
               {/* Expanded thread detail */}
               {isExpanded && (
                 <div className="border-t border-slate-100 bg-slate-50/50 animate-dropdown-enter">
+                  {/* AI tools bar */}
+                  <div className="px-5 py-2.5 border-b border-slate-200 bg-white flex flex-wrap items-start gap-2" onClick={(e) => e.stopPropagation()}>
+                    <AiSummaryButton threadId={thread.id} />
+                    <AiReplySuggestions threadId={thread.id} onSelect={(text) => setReplyBody(text)} />
+                    <AiTaskSuggestions
+                      threadId={thread.id}
+                      onCreateTask={async (task) => {
+                        const dueDate = new Date();
+                        dueDate.setDate(dueDate.getDate() + task.dueDays);
+                        try {
+                          const res = await fetch('/api/crm/tasks', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                              title: task.title,
+                              description: task.description,
+                              priority: task.priority,
+                              dueDate: dueDate.toISOString(),
+                              supplierId: thread.supplier?.id,
+                            }),
+                          });
+                          if (res.ok) toast('Task created from AI suggestion');
+                          else toast('Failed to create task', 'err');
+                        } catch {
+                          toast('Network error', 'err');
+                        }
+                      }}
+                    />
+                  </div>
+
                   {/* Message history */}
                   <div className="px-5 py-3 space-y-3 max-h-64 overflow-y-auto">
                     {thread.messages.length === 0 ? (

@@ -12,6 +12,7 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { CrmService } from './crm.service';
+import { AiService } from '../ai/ai.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CurrentOrg } from '../auth/current-org.decorator';
 import { CurrentUser } from '../auth/current-user.decorator';
@@ -24,7 +25,10 @@ import { CrmThreadStatus, CrmTaskStatus } from '@prisma/client';
 @Controller('crm')
 @UseGuards(JwtAuthGuard)
 export class CrmController {
-  constructor(private readonly crmService: CrmService) {}
+  constructor(
+    private readonly crmService: CrmService,
+    private readonly aiService: AiService,
+  ) {}
 
   // ─── Stats ────────────────────────────────────────────────────────
 
@@ -125,6 +129,48 @@ export class CrmController {
   @Get('activity')
   activity(@CurrentOrg() orgId: string) {
     return this.crmService.activity(orgId);
+  }
+
+  // ─── AI ───────────────────────────────────────────────────────────
+
+  @Get('threads/:id/ai/summary')
+  async threadSummary(@CurrentOrg() orgId: string, @Param('id') id: string) {
+    const thread = await this.crmService.getThread(orgId, id);
+    const summary = this.aiService.summariseThread(thread.messages);
+    return { summary };
+  }
+
+  @Get('threads/:id/ai/replies')
+  async suggestReplies(@CurrentOrg() orgId: string, @Param('id') id: string) {
+    const thread = await this.crmService.getThread(orgId, id);
+    const replies = this.aiService.suggestReplies(thread.messages, {
+      supplierName: thread.supplier?.name,
+    });
+    return { replies };
+  }
+
+  @Get('threads/:id/ai/tasks')
+  async suggestTasks(@CurrentOrg() orgId: string, @Param('id') id: string) {
+    const thread = await this.crmService.getThread(orgId, id);
+    const tasks = this.aiService.suggestTasks(thread.messages, {
+      supplierName: thread.supplier?.name,
+      supplierId: thread.supplier?.id,
+    });
+    return { tasks };
+  }
+
+  @Get('ai/insights')
+  async insights(@CurrentOrg() orgId: string) {
+    const stats = await this.crmService.stats(orgId);
+    const insights = this.aiService.generateInsights({
+      expiringSoon: 0, // Will be enriched from dashboard stats
+      pendingReview: 0,
+      openTasks: stats.openTasks,
+      overdueTasks: stats.overdueTasks,
+      complianceScore: 0,
+      highRiskSuppliers: stats.atRiskCount,
+    });
+    return { insights };
   }
 
   // ─── Team ─────────────────────────────────────────────────────────

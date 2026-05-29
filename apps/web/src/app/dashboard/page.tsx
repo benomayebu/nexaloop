@@ -7,6 +7,7 @@ import { riskBadge } from '@/lib/badges';
 import { fmtDate, daysUntil, relativeDays } from '@/lib/format';
 import { EprDownloadButton } from '../components/epr-download-button';
 import { OnboardingChecklist } from '../components/onboarding-checklist';
+import { AiInsightsWidget } from '../components/ai-insights-widget';
 
 // ── Types ─────────────────────────────────────────────────────────
 
@@ -302,6 +303,11 @@ export default async function DashboardPage() {
             </svg>
           }
         />
+      </div>
+
+      {/* AI Compliance assistant */}
+      <div className="mb-6">
+        <AiInsightsWidget />
       </div>
 
       {/* Row 2: Expiring documents + Document status / Review queue */}
