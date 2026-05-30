@@ -46,7 +46,7 @@ function QuickActionMenu({ collapsed }: { collapsed: boolean }) {
   const actions = [
     { label: 'New Supplier', href: '/dashboard/suppliers/new', icon: <IconTruck /> },
     { label: 'New Product', href: '/dashboard/products/new', icon: <IconPackage /> },
-    { label: 'New Thread', href: '/dashboard/crm', icon: <IconMail /> },
+    { label: 'New Note', href: '/dashboard/crm', icon: <IconMail /> },
   ];
 
   return (
@@ -95,7 +95,7 @@ export function Sidebar({ user, org: _org, role, badgeCounts }: SidebarProps) {
     { href: '/dashboard/suppliers', label: 'Suppliers', icon: <IconTruck />, count: badgeCounts.suppliers },
     { href: '/dashboard/products', label: 'Products', icon: <IconPackage />, count: badgeCounts.products },
     { href: '/dashboard/documents', label: 'Document review', icon: <IconFile />, count: badgeCounts.pendingReview || null },
-    { href: '/dashboard/crm', label: 'CRM', icon: <IconMail /> },
+    { href: '/dashboard/crm', label: 'Supplier hub', icon: <IconMail /> },
   ];
 
   const regulatory: NavItem[] = [

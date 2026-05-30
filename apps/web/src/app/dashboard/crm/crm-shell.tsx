@@ -98,12 +98,12 @@ interface CrmShellProps {
 
 // ─── Main Shell ─────────────────────────────────────────────────────
 
-const TABS = ['inbox', 'pipeline', 'tasks', 'activity'] as const;
+const TABS = ['notes', 'pipeline', 'tasks', 'activity'] as const;
 type Tab = (typeof TABS)[number];
 
 export function CrmShell({ stats, threads, tasks, pipeline, activity, team, suppliers }: CrmShellProps) {
-  const [tab, setTab] = useState<Tab>('inbox');
-  const [showNewThread, setShowNewThread] = useState(false);
+  const [tab, setTab] = useState<Tab>('notes');
+  const [showNewNote, setShowNewNote] = useState(false);
   const [showNewTask, setShowNewTask] = useState(false);
 
   return (
@@ -111,23 +111,23 @@ export function CrmShell({ stats, threads, tasks, pipeline, activity, team, supp
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">CRM</h1>
+          <h1 className="text-2xl font-bold text-slate-900">Supplier hub</h1>
           <p className="text-sm text-slate-500 mt-1">
-            Conversations, pipeline and tasks across your supplier network.
+            Internal notes, pipeline and tasks across your supplier network.
           </p>
         </div>
         <div className="flex gap-2">
-          <NexaButton variant="secondary" icon={<PlusIcon />} onClick={() => setShowNewThread(true)}>New thread</NexaButton>
+          <NexaButton variant="secondary" icon={<PlusIcon />} onClick={() => setShowNewNote(true)}>New note</NexaButton>
           <NexaButton variant="primary" icon={<PlusIcon />} onClick={() => setShowNewTask(true)}>New task</NexaButton>
         </div>
       </div>
 
-      {showNewThread && <NewThreadModal suppliers={suppliers} onClose={() => setShowNewThread(false)} />}
+      {showNewNote && <NewNoteModal suppliers={suppliers} onClose={() => setShowNewNote(false)} />}
       {showNewTask && <NewTaskModal suppliers={suppliers} team={team} onClose={() => setShowNewTask(false)} />}
 
       {/* Stat cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <StatCard icon={<MailIcon />} label="Open threads" value={stats.openThreads} sub={`${threads.length} total`} />
+        <StatCard icon={<MailIcon />} label="Open notes" value={stats.openThreads} sub={`${threads.length} total`} />
         <StatCard icon={<CheckIcon />} label="Open tasks" value={stats.openTasks} sub={stats.overdueTasks > 0 ? `${stats.overdueTasks} overdue` : 'All on track'} subTone={stats.overdueTasks > 0 ? 'red' : 'emerald'} />
         <StatCard icon={<TruckIcon />} label="Pipeline" value={stats.pipelineTotal} sub={`${pipeline.cards.filter(c => c.stage === 'ACTIVE').length} active`} />
         <StatCard icon={<AlertIcon />} label="At-risk suppliers" value={stats.atRiskCount} sub={stats.atRiskCount > 0 ? 'Needs attention' : 'All clear'} subTone={stats.atRiskCount > 0 ? 'red' : 'emerald'} />
@@ -136,7 +136,7 @@ export function CrmShell({ stats, threads, tasks, pipeline, activity, team, supp
       {/* Tab bar */}
       <div className="flex gap-1 border-b border-slate-200 mb-6">
         {TABS.map((t) => {
-          const count = t === 'inbox' ? threads.filter(th => th.status === 'OPEN').length
+          const count = t === 'notes' ? threads.filter(th => th.status === 'OPEN').length
             : t === 'tasks' ? tasks.filter(tk => tk.status === 'OPEN').length
             : t === 'pipeline' ? pipeline.cards.length
             : null;
@@ -162,7 +162,7 @@ export function CrmShell({ stats, threads, tasks, pipeline, activity, team, supp
       </div>
 
       {/* Tab content */}
-      {tab === 'inbox' && <InboxTab threads={threads} />}
+      {tab === 'notes' && <NotesTab threads={threads} />}
       {tab === 'pipeline' && <PipelineTab pipeline={pipeline} />}
       {tab === 'tasks' && <TasksTab tasks={tasks} team={team} />}
       {tab === 'activity' && <ActivityTab activity={activity} />}
@@ -172,45 +172,45 @@ export function CrmShell({ stats, threads, tasks, pipeline, activity, team, supp
 
 // ─── Inbox Tab ──────────────────────────────────────────────────────
 
-function InboxTab({ threads }: { threads: Thread[] }) {
+function NotesTab({ threads }: { threads: Thread[] }) {
   const router = useRouter();
   const toast = useToast();
   const [filter, setFilter] = useState<'all' | 'open' | 'resolved'>('all');
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [replyBody, setReplyBody] = useState('');
-  const [sending, setSending] = useState(false);
+  const [commentBody, setCommentBody] = useState('');
+  const [posting, setPosting] = useState(false);
 
   async function toggleResolve(threadId: string, currentStatus: string) {
     const endpoint = currentStatus === 'OPEN' ? 'resolve' : 'reopen';
     try {
       const res = await fetch(`/api/crm/threads/${threadId}/${endpoint}`, { method: 'PUT' });
       if (res.ok) {
-        toast(endpoint === 'resolve' ? 'Thread resolved' : 'Thread reopened');
+        toast(endpoint === 'resolve' ? 'Note resolved' : 'Note reopened');
         router.refresh();
       }
     } catch { /* ignore */ }
   }
 
-  async function sendReply(threadId: string) {
-    if (!replyBody.trim()) return;
-    setSending(true);
+  async function postComment(threadId: string) {
+    if (!commentBody.trim()) return;
+    setPosting(true);
     try {
       const res = await fetch(`/api/crm/threads/${threadId}/messages`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ body: replyBody }),
+        body: JSON.stringify({ body: commentBody }),
       });
       if (res.ok) {
-        toast('Reply sent');
-        setReplyBody('');
+        toast('Comment posted');
+        setCommentBody('');
         router.refresh();
       } else {
-        toast('Failed to send reply', 'err');
+        toast('Failed to post comment', 'err');
       }
     } catch {
       toast('Network error', 'err');
     } finally {
-      setSending(false);
+      setPosting(false);
     }
   }
 
@@ -222,7 +222,7 @@ function InboxTab({ threads }: { threads: Thread[] }) {
 
   if (threads.length === 0) {
     return (
-      <EmptyState icon={<MailIcon />} title="No conversations yet" subtitle="Start a thread to track discussions with supplier contacts." />
+      <EmptyState icon={<MailIcon />} title="No internal notes yet" subtitle="Create a note to track team discussions about a supplier." />
     );
   }
 
@@ -242,7 +242,7 @@ function InboxTab({ threads }: { threads: Thread[] }) {
             <div key={thread.id}>
               <div
                 className={`flex items-start gap-3 p-4 cursor-pointer transition-colors ${isExpanded ? 'bg-indigo-50/40' : 'hover:bg-slate-50'}`}
-                onClick={() => { setExpandedId(isExpanded ? null : thread.id); setReplyBody(''); }}
+                onClick={() => { setExpandedId(isExpanded ? null : thread.id); setCommentBody(''); }}
               >
                 {thread.supplier && (
                   <SupAvatar name={thread.supplier.name} type={thread.supplier.type} size="sm" />
@@ -273,7 +273,7 @@ function InboxTab({ threads }: { threads: Thread[] }) {
                     {thread.contact && (
                       <span className="text-[11px] text-slate-400">{thread.contact.name}</span>
                     )}
-                    <span className="text-[11px] text-slate-400">{thread._count.messages} message{thread._count.messages !== 1 ? 's' : ''}</span>
+                    <span className="text-[11px] text-slate-400">{thread._count.messages} comment{thread._count.messages !== 1 ? 's' : ''}</span>
                   </div>
                 </div>
                 <div className="flex items-center gap-1 flex-shrink-0">
@@ -296,7 +296,7 @@ function InboxTab({ threads }: { threads: Thread[] }) {
                   {/* AI tools bar */}
                   <div className="px-5 py-2.5 border-b border-slate-200 bg-white flex flex-wrap items-start gap-2" onClick={(e) => e.stopPropagation()}>
                     <AiSummaryButton threadId={thread.id} />
-                    <AiReplySuggestions threadId={thread.id} onSelect={(text) => setReplyBody(text)} />
+                    <AiReplySuggestions threadId={thread.id} onSelect={(text) => setCommentBody(text)} />
                     <AiTaskSuggestions
                       threadId={thread.id}
                       onCreateTask={async (task) => {
@@ -323,10 +323,10 @@ function InboxTab({ threads }: { threads: Thread[] }) {
                     />
                   </div>
 
-                  {/* Message history */}
+                  {/* Comment history */}
                   <div className="px-5 py-3 space-y-3 max-h-64 overflow-y-auto">
                     {thread.messages.length === 0 ? (
-                      <p className="text-xs text-slate-400 py-2">No messages yet.</p>
+                      <p className="text-xs text-slate-400 py-2">No comments yet.</p>
                     ) : (
                       [...thread.messages].reverse().map((msg, i) => (
                         <div key={i} className="flex gap-3">
@@ -347,14 +347,14 @@ function InboxTab({ threads }: { threads: Thread[] }) {
                     )}
                   </div>
 
-                  {/* Reply composer */}
+                  {/* Comment composer */}
                   {thread.status === 'OPEN' && (
                     <div className="px-5 py-3 border-t border-slate-200 bg-white">
                       <div className="flex gap-2">
                         <textarea
-                          value={replyBody}
-                          onChange={(e) => setReplyBody(e.target.value)}
-                          placeholder="Write a reply..."
+                          value={commentBody}
+                          onChange={(e) => setCommentBody(e.target.value)}
+                          placeholder="Add an internal comment..."
                           rows={2}
                           className="flex-1 border border-slate-200 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none resize-none bg-white"
                           onClick={(e) => e.stopPropagation()}
@@ -362,10 +362,10 @@ function InboxTab({ threads }: { threads: Thread[] }) {
                         <NexaButton
                           variant="primary"
                           size="sm"
-                          disabled={sending || !replyBody.trim()}
-                          onClick={(e: React.MouseEvent) => { e.stopPropagation(); sendReply(thread.id); }}
+                          disabled={posting || !commentBody.trim()}
+                          onClick={(e: React.MouseEvent) => { e.stopPropagation(); postComment(thread.id); }}
                         >
-                          {sending ? 'Sending...' : 'Send'}
+                          {posting ? 'Posting...' : 'Post'}
                         </NexaButton>
                       </div>
                     </div>
@@ -761,7 +761,7 @@ function EmptyState({ icon, title, subtitle }: { icon: React.ReactNode; title: s
 
 // ─── New Thread Modal ───────────────────────────────────────────────
 
-function NewThreadModal({ suppliers, onClose }: { suppliers: SupplierOption[]; onClose: () => void }) {
+function NewNoteModal({ suppliers, onClose }: { suppliers: SupplierOption[]; onClose: () => void }) {
   const router = useRouter();
   const toast = useToast();
   const [saving, setSaving] = useState(false);
@@ -781,10 +781,10 @@ function NewThreadModal({ suppliers, onClose }: { suppliers: SupplierOption[]; o
         }),
       });
       if (!res.ok) {
-        toast('Failed to create thread', 'err');
+        toast('Failed to create note', 'err');
         return;
       }
-      toast('Thread created');
+      toast('Note created');
       onClose();
       router.refresh();
     } catch {
@@ -795,7 +795,7 @@ function NewThreadModal({ suppliers, onClose }: { suppliers: SupplierOption[]; o
   }
 
   return (
-    <Modal title="New thread" onClose={onClose}>
+    <Modal title="New internal note" onClose={onClose}>
       <form onSubmit={handleSubmit} className="space-y-4">
         <Field label="Subject" required>
           <input
@@ -813,20 +813,20 @@ function NewThreadModal({ suppliers, onClose }: { suppliers: SupplierOption[]; o
             {suppliers.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
           </select>
         </Field>
-        <Field label="Message" required>
+        <Field label="Note" required>
           <textarea
             required
             rows={4}
             value={form.body}
             onChange={(e) => setForm({ ...form, body: e.target.value })}
             className={inputClass}
-            placeholder="Start the conversation..."
+            placeholder="What does your team need to track about this supplier?"
           />
         </Field>
         <div className="flex justify-end gap-2 pt-2">
           <NexaButton type="button" variant="secondary" onClick={onClose}>Cancel</NexaButton>
           <NexaButton type="submit" variant="primary" disabled={saving}>
-            {saving ? 'Creating...' : 'Create thread'}
+            {saving ? 'Creating...' : 'Create note'}
           </NexaButton>
         </div>
       </form>

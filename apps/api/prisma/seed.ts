@@ -282,7 +282,7 @@ async function main() {
   );
   console.log(`  ✓ Product–Supplier links: ${links.length}`);
 
-  // ── CRM Threads & Messages ──────────────────────────────────
+  // ── CRM Notes & Comments (internal team discussions) ─────────
   const threads = [
     {
       subject: 'BSCI audit renewal — Zhejiang facility',
@@ -291,9 +291,9 @@ async function main() {
       status: CrmThreadStatus.OPEN,
       createdByUserId: userSophie.id,
       messages: [
-        { body: 'Hi Wei, the BSCI audit for the Hangzhou facility expired last month. We need to schedule the renewal audit ASAP to maintain our compliance status. Can you share available dates?', authorName: 'Sophie Durand', authorType: CrmMessageAuthorType.INTERNAL, authorUserId: userSophie.id },
-        { body: 'Hello Sophie, thank you for the reminder. We have contacted TÜV for audit scheduling. They proposed the week of July 14th. Would that work on your end?', authorName: 'Wei Chen', authorType: CrmMessageAuthorType.EXTERNAL },
-        { body: 'July 14th works. Please confirm with TÜV and share the formal schedule. We\'ll need the pre-audit checklist completed beforehand.', authorName: 'Sophie Durand', authorType: CrmMessageAuthorType.INTERNAL, authorUserId: userSophie.id },
+        { body: 'The BSCI audit for the Hangzhou facility expired last month. I\'ve emailed Wei Chen to schedule the renewal audit with TÜV. Waiting for their available dates.', authorName: 'Sophie Durand', authorType: CrmMessageAuthorType.INTERNAL, authorUserId: userSophie.id },
+        { body: 'Update: Wei confirmed TÜV proposed the week of July 14th. I\'ve approved that timeframe. We need to make sure the pre-audit checklist is completed beforehand — assigning a task for that.', authorName: 'Sophie Durand', authorType: CrmMessageAuthorType.INTERNAL, authorUserId: userSophie.id },
+        { body: 'Good. I\'ll flag this on our next compliance review call. We should also check if the GRS certificate for this facility is still valid — last I saw it was expiring in Q3.', authorName: 'Marc Lefèvre', authorType: CrmMessageAuthorType.INTERNAL, authorUserId: userMarc.id },
       ],
     },
     {
@@ -303,10 +303,9 @@ async function main() {
       status: CrmThreadStatus.OPEN,
       createdByUserId: userMarc.id,
       messages: [
-        { body: 'Rahim, I noticed the fire safety certificate for the Dhaka facility has been expired for over 4 months. This is a critical compliance gap. What is the status of the renewal?', authorName: 'Marc Lefèvre', authorType: CrmMessageAuthorType.INTERNAL, authorUserId: userMarc.id },
-        { body: 'Marc, apologies for the delay. We had the inspection last week and are waiting for the certificate to be issued. Should have it within 2 weeks.', authorName: 'Rahim Ahmed', authorType: CrmMessageAuthorType.EXTERNAL },
-        { body: 'Thank you Rahim. Please prioritise this — we cannot place new orders until the certificate is on file. Can you send interim documentation showing the inspection passed?', authorName: 'Marc Lefèvre', authorType: CrmMessageAuthorType.INTERNAL, authorUserId: userMarc.id },
-        { body: 'I have attached the inspection pass letter from the local fire department. The formal certificate will follow.', authorName: 'Rahim Ahmed', authorType: CrmMessageAuthorType.EXTERNAL },
+        { body: 'The fire safety certificate for the Dhaka facility has been expired for over 4 months. This is a critical compliance gap — we cannot place new orders until this is resolved. I\'ve escalated via email to Rahim.', authorName: 'Marc Lefèvre', authorType: CrmMessageAuthorType.INTERNAL, authorUserId: userMarc.id },
+        { body: 'Spoke with Rahim on the phone. They had an inspection last week and the certificate should be reissued within 2 weeks. He\'s sending an interim pass letter from the local fire department.', authorName: 'Marc Lefèvre', authorType: CrmMessageAuthorType.INTERNAL, authorUserId: userMarc.id },
+        { body: 'Received the interim pass letter via email and uploaded it as a document. Still waiting for the formal certificate. Keeping orders on hold until we have the official cert.', authorName: 'Leïla Benali', authorType: CrmMessageAuthorType.INTERNAL, authorUserId: userLeila.id },
       ],
     },
     {
@@ -316,8 +315,8 @@ async function main() {
       status: CrmThreadStatus.OPEN,
       createdByUserId: userLeila.id,
       messages: [
-        { body: 'Hi Emre, your OEKO-TEX Standard 100 certificate expires in 25 days. Have you started the renewal process?', authorName: 'Leïla Benali', authorType: CrmMessageAuthorType.INTERNAL, authorUserId: userLeila.id },
-        { body: 'Leïla, yes — we submitted the renewal application last week. The lab testing is in progress. We expect the new certificate by the end of this month.', authorName: 'Emre Yılmaz', authorType: CrmMessageAuthorType.EXTERNAL },
+        { body: 'OEKO-TEX Standard 100 certificate for Anatolian Textiles expires in 25 days. I\'ve sent Emre a reminder email asking about the renewal status.', authorName: 'Leïla Benali', authorType: CrmMessageAuthorType.INTERNAL, authorUserId: userLeila.id },
+        { body: 'Emre confirmed via email that they submitted the renewal application last week. Lab testing is in progress and they expect the new certificate by end of month. Adding a follow-up task for the 28th.', authorName: 'Leïla Benali', authorType: CrmMessageAuthorType.INTERNAL, authorUserId: userLeila.id },
       ],
     },
     {
@@ -327,8 +326,8 @@ async function main() {
       status: CrmThreadStatus.OPEN,
       createdByUserId: userSophie.id,
       messages: [
-        { body: 'Welcome Minh! We\'re excited to start working with Saigon Fabrics. To begin the onboarding process, we\'ll need: NDA signed, REACH declaration, OEKO-TEX certificate (if available), and factory profile.', authorName: 'Sophie Durand', authorType: CrmMessageAuthorType.INTERNAL, authorUserId: userSophie.id },
-        { body: 'Thank you Sophie! I will prepare all documents this week. We do have OEKO-TEX certification. I\'ll send everything by Friday.', authorName: 'Nguyen Minh', authorType: CrmMessageAuthorType.EXTERNAL },
+        { body: 'Starting the onboarding process for Saigon Fabrics. I\'ve emailed Nguyen Minh with our standard requirements: NDA, REACH declaration, OEKO-TEX certificate (if available), and factory profile. They confirmed they\'ll have everything ready by Friday.', authorName: 'Sophie Durand', authorType: CrmMessageAuthorType.INTERNAL, authorUserId: userSophie.id },
+        { body: 'Just a heads-up — I checked their initial factory profile and they do have OEKO-TEX, which is great. Country risk for Vietnam is medium so we should make sure the BSCI is scheduled within 60 days of onboarding.', authorName: 'Marc Lefèvre', authorType: CrmMessageAuthorType.INTERNAL, authorUserId: userMarc.id },
       ],
     },
     {
@@ -338,9 +337,9 @@ async function main() {
       status: CrmThreadStatus.RESOLVED,
       createdByUserId: userMarc.id,
       messages: [
-        { body: 'Wei, the REACH declaration you submitted was rejected by our compliance team. The restricted amine declarations per Annex XVII Entry 43 were missing. Please resubmit with the complete substance list.', authorName: 'Marc Lefèvre', authorType: CrmMessageAuthorType.INTERNAL, authorUserId: userMarc.id },
-        { body: 'We apologise for the oversight. Our compliance team has prepared the updated declaration with all required amine test results. Please find the revised document attached.', authorName: 'Wei Chen', authorType: CrmMessageAuthorType.EXTERNAL },
-        { body: 'Thank you Wei. The updated declaration has been submitted for review. We\'ll follow up once our team has completed the assessment.', authorName: 'Marc Lefèvre', authorType: CrmMessageAuthorType.INTERNAL, authorUserId: userMarc.id },
+        { body: 'Rejected the REACH declaration from Zhejiang Silk Co. — the restricted amine declarations per Annex XVII Entry 43 were missing. I\'ve emailed Wei Chen asking for a resubmission with the complete substance list.', authorName: 'Marc Lefèvre', authorType: CrmMessageAuthorType.INTERNAL, authorUserId: userMarc.id },
+        { body: 'Wei sent the updated declaration with all required amine test results. I\'ve uploaded it and it\'s now in the review queue.', authorName: 'Leïla Benali', authorType: CrmMessageAuthorType.INTERNAL, authorUserId: userLeila.id },
+        { body: 'Reviewed and approved the updated declaration. All good now — marking this as resolved.', authorName: 'Marc Lefèvre', authorType: CrmMessageAuthorType.INTERNAL, authorUserId: userMarc.id },
       ],
     },
   ];
@@ -370,7 +369,7 @@ async function main() {
       });
     }
   }
-  console.log(`  ✓ CRM Threads: ${threads.length} with messages`);
+  console.log(`  ✓ Internal notes: ${threads.length} with comments`);
 
   // ── CRM Tasks ───────────────────────────────────────────────
   const taskData = [

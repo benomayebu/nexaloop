@@ -50,7 +50,7 @@ export function MobileNav({ user, org: _org, role, badgeCounts }: MobileNavProps
     { href: '/dashboard/suppliers', label: 'Suppliers', icon: <IconTruck />, count: badgeCounts.suppliers },
     { href: '/dashboard/products', label: 'Products', icon: <IconPackage />, count: badgeCounts.products },
     { href: '/dashboard/documents', label: 'Document review', icon: <IconFile />, count: badgeCounts.pendingReview || null },
-    { href: '/dashboard/crm', label: 'CRM', icon: <IconMail /> },
+    { href: '/dashboard/crm', label: 'Supplier hub', icon: <IconMail /> },
   ];
 
   const regulatory: NavItem[] = [

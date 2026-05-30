@@ -76,7 +76,7 @@ export function AiReplySuggestions({
         className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-slate-600 hover:text-indigo-600 bg-slate-100 hover:bg-indigo-50 rounded-md transition-colors disabled:opacity-50"
       >
         <SparklesIcon />
-        {loading ? 'Thinking...' : 'Suggest reply'}
+        {loading ? 'Thinking...' : 'Suggest comment'}
       </button>
       {open && suggestions.length > 0 && (
         <div className="mt-1.5 space-y-1.5 animate-dropdown-enter">

@@ -186,7 +186,7 @@ export function SearchCommand() {
                     { label: 'Suppliers', href: '/dashboard/suppliers' },
                     { label: 'Products', href: '/dashboard/products' },
                     { label: 'Document review', href: '/dashboard/documents' },
-                    { label: 'CRM', href: '/dashboard/crm' },
+                    { label: 'Supplier hub', href: '/dashboard/crm' },
                     { label: 'Settings', href: '/dashboard/settings' },
                   ].map((link) => (
                     <button
