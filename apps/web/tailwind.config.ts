@@ -39,10 +39,12 @@ const config: Config = {
       keyframes: {
         'fade-in': { from: { opacity: '0' }, to: { opacity: '1' } },
         'slide-in-left': { from: { transform: 'translateX(-100%)' }, to: { transform: 'translateX(0)' } },
+        'scale-in': { from: { opacity: '0', transform: 'scale(0.95)' }, to: { opacity: '1', transform: 'scale(1)' } },
       },
       animation: {
         'fade-in': 'fade-in 200ms ease-out',
         'slide-in-left': 'slide-in-left 200ms ease-out',
+        'scale-in': 'scale-in 300ms ease-out both',
       },
     },
   },
