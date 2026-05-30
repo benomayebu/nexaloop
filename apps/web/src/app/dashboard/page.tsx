@@ -9,7 +9,7 @@ import { AiInsightsWidget } from '../components/ai-insights-widget';
 import { ComplianceGauge } from '../components/dashboard/compliance-gauge';
 import { DonutChart } from '../components/dashboard/donut-chart';
 import { RiskBars } from '../components/dashboard/risk-bars';
-import { CountryHeatmap } from '../components/dashboard/country-heatmap';
+import { SupplierWorldMap } from '../components/dashboard/supplier-world-map';
 import { ExpiryTimeline } from '../components/dashboard/expiry-timeline';
 import { ReviewQueue } from '../components/dashboard/review-queue';
 import { DashStatCard } from '../components/dashboard/dash-stat-card';
@@ -330,10 +330,31 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      {/* ── Row 3: Supplier risk + Global footprint + Top suppliers ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      {/* ── Row 3: Global footprint (full width map) ── */}
+      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-lg transition-all duration-300">
+        <div className="px-6 py-5 border-b border-slate-100">
+          <h2 className="text-[15px] font-bold text-slate-900">Global footprint</h2>
+          <p className="text-[11px] text-slate-400 mt-0.5">
+            Your supplier network across {totalCountries} {totalCountries === 1 ? 'country' : 'countries'}
+          </p>
+        </div>
+        <div className="p-5">
+          {totalCountries === 0 ? (
+            <p className="text-sm text-slate-400 text-center py-6">No suppliers yet.</p>
+          ) : (
+            <SupplierWorldMap
+              breakdown={countryBreakdown}
+              totalCountries={totalCountries}
+              totalSuppliers={stats.activeSuppliers}
+            />
+          )}
+        </div>
+      </div>
+
+      {/* ── Row 4: Supplier risk + Top suppliers ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Supplier risk breakdown */}
-        <div className="lg:col-span-4 bg-white rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-lg transition-all duration-300">
+        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-lg transition-all duration-300">
           <div className="px-6 py-5 border-b border-slate-100">
             <h2 className="text-[15px] font-bold text-slate-900">Risk distribution</h2>
             <p className="text-[11px] text-slate-400 mt-0.5">{stats.activeSuppliers} active supplier{stats.activeSuppliers !== 1 ? 's' : ''}</p>
@@ -347,25 +368,8 @@ export default async function DashboardPage() {
           </div>
         </div>
 
-        {/* Global footprint */}
-        <div className="lg:col-span-4 bg-white rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-lg transition-all duration-300">
-          <div className="px-6 py-5 border-b border-slate-100">
-            <h2 className="text-[15px] font-bold text-slate-900">Global footprint</h2>
-            <p className="text-[11px] text-slate-400 mt-0.5">
-              {stats.activeSuppliers} supplier{stats.activeSuppliers !== 1 ? 's' : ''} across {totalCountries} {totalCountries === 1 ? 'country' : 'countries'}
-            </p>
-          </div>
-          <div className="p-5">
-            {totalCountries === 0 ? (
-              <p className="text-sm text-slate-400 text-center py-6">No suppliers yet.</p>
-            ) : (
-              <CountryHeatmap breakdown={countryBreakdown} totalCountries={totalCountries} />
-            )}
-          </div>
-        </div>
-
         {/* Top risk suppliers */}
-        <div className="lg:col-span-4 bg-white rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-lg transition-all duration-300">
+        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-lg transition-all duration-300">
           <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between">
             <div>
               <h2 className="text-[15px] font-bold text-slate-900">Attention needed</h2>
