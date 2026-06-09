@@ -9,7 +9,7 @@ import { AiInsightsWidget } from '../components/ai-insights-widget';
 import { ComplianceGauge } from '../components/dashboard/compliance-gauge';
 import { DonutChart } from '../components/dashboard/donut-chart';
 import { RiskBars } from '../components/dashboard/risk-bars';
-import { SupplierWorldMap } from '../components/dashboard/supplier-world-map';
+import { SupplierGlobe } from '../components/dashboard/supplier-globe';
 import { ExpiryTimeline } from '../components/dashboard/expiry-timeline';
 import { ReviewQueue } from '../components/dashboard/review-queue';
 import { DashStatCard } from '../components/dashboard/dash-stat-card';
@@ -330,7 +330,7 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      {/* ── Row 3: Global footprint (full width map) ── */}
+      {/* ── Row 3: Global footprint (full width 3D globe) ── */}
       <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-lg transition-all duration-300">
         <div className="px-6 py-5 border-b border-slate-100">
           <h2 className="text-[15px] font-bold text-slate-900">Global footprint</h2>
@@ -342,10 +342,11 @@ export default async function DashboardPage() {
           {totalCountries === 0 ? (
             <p className="text-sm text-slate-400 text-center py-6">No suppliers yet.</p>
           ) : (
-            <SupplierWorldMap
+            <SupplierGlobe
               breakdown={countryBreakdown}
               totalCountries={totalCountries}
               totalSuppliers={stats.activeSuppliers}
+              mapboxToken={process.env.NEXT_PUBLIC_MAPBOX_TOKEN ?? ''}
             />
           )}
         </div>

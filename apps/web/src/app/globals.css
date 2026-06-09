@@ -181,3 +181,26 @@
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
 }
+
+/* ── Mapbox popup overrides ─────────────────────────── */
+.mapboxgl-popup-content {
+  border-radius: 10px !important;
+  padding: 8px 12px !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2) !important;
+  font-family: var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif !important;
+}
+
+.mapboxgl-popup-close-button {
+  font-size: 16px;
+  padding: 2px 6px;
+  color: #94a3b8;
+}
+
+.mapboxgl-popup-close-button:hover {
+  color: #334155;
+  background: transparent;
+}
+
+.mapboxgl-popup-tip {
+  border-top-color: #fff !important;
+}
