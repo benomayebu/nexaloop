@@ -33,7 +33,7 @@ export class AuthController {
     const isProduction = process.env.NODE_ENV === 'production';
     res.cookie('auth_token', result.token, {
       httpOnly: true,
-      sameSite: isProduction ? 'none' : 'lax',
+      sameSite: 'lax',
       maxAge: 7 * 24 * 60 * 60 * 1000,
       secure: isProduction,
     });
@@ -51,7 +51,7 @@ export class AuthController {
     const isProduction = process.env.NODE_ENV === 'production';
     res.cookie('auth_token', result.token, {
       httpOnly: true,
-      sameSite: isProduction ? 'none' : 'lax',
+      sameSite: 'lax',
       maxAge: 7 * 24 * 60 * 60 * 1000,
       secure: isProduction,
     });
@@ -104,7 +104,7 @@ export class AuthController {
     const isProduction = process.env.NODE_ENV === 'production';
     res.cookie('auth_token', result.token, {
       httpOnly: true,
-      sameSite: isProduction ? 'none' : 'lax',
+      sameSite: 'lax',
       maxAge: 7 * 24 * 60 * 60 * 1000,
       secure: isProduction,
     });

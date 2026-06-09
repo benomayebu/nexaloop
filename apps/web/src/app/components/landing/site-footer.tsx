@@ -92,8 +92,8 @@ export function SiteFooter() {
             <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Contact</h4>
             <ul className="space-y-2">
               <li>
-                <a href="mailto:hello@nexaloop.io" className="text-slate-500 hover:text-slate-300 text-sm transition-colors">
-                  hello@nexaloop.io
+                <a href="mailto:hello@nexaloop.app" className="text-slate-500 hover:text-slate-300 text-sm transition-colors">
+                  hello@nexaloop.app
                 </a>
               </li>
               <li>

@@ -25,7 +25,7 @@ export class EmailService {
     if (provider === 'resend' && process.env.RESEND_API_KEY) {
       const resend = new Resend(process.env.RESEND_API_KEY);
       const from =
-        process.env.EMAIL_FROM || 'N.E.X.A Loop <noreply@nexaloop.io>';
+        process.env.EMAIL_FROM || 'N.E.X.A Loop <noreply@nexaloop.app>';
       this.logger.log(`[Email] Sending via Resend from="${from}"`);
       const { data, error } = await resend.emails.send({
         from,

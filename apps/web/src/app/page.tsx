@@ -22,7 +22,7 @@ export const metadata: Metadata = {
     description:
       'Supply chain compliance platform for EU-facing fashion brands. ESPR, DPP, and EPR ready.',
     type: 'website',
-    url: 'https://nexaloop.vercel.app',
+    url: 'https://nexaloop.app',
     siteName: 'N.E.X.A Loop',
   },
   twitter: {
@@ -31,7 +31,7 @@ export const metadata: Metadata = {
     description: 'Centralise supplier data. Track every certificate. Ship Digital Product Passports in one click.',
   },
   alternates: {
-    canonical: 'https://nexaloop.vercel.app',
+    canonical: 'https://nexaloop.app',
   },
 };
 
