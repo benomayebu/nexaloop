@@ -121,12 +121,15 @@ export function Sidebar({ user, org: _org, role, badgeCounts }: SidebarProps) {
   return (
       <aside className={`hidden md:flex md:flex-col ${sidebarWidth} bg-slate-900 fixed inset-y-0 z-40 transition-[width] duration-200`}>
         {/* Brand */}
-        <div className={`flex items-center ${collapsed ? 'justify-center' : 'gap-2.5 px-5'} py-4 border-b border-white/10`}>
+        <Link
+          href="/dashboard"
+          className={`flex items-center ${collapsed ? 'justify-center' : 'gap-2.5 px-5'} py-4 border-b border-white/10 group`}
+        >
           <LoopMark size={28} />
           {!collapsed && (
-            <span className="text-[15px] font-bold text-white tracking-tight">N.E.X.A Loop</span>
+            <span className="text-[15px] font-bold text-white tracking-tight group-hover:text-slate-200 transition-colors">N.E.X.A Loop</span>
           )}
-        </div>
+        </Link>
 
         {/* Quick actions */}
         <div className="pt-3">

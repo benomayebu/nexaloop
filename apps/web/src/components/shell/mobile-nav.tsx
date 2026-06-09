@@ -95,10 +95,10 @@ export function MobileNav({ user, org: _org, role, badgeCounts }: MobileNavProps
           <aside className="fixed inset-y-0 left-0 z-50 w-[280px] bg-slate-900 flex flex-col animate-slide-in-left">
             {/* Brand + close */}
             <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
-              <div className="flex items-center gap-2.5">
+              <Link href="/dashboard" className="flex items-center gap-2.5 group" onClick={() => setOpen(false)}>
                 <LoopMark size={28} />
-                <span className="text-[15px] font-bold text-white tracking-tight">N.E.X.A Loop</span>
-              </div>
+                <span className="text-[15px] font-bold text-white tracking-tight group-hover:text-slate-200 transition-colors">N.E.X.A Loop</span>
+              </Link>
               <button
                 onClick={() => setOpen(false)}
                 className="text-slate-400 hover:text-white p-1 rounded transition-colors"

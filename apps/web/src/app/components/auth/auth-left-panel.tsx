@@ -4,6 +4,7 @@
 // Renders the brand mark, orbital supply-chain SVG, context-aware
 // tagline + description, and trust/trial footer badges.
 
+import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { LoopMark } from '@/components/shell/loop-mark';
 import { AuthVisual } from './auth-visual';
@@ -36,12 +37,12 @@ export function AuthLeftPanel() {
   return (
     <div className="hidden md:flex md:w-[44%] flex-col justify-between bg-slate-900 px-10 py-10 relative overflow-hidden">
       {/* Brand */}
-      <div className="relative z-10 flex items-center gap-2.5">
+      <Link href="/" className="relative z-10 flex items-center gap-2.5 group">
         <LoopMark size={28} />
-        <span className="text-[15px] font-bold text-white tracking-tight">
+        <span className="text-[15px] font-bold text-white tracking-tight group-hover:text-slate-200 transition-colors">
           N.E.X.A Loop
         </span>
-      </div>
+      </Link>
 
       {/* Orbital visualisation */}
       <div className="relative z-10 flex-1 flex items-center justify-center py-8">
