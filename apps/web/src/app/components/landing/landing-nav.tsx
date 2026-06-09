@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import { LoopMark } from '@/components/shell/loop-mark';
 
 const NAV_LINKS = [
   { label: 'How it works', href: '#how-it-works' },
@@ -42,9 +43,7 @@ export function LandingNav() {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2.5 group relative z-50">
-            <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center flex-shrink-0 group-hover:bg-indigo-500 transition-colors">
-              <span className="text-white font-bold text-sm font-display">N</span>
-            </div>
+            <LoopMark size={30} />
             <span className="text-white font-display font-bold text-[15px] tracking-tight">
               N.E.X.A Loop
             </span>

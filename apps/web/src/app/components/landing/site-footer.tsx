@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { LoopMark } from '@/components/shell/loop-mark';
 
 const PRODUCT_LINKS = [
   { label: 'How it works', href: '#how-it-works' },
@@ -27,9 +28,7 @@ export function SiteFooter() {
           {/* Brand column */}
           <div className="col-span-2 md:col-span-1">
             <Link href="/" className="flex items-center gap-2 mb-3 group">
-              <div className="w-7 h-7 bg-indigo-600 rounded-lg flex items-center justify-center group-hover:bg-indigo-500 transition-colors">
-                <span className="text-white font-bold text-xs font-display">N</span>
-              </div>
+              <LoopMark size={26} />
               <span className="text-white font-display font-bold text-sm group-hover:text-slate-200 transition-colors">N.E.X.A Loop</span>
             </Link>
             <p className="text-slate-500 text-xs leading-relaxed mb-4">
