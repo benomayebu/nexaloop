@@ -406,23 +406,38 @@ function PipelineTab({ pipeline }: { pipeline: PipelineData }) {
   const byStage = (stageId: string) => cards.filter((c) => c.stage === stageId);
 
   async function moveToStage(supplierId: string, newStage: string) {
-    const prevStage = cards.find((c) => c.id === supplierId)?.stage;
-    setCards((prev) => prev.map((c) => (c.id === supplierId ? { ...c, stage: newStage } : c)));
+    const card = cards.find((c) => c.id === supplierId);
+    const prevStage = card?.stage;
+    // "stage" is derived server-side from status + riskLevel — the
+    // AT_RISK column means ACTIVE + HIGH risk. Translate accordingly.
+    const body: Record<string, string> =
+      newStage === 'AT_RISK'
+        ? { status: 'ACTIVE', riskLevel: 'HIGH' }
+        : prevStage === 'AT_RISK'
+          ? { status: newStage, riskLevel: 'MEDIUM' }
+          : { status: newStage };
+    setCards((prev) =>
+      prev.map((c) =>
+        c.id === supplierId
+          ? { ...c, stage: newStage, status: body.status, riskLevel: body.riskLevel ?? c.riskLevel }
+          : c,
+      ),
+    );
     try {
       const res = await fetch(`/api/suppliers/${supplierId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ stage: newStage }),
+        body: JSON.stringify(body),
       });
       if (res.ok) {
         toast('Supplier moved');
         router.refresh();
       } else {
-        if (prevStage) setCards((prev) => prev.map((c) => (c.id === supplierId ? { ...c, stage: prevStage } : c)));
+        if (card) setCards((prev) => prev.map((c) => (c.id === supplierId ? card : c)));
         toast('Failed to move supplier', 'err');
       }
     } catch {
-      if (prevStage) setCards((prev) => prev.map((c) => (c.id === supplierId ? { ...c, stage: prevStage } : c)));
+      if (card) setCards((prev) => prev.map((c) => (c.id === supplierId ? card : c)));
       toast('Network error', 'err');
     }
   }

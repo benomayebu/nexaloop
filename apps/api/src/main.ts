@@ -3,9 +3,10 @@ process.on('uncaughtException', (err) => {
   console.error('[FATAL] Uncaught exception:', err);
   process.exit(1);
 });
+// Log unhandled rejections but do NOT exit — a stray rejection from a
+// fire-and-forget task (e.g. webhook delivery) must not take down the API.
 process.on('unhandledRejection', (err) => {
-  console.error('[FATAL] Unhandled rejection:', err);
-  process.exit(1);
+  console.error('[ERROR] Unhandled rejection:', err);
 });
 
 import { NestFactory } from '@nestjs/core';

@@ -84,32 +84,37 @@ export class WebhookService {
    * Fire a webhook event for a given org.
    * Finds all active webhooks subscribed to this event and delivers payloads.
    * Runs asynchronously — callers don't need to await delivery.
+   *
+   * Must NEVER throw: callers invoke this fire-and-forget, so a rejection
+   * here becomes an unhandled rejection and kills the process.
    */
   async dispatch(orgId: string, event: WebhookEvent, payload: Record<string, unknown>) {
-    const webhooks = await this.prisma.webhook.findMany({
-      where: {
-        orgId,
-        isActive: true,
-        events: { has: event },
-      },
-    });
+    try {
+      const webhooks = await this.prisma.webhook.findMany({
+        where: {
+          orgId,
+          isActive: true,
+          events: { has: event },
+        },
+      });
 
-    if (webhooks.length === 0) return;
+      if (webhooks.length === 0) return;
 
-    const envelope = {
-      event,
-      timestamp: new Date().toISOString(),
-      data: payload,
-    };
-    const body = JSON.stringify(envelope);
+      const envelope = {
+        event,
+        timestamp: new Date().toISOString(),
+        data: payload,
+      };
+      const body = JSON.stringify(envelope);
 
-    // Fire all webhooks in parallel, don't block the caller
-    const deliveries = webhooks.map((wh) => this.deliver(wh.id, wh.url, wh.secret, event, body));
+      // Fire all webhooks in parallel, don't block the caller
+      const deliveries = webhooks.map((wh) => this.deliver(wh.id, wh.url, wh.secret, event, body));
 
-    // Don't await — fire and forget with error logging
-    Promise.allSettled(deliveries).catch((err) => {
-      this.logger.error(`Webhook batch dispatch failed for event ${event}`, err);
-    });
+      // Don't await — fire and forget; deliver() handles its own errors
+      void Promise.allSettled(deliveries);
+    } catch (err) {
+      this.logger.error(`Webhook dispatch failed for event ${event}`, err);
+    }
   }
 
   private async deliver(webhookId: string, url: string, secret: string, event: string, body: string) {
