@@ -79,7 +79,20 @@ async function ReviewQueueTab({ statusFilter }: { statusFilter: string }) {
             </svg>
           </div>
           <p className="text-slate-600 font-medium">No documents found</p>
-          <p className="text-sm text-slate-400 mt-1">Try a different status filter.</p>
+          <p className="text-sm text-slate-400 mt-1">
+            {statusFilter && statusFilter !== 'ALL'
+              ? 'Try a different status filter, or upload a new document from a supplier page.'
+              : 'Documents are uploaded from each supplier’s profile page.'}
+          </p>
+          <Link
+            href="/dashboard/suppliers"
+            className="mt-5 inline-flex items-center gap-2 bg-indigo-600 text-white rounded-lg px-4 py-2 text-sm font-semibold hover:bg-indigo-500 transition-colors"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+            </svg>
+            Go to suppliers
+          </Link>
         </div>
       ) : (
         <div className="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden">
@@ -140,6 +153,15 @@ async function CoverageMatrixTab() {
       <div className="bg-white border border-slate-200 rounded-lg p-12 text-center">
         <p className="text-slate-600 font-medium">No active suppliers</p>
         <p className="text-sm text-slate-400 mt-1">Add suppliers to see the compliance coverage matrix.</p>
+        <Link
+          href="/dashboard/suppliers/new"
+          className="mt-5 inline-flex items-center gap-2 bg-indigo-600 text-white rounded-lg px-4 py-2 text-sm font-semibold hover:bg-indigo-500 transition-colors"
+        >
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+          </svg>
+          Add supplier
+        </Link>
       </div>
     );
   }

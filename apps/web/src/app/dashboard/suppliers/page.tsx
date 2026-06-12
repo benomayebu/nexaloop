@@ -121,7 +121,17 @@ export default async function SuppliersPage({
             <svg className="mx-auto w-12 h-12 text-slate-300" fill="none" viewBox="0 0 24 24" strokeWidth={1} stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 21h19.5M3.75 3v18m4.5-18v18m4.5-18v18m4.5-18v18m4.5-18v18" />
             </svg>
-            <p className="mt-4 text-sm text-slate-500">No suppliers found. Add your first supplier to get started.</p>
+            <p className="mt-4 text-slate-600 font-medium">No suppliers found</p>
+            <p className="mt-1 text-sm text-slate-400">Add your first supplier manually or import a CSV to get started.</p>
+            <Link
+              href="/dashboard/suppliers/new"
+              className="mt-5 inline-flex items-center gap-2 bg-indigo-600 text-white rounded-lg px-4 py-2 text-sm font-semibold hover:bg-indigo-500 transition-colors"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+              </svg>
+              Add supplier
+            </Link>
           </div>
         ) : (
           <>

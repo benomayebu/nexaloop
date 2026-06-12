@@ -107,7 +107,16 @@ export default async function ProductsPage({
             </svg>
           </div>
           <p className="text-slate-600 font-medium">No products found</p>
-          <p className="text-sm text-slate-400 mt-1">Add your first product to get started.</p>
+          <p className="text-sm text-slate-400 mt-1">Add your first product to map it to your supply chain.</p>
+          <Link
+            href="/dashboard/products/new"
+            className="mt-5 inline-flex items-center gap-2 bg-indigo-600 text-white rounded-lg px-4 py-2 text-sm font-semibold hover:bg-indigo-500 transition-colors"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+            </svg>
+            Add product
+          </Link>
         </div>
       ) : (
         <>
