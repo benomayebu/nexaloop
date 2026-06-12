@@ -148,32 +148,43 @@ export function SupplierGlobe({
     map.setProjection(mapStyle === 'globe' ? 'globe' : 'mercator');
   }, [mapStyle, loaded]);
 
-  // Circle layer style — size and color based on count
-  const circleLayer = useMemo(
-    () => ({
+  // Circle layer style — size and color based on count.
+  // Mapbox interpolate stops must be strictly ascending, so when all
+  // countries have similar counts (maxCount <= 2) the midpoint stop
+  // would collide with the endpoints — use constant styling instead.
+  const circleLayer = useMemo(() => {
+    const paint =
+      maxCount <= 2
+        ? {
+            'circle-radius': 12,
+            'circle-color': '#6366f1',
+          }
+        : {
+            'circle-radius': [
+              'interpolate', ['linear'], ['get', 'count'],
+              1, 8,
+              Math.ceil(maxCount / 2), 16,
+              maxCount, 28,
+            ] as unknown as number,
+            'circle-color': [
+              'interpolate', ['linear'], ['get', 'count'],
+              1, '#818cf8',
+              Math.ceil(maxCount / 2), '#6366f1',
+              maxCount, '#4338ca',
+            ] as unknown as string,
+          };
+    return {
       id: 'supplier-circles',
       type: 'circle' as const,
       paint: {
-        'circle-radius': [
-          'interpolate', ['linear'], ['get', 'count'],
-          1, 8,
-          Math.ceil(maxCount / 2), 16,
-          maxCount, 28,
-        ] as unknown as number,
-        'circle-color': [
-          'interpolate', ['linear'], ['get', 'count'],
-          1, '#818cf8',
-          Math.ceil(maxCount / 2), '#6366f1',
-          maxCount, '#4338ca',
-        ] as unknown as string,
+        ...paint,
         'circle-opacity': 0.85,
         'circle-stroke-width': 2,
         'circle-stroke-color': '#ffffff',
         'circle-stroke-opacity': 0.6,
       },
-    }),
-    [maxCount],
-  );
+    };
+  }, [maxCount]);
 
   // Text layer for count labels
   const textLayer = useMemo(
