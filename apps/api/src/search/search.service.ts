@@ -8,10 +8,10 @@ export class SearchService {
   async search(orgId: string, query: string) {
     const q = query.trim();
     if (q.length < 2) {
-      return { suppliers: [], products: [], documents: [] };
+      return { suppliers: [], products: [], documents: [], notes: [] };
     }
 
-    const [suppliers, products, documents] = await Promise.all([
+    const [suppliers, products, documents, notes] = await Promise.all([
       this.prisma.supplier.findMany({
         where: {
           orgId,
@@ -48,11 +48,26 @@ export class SearchService {
         select: {
           id: true,
           filename: true,
-          supplier: { select: { name: true } },
+          supplier: { select: { id: true, name: true } },
           documentType: { select: { name: true } },
         },
         take: 5,
         orderBy: { filename: 'asc' },
+      }),
+
+      this.prisma.crmThread.findMany({
+        where: {
+          orgId,
+          subject: { contains: q, mode: 'insensitive' },
+        },
+        select: {
+          id: true,
+          subject: true,
+          status: true,
+          supplier: { select: { name: true } },
+        },
+        take: 5,
+        orderBy: { lastMessageAt: 'desc' },
       }),
     ]);
 
@@ -62,8 +77,15 @@ export class SearchService {
       documents: documents.map((d) => ({
         id: d.id,
         filename: d.filename,
+        supplierId: d.supplier.id,
         supplierName: d.supplier.name,
         documentTypeName: d.documentType.name,
+      })),
+      notes: notes.map((n) => ({
+        id: n.id,
+        subject: n.subject,
+        status: n.status,
+        supplierName: n.supplier?.name ?? null,
       })),
     };
   }

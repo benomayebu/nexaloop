@@ -8,7 +8,12 @@ import { IconSearch } from './nav-icons';
 interface SearchResult {
   suppliers: { id: string; name: string; supplierCode: string; type: string; country: string }[];
   products: { id: string; name: string; sku: string; category: string; season: string }[];
-  documents: { id: string; filename: string; supplierName: string; documentTypeName: string }[];
+  documents: { id: string; filename: string; supplierId?: string; supplierName: string; documentTypeName: string }[];
+  notes?: { id: string; subject: string; status: string; supplierName: string | null }[];
+}
+
+function documentHref(d: SearchResult['documents'][number]): string {
+  return d.supplierId ? `/dashboard/suppliers/${d.supplierId}?tab=documents` : '/dashboard/documents';
 }
 
 export function SearchCommand() {
@@ -56,7 +61,8 @@ export function SearchCommand() {
   if (results) {
     results.suppliers.forEach((s) => allItems.push({ label: s.name, sub: `${s.supplierCode} · ${s.country}`, href: `/dashboard/suppliers/${s.id}` }));
     results.products.forEach((p) => allItems.push({ label: p.name, sub: `${p.sku} · ${p.category}`, href: `/dashboard/products/${p.id}` }));
-    results.documents.forEach((d) => allItems.push({ label: d.filename, sub: `${d.documentTypeName} · ${d.supplierName}`, href: `/dashboard/documents` }));
+    results.documents.forEach((d) => allItems.push({ label: d.filename, sub: `${d.documentTypeName} · ${d.supplierName}`, href: documentHref(d) }));
+    (results.notes ?? []).forEach((n) => allItems.push({ label: n.subject, sub: n.supplierName ?? 'General note', href: '/dashboard/crm' }));
   }
 
   function navigate(href: string) {
@@ -161,12 +167,31 @@ export function SearchCommand() {
                         return (
                           <button
                             key={d.id}
-                            onClick={() => navigate(`/dashboard/documents`)}
+                            onClick={() => navigate(documentHref(d))}
                             onMouseEnter={() => setActiveIndex(globalIdx)}
                             className={`w-full text-left px-4 py-2 flex items-center justify-between text-sm transition-colors ${activeIndex === globalIdx ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-50'}`}
                           >
                             <span className="font-medium truncate">{d.filename}</span>
                             <span className="text-xs text-slate-400 flex-shrink-0 ml-2">{d.documentTypeName}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                  {(results.notes ?? []).length > 0 && (
+                    <div>
+                      <p className="px-4 py-1 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Notes</p>
+                      {(results.notes ?? []).map((n, i) => {
+                        const globalIdx = results.suppliers.length + results.products.length + results.documents.length + i;
+                        return (
+                          <button
+                            key={n.id}
+                            onClick={() => navigate('/dashboard/crm')}
+                            onMouseEnter={() => setActiveIndex(globalIdx)}
+                            className={`w-full text-left px-4 py-2 flex items-center justify-between text-sm transition-colors ${activeIndex === globalIdx ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-50'}`}
+                          >
+                            <span className="font-medium truncate">{n.subject}</span>
+                            <span className="text-xs text-slate-400 flex-shrink-0 ml-2">{n.supplierName ?? 'General'}</span>
                           </button>
                         );
                       })}

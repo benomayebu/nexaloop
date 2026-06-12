@@ -152,14 +152,14 @@ export default async function DashboardPage() {
   return (
     <div className="space-y-6">
       {/* ── Hero header ────────────────────────────────────── */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-900 rounded-2xl p-6 md:p-8 text-white">
+      <div className="relative overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-900 rounded-2xl p-5 md:p-7 text-white">
         {/* Background mesh accents */}
         <div className="absolute top-0 right-0 w-72 h-72 bg-indigo-500/10 rounded-full blur-3xl -translate-y-1/3 translate-x-1/4" />
         <div className="absolute bottom-0 left-0 w-48 h-48 bg-emerald-500/8 rounded-full blur-2xl translate-y-1/3 -translate-x-1/4" />
 
         <div className="relative z-10 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
+            <h1 className="text-xl md:text-3xl font-bold tracking-tight">
               {greeting()}
               {userName ? `, ${userName}` : ''}
             </h1>
@@ -207,7 +207,7 @@ export default async function DashboardPage() {
       />
 
       {/* ── Stat cards ─────────────────────────────────────── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <DashStatCard
           label="Active suppliers"
           value={stats.activeSuppliers}

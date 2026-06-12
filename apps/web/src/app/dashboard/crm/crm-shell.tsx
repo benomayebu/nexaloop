@@ -172,23 +172,34 @@ export function CrmShell({ stats, threads, tasks, pipeline, activity, team, supp
 
 // ─── Inbox Tab ──────────────────────────────────────────────────────
 
-function NotesTab({ threads }: { threads: Thread[] }) {
+function NotesTab({ threads: serverThreads }: { threads: Thread[] }) {
   const router = useRouter();
   const toast = useToast();
   const [filter, setFilter] = useState<'all' | 'open' | 'resolved'>('all');
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [commentBody, setCommentBody] = useState('');
   const [posting, setPosting] = useState(false);
+  // Optimistic copy — status flips immediately on toggle, server refresh re-syncs
+  const [threads, setThreads] = useState(serverThreads);
+  React.useEffect(() => setThreads(serverThreads), [serverThreads]);
 
   async function toggleResolve(threadId: string, currentStatus: string) {
     const endpoint = currentStatus === 'OPEN' ? 'resolve' : 'reopen';
+    const newStatus = currentStatus === 'OPEN' ? 'RESOLVED' : 'OPEN';
+    setThreads((prev) => prev.map((t) => (t.id === threadId ? { ...t, status: newStatus } : t)));
     try {
       const res = await fetch(`/api/crm/threads/${threadId}/${endpoint}`, { method: 'PUT' });
       if (res.ok) {
         toast(endpoint === 'resolve' ? 'Note resolved' : 'Note reopened');
         router.refresh();
+      } else {
+        setThreads((prev) => prev.map((t) => (t.id === threadId ? { ...t, status: currentStatus } : t)));
+        toast('Failed to update note', 'err');
       }
-    } catch { /* ignore */ }
+    } catch {
+      setThreads((prev) => prev.map((t) => (t.id === threadId ? { ...t, status: currentStatus } : t)));
+      toast('Network error', 'err');
+    }
   }
 
   async function postComment(threadId: string) {
@@ -385,12 +396,17 @@ function NotesTab({ threads }: { threads: Thread[] }) {
 function PipelineTab({ pipeline }: { pipeline: PipelineData }) {
   const router = useRouter();
   const toast = useToast();
-  const { stages, cards } = pipeline;
+  const { stages } = pipeline;
   const [dragOverStage, setDragOverStage] = useState<string | null>(null);
   const [draggingId, setDraggingId] = useState<string | null>(null);
+  // Optimistic copy — card moves to the new column immediately on drop
+  const [cards, setCards] = useState(pipeline.cards);
+  React.useEffect(() => setCards(pipeline.cards), [pipeline.cards]);
   const byStage = (stageId: string) => cards.filter((c) => c.stage === stageId);
 
   async function moveToStage(supplierId: string, newStage: string) {
+    const prevStage = cards.find((c) => c.id === supplierId)?.stage;
+    setCards((prev) => prev.map((c) => (c.id === supplierId ? { ...c, stage: newStage } : c)));
     try {
       const res = await fetch(`/api/suppliers/${supplierId}`, {
         method: 'PUT',
@@ -400,8 +416,14 @@ function PipelineTab({ pipeline }: { pipeline: PipelineData }) {
       if (res.ok) {
         toast('Supplier moved');
         router.refresh();
+      } else {
+        if (prevStage) setCards((prev) => prev.map((c) => (c.id === supplierId ? { ...c, stage: prevStage } : c)));
+        toast('Failed to move supplier', 'err');
       }
-    } catch { /* ignore */ }
+    } catch {
+      if (prevStage) setCards((prev) => prev.map((c) => (c.id === supplierId ? { ...c, stage: prevStage } : c)));
+      toast('Network error', 'err');
+    }
   }
 
   if (cards.length === 0) {
@@ -493,17 +515,21 @@ function PipelineTab({ pipeline }: { pipeline: PipelineData }) {
 
 // ─── Tasks Tab ──────────────────────────────────────────────────────
 
-function TasksTab({ tasks, team: _team }: { tasks: Task[]; team: TeamMember[] }) {
+function TasksTab({ tasks: serverTasks, team: _team }: { tasks: Task[]; team: TeamMember[] }) {
   const router = useRouter();
   const toast = useToast();
   const [filter, setFilter] = useState<'all' | 'open' | 'overdue' | 'done'>('all');
   const [showDone, setShowDone] = useState(false);
   const [toggling, setToggling] = useState<string | null>(null);
+  // Optimistic copy — checkbox flips immediately, server refresh re-syncs
+  const [tasks, setTasks] = useState(serverTasks);
+  React.useEffect(() => setTasks(serverTasks), [serverTasks]);
   const now = new Date();
 
   async function toggleTask(taskId: string, currentStatus: string) {
     setToggling(taskId);
     const newStatus = currentStatus === 'DONE' ? 'OPEN' : 'DONE';
+    setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, status: newStatus } : t)));
     try {
       const res = await fetch(`/api/crm/tasks/${taskId}`, {
         method: 'PUT',
@@ -513,8 +539,14 @@ function TasksTab({ tasks, team: _team }: { tasks: Task[]; team: TeamMember[] })
       if (res.ok) {
         toast(newStatus === 'DONE' ? 'Task completed' : 'Task reopened');
         router.refresh();
+      } else {
+        setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, status: currentStatus } : t)));
+        toast('Failed to update task', 'err');
       }
-    } catch { /* ignore */ }
+    } catch {
+      setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, status: currentStatus } : t)));
+      toast('Network error', 'err');
+    }
     setToggling(null);
   }
 

@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { apiFetch, apiFetchList } from '../../../lib/api';
 import { NexaBadge } from '@/components/ui/nexa-badge';
+import { ClickableRow } from '@/components/ui/clickable-row';
 import { docStatusBadge } from '@/lib/badges';
 import { fmtDate } from '@/lib/format';
 
@@ -110,7 +111,7 @@ async function ReviewQueueTab({ statusFilter }: { statusFilter: string }) {
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {docs.map((doc) => (
-                  <tr key={doc.id} className="hover:bg-slate-50 transition-colors">
+                  <ClickableRow key={doc.id} href={`/dashboard/suppliers/${doc.supplier.id}?tab=documents`} className="hover:bg-slate-50 transition-colors">
                     <td className="px-4 py-3 text-sm font-medium text-slate-900">{doc.documentType.name}</td>
                     <td className="px-4 py-3 text-sm">
                       <Link href={`/dashboard/suppliers/${doc.supplier.id}?tab=documents`} className="text-indigo-600 hover:text-indigo-800">
@@ -132,7 +133,7 @@ async function ReviewQueueTab({ statusFilter }: { statusFilter: string }) {
                         {doc.status === 'PENDING_REVIEW' ? 'Review →' : 'View →'}
                       </Link>
                     </td>
-                  </tr>
+                  </ClickableRow>
                 ))}
               </tbody>
             </table>

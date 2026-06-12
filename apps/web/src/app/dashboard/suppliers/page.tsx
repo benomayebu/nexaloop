@@ -9,6 +9,7 @@ import { CsvImportButton } from '../../components/csv-import-button';
 import { CsvExportButton } from '../../components/csv-export-button';
 import { ScoreBar } from '@/components/ui/score-bar';
 import { SortHeader } from '@/components/ui/sort-header';
+import { ClickableRow } from '@/components/ui/clickable-row';
 import { Pagination } from '@/components/ui/pagination';
 import { supStatusBadge, riskBadge, typeBadge } from '@/lib/badges';
 import { fmtDate } from '@/lib/format';
@@ -156,7 +157,7 @@ export default async function SuppliersPage({
                   const risk = riskBadge(supplier.riskLevel);
                   const type = typeBadge(supplier.type);
                   return (
-                    <tr key={supplier.id} className="hover:bg-slate-50 transition-colors">
+                    <ClickableRow key={supplier.id} href={`/dashboard/suppliers/${supplier.id}`} className="hover:bg-slate-50 transition-colors">
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-3">
                           <SupAvatar name={supplier.name} type={supplier.type} size="sm" />
@@ -213,7 +214,7 @@ export default async function SuppliersPage({
                           </svg>
                         </Link>
                       </td>
-                    </tr>
+                    </ClickableRow>
                   );
                 })}
               </tbody>
