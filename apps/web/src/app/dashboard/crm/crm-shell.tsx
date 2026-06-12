@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { motion, LayoutGroup } from 'framer-motion';
 import { NexaBadge } from '@/components/ui/nexa-badge';
 import { NexaButton } from '@/components/ui/nexa-button';
 import { SupAvatar } from '@/components/ui/sup-avatar';
@@ -434,6 +435,7 @@ function PipelineTab({ pipeline }: { pipeline: PipelineData }) {
 
   return (
     <div className="overflow-x-auto pb-2">
+      <LayoutGroup>
       <div className="grid gap-3" style={{ gridTemplateColumns: `repeat(${stages.length}, minmax(240px, 1fr))`, minWidth: stages.length * 260 }}>
         {stages.map((stage) => {
           const items = byStage(stage.id);
@@ -463,8 +465,15 @@ function PipelineTab({ pipeline }: { pipeline: PipelineData }) {
                   const risk = riskBadge(card.riskLevel);
                   const isDragging = draggingId === card.id;
                   return (
-                    <div
+                    <motion.div
                       key={card.id}
+                      layoutId={`pipeline-card-${card.id}`}
+                      layout
+                      transition={{ type: 'spring', stiffness: 500, damping: 35 }}
+                    >
+                    {/* Native HTML5 drag lives on a plain div — framer-motion
+                        would intercept onDragStart/onDragEnd as gesture props */}
+                    <div
                       draggable
                       onDragStart={(e) => { e.dataTransfer.setData('text/plain', card.id); setDraggingId(card.id); }}
                       onDragEnd={() => { setDraggingId(null); setDragOverStage(null); }}
@@ -497,6 +506,7 @@ function PipelineTab({ pipeline }: { pipeline: PipelineData }) {
                         </div>
                       </Link>
                     </div>
+                    </motion.div>
                   );
                 })}
                 {items.length === 0 && (
@@ -509,6 +519,7 @@ function PipelineTab({ pipeline }: { pipeline: PipelineData }) {
           );
         })}
       </div>
+      </LayoutGroup>
     </div>
   );
 }
